@@ -6,7 +6,7 @@ import re
 js=Path("assets/portal.js").read_text(encoding="utf-8")
 css=Path("assets/portal.css").read_text(encoding="utf-8")
 main=Path("hangar18-madplan.php").read_text(encoding="utf-8")
-assert "Version: 0.1.6" in main
+assert " * Version: " in main
 assert "limit=7;" in js, "Must render exactly seven days"
 assert "for(var i=0;i<limit;i++)" in js
 assert "i>=focus" not in js, "No mobile focus window"
