@@ -13,6 +13,9 @@ final class MP_Updater {
     private const MANIFEST = 'https://raw.githubusercontent.com/phenixdk2020/Madplan/main/update.json';
     private const CACHE = 'mp_github_updater_v1';
     private const ERROR_CACHE = 'mp_github_updater_error_v1';
+    /** WordPress temporarily deactivates plugins during manual upgrades. */
+    private static bool $was_active_on_upgrade = false;
+    private static bool $was_network_active_on_upgrade = false;
 
     public static function register(): void {
         add_filter('pre_set_site_transient_update_plugins',[self::class,'updates']);
@@ -20,6 +23,9 @@ final class MP_Updater {
         add_filter('update_plugins_github.com',[self::class,'github_update_uri'],10,4);
         add_filter('plugins_api',[self::class,'plugin_info'],20,3);
         add_filter('upgrader_pre_download',[self::class,'verify_download'],20,4);
+        // Capture activation BEFORE WP core silently deactivates an active plugin.
+        add_filter('upgrader_pre_install',[self::class,'capture_activation'],4,2);
+        add_filter('upgrader_post_install',[self::class,'reactivate_after_install'],20,2);
         add_action('upgrader_process_complete',[self::class,'clear_cache'],10,2);
         add_action('admin_post_mp_update_check',[self::class,'manual_check']);
         add_action('admin_post_mp_test_backup',[self::class,'test_backup']);
@@ -109,6 +115,61 @@ final class MP_Updater {
         $item['version'] = $item['new_version'];
         return $item;
     }
+    private static function is_our_update(array $extra): bool {
+        if (($extra['type'] ?? '') !== 'plugin' || ($extra['action'] ?? '') !== 'update') { return false; }
+        $plugin = (string)($extra['plugin'] ?? '');
+        $plugins = is_array($extra['plugins'] ?? null) ? $extra['plugins'] : [];
+        return $plugin === self::PLUGIN || in_array(self::PLUGIN, $plugins, true);
+    }
+
+    /** Called at priority 4, before core deactivation (priority 10). */
+    public static function capture_activation($result, array $extra = []) {
+        if (is_wp_error($result) || !self::is_our_update($extra)) { return $result; }
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        self::$was_active_on_upgrade = is_plugin_active(self::PLUGIN);
+        self::$was_network_active_on_upgrade = is_plugin_active_for_network(self::PLUGIN);
+        return $result;
+    }
+
+    /**
+     * A successful manual WP Plugin_Upgrader run does NOT reactivate plugins
+     * by itself when using Automatic_Upgrader_Skin. Restore exactly the
+     * activation state recorded prior to the update; never auto-activate a
+     * plugin which was deliberately inactive.
+     */
+    public static function restore_activation(bool $previously_active, bool $network_active): bool|WP_Error {
+        if (!$previously_active && !$network_active) { return true; }
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        if (is_plugin_active(self::PLUGIN)) { return true; }
+        if (!is_file(WP_PLUGIN_DIR . '/' . self::PLUGIN)) {
+            return new WP_Error('mp_missing_after_update',
+                'Pluginfilen mangler efter opdatering. Åbn Plugins og geninstaller Madplan.');
+        }
+        $activated = activate_plugin(self::PLUGIN, '', $network_active, true);
+        if (is_wp_error($activated)) {
+            return new WP_Error('mp_reactivation_failed',
+                'Madplan blev opdateret, men kunne ikke genaktiveres: ' . $activated->get_error_message());
+        }
+        if (!is_plugin_active(self::PLUGIN)) {
+            return new WP_Error('mp_not_active_after_update',
+                'Opdateringen er installeret, men Madplan er stadig deaktiveret. Åbn Plugins og aktivér den.');
+        }
+        return true;
+    }
+
+    /** Works for updates initiated both by Hangar18 and by WordPress Plugins. */
+    public static function reactivate_after_install($result, array $extra = []) {
+        if (is_wp_error($result) || !self::is_our_update($extra)) { return $result; }
+        $activated = self::restore_activation(
+            self::$was_active_on_upgrade, self::$was_network_active_on_upgrade
+        );
+        if (is_wp_error($activated)) {
+            self::record_error($activated->get_error_message());
+            return $activated;
+        }
+        return $result;
+    }
+
     private static function record_error(string $message): void {
         set_transient('mp_update_error_' . get_current_user_id(), sanitize_text_field($message), 10 * MINUTE_IN_SECONDS);
     }
@@ -168,7 +229,7 @@ final class MP_Updater {
         if (is_wp_error($result)) { @unlink($file); return $result; }
         return $file;
     }
-    public static function verify_zip(string $file, string $sha, string $version = ''): true|WP_Error {
+    public static function verify_zip(string $file, string $sha, string $version = ''): bool|WP_Error {
         if (!is_file($file) || !preg_match('/^[a-f0-9]{64}$/',$sha) ||
             !hash_equals($sha, strtolower((string)hash_file('sha256',$file)))) {
             return new WP_Error('mp_zip_sha','Opdatering afvist: SHA-256 matcher ikke.');
@@ -199,7 +260,7 @@ final class MP_Updater {
         $zip->close();
         return true;
     }
-    private static function redirect(string $status): never {
+    private static function redirect(string $status): void {
         wp_safe_redirect(add_query_arg('mp_result',$status,self::admin_url()));
         exit;
     }
@@ -245,10 +306,22 @@ final class MP_Updater {
             unset($transient->no_update[self::PLUGIN]);
         }
         set_site_transient('update_plugins', $transient);
+        // Keep the activation state even if a third-party upgrader removes the hooks.
+        $was_active = is_plugin_active(self::PLUGIN);
+        $was_network_active = is_plugin_active_for_network(self::PLUGIN);
         $upgrader = new Plugin_Upgrader(new Automatic_Upgrader_Skin());
         $result = $upgrader->upgrade(self::PLUGIN);
-        if ($result === false || is_wp_error($result)) {
-            $reason = is_wp_error($result) ? $result->get_error_message() : 'WordPress-opdateringen returnerede false. Kontroller filrettigheder og backupmappen.';
+        $activation = self::restore_activation($was_active, $was_network_active);
+        if (is_wp_error($activation)) {
+            self::record_error($activation->get_error_message());
+            // Our admin menu is unavailable when the plugin is inactive.
+            // Never redirect to the missing menu page in that state.
+            wp_safe_redirect(admin_url('plugins.php'));
+            exit;
+        }
+        if ($result !== true) {
+            $reason = is_wp_error($result) ? $result->get_error_message() :
+                'WordPress-opdateringen returnerede false. Kontroller filrettigheder og backupmappen.';
             self::record_error($reason);
             self::redirect('install-error');
         }

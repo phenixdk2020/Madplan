@@ -37,6 +37,7 @@ jobs:
           find . -name '*.php' -not -path './build/*' -print0 | xargs -0 -n1 php -l
           find assets -name '*.js' -print0 | xargs -0 -n1 node --check
           python3 tests/updater_contract.py
+          php tests/updater_reactivation.php
           php tests/tv_auto.php
           python3 tests/tv_portal_contract.py
           python3 tests/week_layout_contract.py

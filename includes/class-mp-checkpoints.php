@@ -8,7 +8,7 @@ final class MP_Checkpoints {
     private static bool $created = false;
 
     public static function register(): void {
-        add_filter('upgrader_pre_install', [self::class, 'pre_install'], 20, 2);
+        add_filter('upgrader_pre_install', [self::class, 'pre_install'], 5, 2);
         add_action('admin_post_mp_backup_download', [self::class, 'download']);
     }
     public static function rows(): array {
@@ -83,7 +83,7 @@ final class MP_Checkpoints {
         }
         return $row;
     }
-    private static function program_zip(string $path): true|WP_Error {
+    private static function program_zip(string $path): bool|WP_Error {
         $base = realpath(MP_DIR);
         if (!$base) { return new WP_Error('mp_program_missing','Pluginmappen mangler.'); }
         $zip = new ZipArchive();
@@ -111,7 +111,7 @@ final class MP_Checkpoints {
         }
         return true;
     }
-    private static function data_zip(string $path): true|WP_Error {
+    private static function data_zip(string $path): bool|WP_Error {
         global $wpdb;
         $payload = [
             'format'=>'hangar18-data-checkpoint-1', 'created'=>gmdate('c'), 'version'=>MP_VERSION,

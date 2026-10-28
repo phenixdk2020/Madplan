@@ -92,3 +92,13 @@ Senere: automatiske indkøb fra opskrifter, tilbud, dansk premieredatakilde, ske
 - Sæsonmetadata kan mangle eller fejle; serien må ikke fjernes eller afbrydes.
 - REST /shows returnerer monitor/status; /shows/{id}/sync returnerer new_season og state.
 - Der er ingen push-alarm; UI opdateres ved åbning og næste synkronisering.
+
+
+## 0.1.9 – activation lifecycle ved pluginopdatering
+- upgrader_pre_install priority 4 tager snapshot af oprindelig aktiv/netværksaktiv status.
+- MP_Checkpoints::pre_install priority 5 opretter program- og datacheckpoint før WP core priority 10 deaktiverer.
+- upgrader_post_install priority 20 genaktiverer stille, hvis WordPress havde deaktiveret et aktivt plugin.
+- MP_Updater::install_now udfører desuden genaktiveringskontrol på både succes og fejl; redirect til Plugins ved genaktiveringsfejl.
+- Der foretages ikke automatisk aktivering af plugins, der var inaktive.
+- WP core's Plugin_Upgrader::deactivate_plugin_before_upgrade() står for deaktiveringen, ikke vores egen kode.
+- Isolerede PHP-tests i tests/updater_reactivation.php.

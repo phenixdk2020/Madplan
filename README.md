@@ -163,3 +163,20 @@ Dansk streamingtjeneste vælges i en dropdown (Netflix, HBO Max, Disney+, Prime 
 - Der foretages ikke automatisk opslag på betalte eller uofficielle streamingkatalog-API'er. En verificeret dansk premiere hos Netflix/Prime Video/TV 2 Play kræver en kilde med danske rettigheder og kalenderoplysninger.
 
 Temaer: eksisterende Default, Mørk, Skovgrøn, Lilla, Sand samt nye Havblå, Rosa, Solnedgang, Mint og Bordeaux. Alle 10 gemmes på WordPress-brugeren.
+
+
+## Version 0.1.9 – rettelse af inaktivt plugin efter WordPress-opdatering
+
+**Konkret fejl rettet:** WordPress' Plugin_Upgrader::upgrade() kalder deactivate_plugin_before_upgrade i ikke-cron-baserede opdateringer. Madplans selvbyggede GUI anvendte Automatic_Upgrader_Skin, som ikke genaktiverer pluginet. Efter en ellers vellykket opdatering var Hangar18-menuen derfor væk med "Du har ikke adgang til denne side" ved redirect.
+
+- Installeren gemmer aktiv status (og multisite-netværksstatus) før WordPress deaktiverer.
+- Ved gennemført upgrade genaktiveres pluginet automatisk og stille via activate_plugin().
+- Også ved rapporteret mislykket upgrade forsøges genaktivering af den installerede pluginfil, når den oprindeligt var aktiv.
+- Genaktivering gennemføres kun, hvis pluginet var aktivt før opdateringen; et bevidst inaktivt plugin skal forblive inaktivt.
+- Backup via upgrader_pre_install kører før WordPress' standarddeaktivering, så et backup-problem ikke længere deaktiverer pluginet.
+- Hvis genaktivering ikke lykkes, vises WordPress Plugins-siden i stedet for redirect til et Hangar18-adminmenupunkt, der ikke længere findes.
+- PHP 8.0-kompatibilitet rettet: redirect bruger void, ikke PHP 8.1-returntypen never.
+
+**Recovery for eksisterende installationer, der blev deaktiveret:** Åbn /wp-admin/plugins.php → Aktivér Hangar18 Madplan & TV-plan. Upload derefter ZIP v0.1.9 og vælg "Erstat eksisterende", eller installer via en opdateringsmetode, der garanterer aktivering. Undgå knappen "Opdater nu" fra ældre Hangar18-versioner, da buggen er i dem. Slet ikke pluginet og slet ikke data.
+
+**Test:** Isoleret PHP regression tester normal og multisite-aktivering, ikke-genaktivering af inaktive plugins, andres plugins, allerede aktiv, aktiveringsfejl og manglende pluginfil. Integration i WordPress-webhotel skal stadig testes.
