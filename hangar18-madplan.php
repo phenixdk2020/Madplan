@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/phenixdk2020/Madplan
  * Update URI: https://github.com/phenixdk2020/Madplan
  * Description: Mobilvenlig familieportal med fælles TV-ugeplan, watchlist, madplan og opskrifter.
- * Version: 0.1.10
+ * Version: 0.1.11
  * Requires at least: 6.4
  * Requires PHP: 8.0
  * Text Domain: hangar18-madplan
@@ -12,7 +12,7 @@
 declare(strict_types=1);
 
 if (!defined('ABSPATH')) { exit; }
-define('MP_VERSION', '0.1.10');
+define('MP_VERSION', '0.1.11');
 define('MP_FILE', __FILE__);
 define('MP_DIR', plugin_dir_path(__FILE__));
 define('MP_URL', plugin_dir_url(__FILE__));
@@ -20,6 +20,7 @@ define('MP_URL', plugin_dir_url(__FILE__));
 require_once MP_DIR . 'includes/class-mp-storage.php';
 require_once MP_DIR . 'includes/class-mp-tvmaze.php';
 require_once MP_DIR . 'includes/class-mp-rest.php';
+require_once MP_DIR . 'includes/class-mp-streaming.php';
 require_once MP_DIR . 'includes/class-mp-portal.php';
 require_once MP_DIR . 'includes/class-mp-home.php';
 require_once MP_DIR . 'includes/class-mp-checkpoints.php';
@@ -124,6 +125,20 @@ final class MP_Plugin {
             update_option('mp_people', $names);
             echo '<div class="notice notice-success"><p>Personnavne gemt.</p></div>';
         }
+        if (isset($_POST['mp_save_tmdb'])) {
+            check_admin_referer('mp_save_tmdb');
+            if (isset($_POST['mp_clear_tmdb']) && $_POST['mp_clear_tmdb'] === '1') {
+                MP_Streaming::clear_token();
+                echo '<div class="notice notice-success"><p>TMDB-nøglen er fjernet.</p></div>';
+            } else {
+                $key=trim((string)wp_unslash($_POST['mp_tmdb_token'] ?? ''));
+                if (MP_Streaming::save_token($key)) {
+                    echo '<div class="notice notice-success"><p>TMDB API-nøglen er gemt.</p></div>';
+                } else {
+                    echo '<div class="notice notice-error"><p>Ugyldig TMDB API-nøgle. Indsæt den fulde API Read Access Token eller API key.</p></div>';
+                }
+            }
+        }
         $people = MP_Storage::people();
         $page_id = (int)get_option('mp_portal_page');
         echo '<div class="wrap"><h1>Hangar18 Madplan & TV-plan</h1>';
@@ -151,6 +166,15 @@ final class MP_Plugin {
             wp_nonce_field('mp_restore_home');
             echo '<button class="button" type="submit">Gendan tidligere WordPress-forside</button></form>';
         }
+        echo '<hr><h2>Streamingtjenester – automatisk dansk katalogopslag</h2>';
+        echo '<p>TV-guiden kan undersøge streamingtjenester i Danmark via JustWatch-data fra TMDB. Gratis udvikleradgang til ikke-kommerciel brug kræver en TMDB API-nøgle. Familiemedlemmer vælger deres abonnementer under TV-guide → Watchlist.</p>';
+        echo '<p>Status: <strong>' . (MP_Streaming::configured() ? 'TMDB er konfigureret' : 'TMDB mangler API-nøgle') . '</strong>. ';
+        echo '<a href="https://developer.themoviedb.org/docs/getting-started" target="_blank" rel="noopener">Sådan får du en gratis TMDB API-nøgle</a>.</p>';
+        echo '<form method="post">'; wp_nonce_field('mp_save_tmdb');
+        echo '<p><label>API Read Access Token / API key (vises ikke efter lagring) <input type="password" name="mp_tmdb_token" value="" class="regular-text" autocomplete="new-password"></label></p>';
+        echo '<p><button class="button button-primary" type="submit" name="mp_save_tmdb" value="1">Gem TMDB-nøgle</button> ';
+        echo '<label><input type="checkbox" name="mp_clear_tmdb" value="1"> Fjern gemt nøgle</label></p></form>';
+        echo '<p class="description">Nøglen gemmes kun på serveren. Alternativt kan MP_TMDB_API_TOKEN sættes i wp-config.php.</p>';
         echo '<hr>';
         echo '<p>Portal: <a href="' . esc_url($page_id ? get_permalink($page_id) : home_url('/familieplan/')) . '" target="_blank" rel="noopener">Åbn Familieplan</a>. Indsæt <code>[hangar18_portal]</code> på en anden side efter behov.</p>';
         echo '<p>Opskrifter oprettes i menupunktet <strong>Hangar18 → Opskrifter</strong> på PC. Madplan og TV-watchlist kan redigeres af alle loggede brugere direkte på mobilen.</p>';

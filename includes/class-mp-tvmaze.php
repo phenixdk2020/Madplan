@@ -121,6 +121,7 @@ final class MP_TVmaze {
         $out=[
             'id'=>$id,
             'title'=>sanitize_text_field((string)($show['name'] ?? '')),
+            'premiered'=>sanitize_text_field((string)($show['premiered'] ?? '')),
             'original_provider'=>sanitize_text_field($origin),
             'provider_kind'=>$primary!=='' ? 'web' : ($network!=='' ? 'broadcast' : 'unknown'),
             'provider_note'=>'Kilden angiver oprindelig kanal eller streamingtjeneste. Dansk tilgængelighed er ikke bekræftet.',

@@ -24,6 +24,37 @@ final class MP_REST {
         update_user_meta($uid, 'mp_portal_theme', $theme);
         return ['theme'=>$theme, 'saved'=>true];
     }
+    public static function streaming_services(): array {
+        return ['options'=>MP_Streaming::services(),'selected'=>MP_Streaming::chosen(),
+            'configured'=>MP_Streaming::configured(),
+            'credits'=>'Streaming availability: JustWatch via TMDB (DK).'];
+    }
+    public static function save_streaming_services(WP_REST_Request $r) {
+        $services=$r->get_param('services');
+        if (!is_array($services)) {
+            return new WP_Error('mp_services_invalid','Send en liste med streamingtjenester.',['status'=>400]);
+        }
+        return MP_Streaming::save_for_user(get_current_user_id(),$services);
+    }
+    public static function streaming_lookup(WP_REST_Request $r): array {
+        return MP_Streaming::lookup(absint($r->get_param('tvmaze_id')));
+    }
+    public static function check_streaming_show(WP_REST_Request $r) {
+        global $wpdb;
+        $id=absint($r['id']);
+        $table=MP_Storage::table('shows');
+        $show=$wpdb->get_row($wpdb->prepare("SELECT id,tvmaze_id,service FROM $table WHERE id=%d AND active=1",$id),ARRAY_A);
+        if (!$show) { return new WP_Error('mp_show_missing','Serien findes ikke.',['status'=>404]); }
+        $lookup=MP_Streaming::lookup((int)$show['tvmaze_id']);
+        $current=(string)($show['service']??'');
+        if (($current==='' || $current==='Ukendt') && count($lookup['matches'])===1) {
+            $current=$lookup['matches'][0];
+            $wpdb->update($table,['service'=>$current],['id'=>$id],['%s'],['%d']);
+            $lookup['auto_assigned']=$current;
+        } else { $lookup['auto_assigned']=''; }
+        $lookup['service']=$current;
+        return $lookup;
+    }
     private static function route(string $path, string $method, string $callback, bool $write = false, bool $admin_only = false): void {
         register_rest_route(self::NS, $path, [
             'methods'=>$method, 'callback'=>[self::class, $callback],
@@ -32,6 +63,10 @@ final class MP_REST {
     }
     public static function register(): void {
         self::route('/theme', 'POST', 'save_theme', true);
+        self::route('/streaming-services', 'GET', 'streaming_services');
+        self::route('/streaming-services', 'POST', 'save_streaming_services', true);
+        self::route('/streaming-lookup', 'GET', 'streaming_lookup');
+        self::route('/shows/(?P<id>\d+)/streaming-check', 'POST', 'check_streaming_show', true);
         self::route('/week', 'GET', 'week');
         self::route('/recipes', 'GET', 'recipes');
         self::route('/recipe/(?P<id>\d+)', 'GET', 'recipe');
@@ -114,7 +149,14 @@ final class MP_REST {
         // Canonical TVmaze name prevents an arbitrary show title supplied by a client.
         $name=sanitize_text_field((string)$details['title']);
         $service=sanitize_text_field((string)$r->get_param('service'));
-        $service=$service !== '' ? $service : 'Ukendt';
+        $streaming_result=null;
+        if ($service === '') {
+            $streaming_result=MP_Streaming::lookup($tvmaze);
+            $service=count($streaming_result['matches'])===1 ? $streaming_result['matches'][0] : 'Ukendt';
+        }
+        if (!in_array($service,MP_Streaming::services(),true) && $service!=='Ukendt') {
+            return new WP_Error('mp_bad_streaming_service','Vælg en kendt streamingtjeneste.',['status'=>400]);
+        }
         $season=absint($r->get_param('season')) ?: (int)$details['suggested_season'];
         $seasonData=null;
         foreach ($details['seasons'] as $item) {
@@ -170,6 +212,8 @@ final class MP_REST {
                 'weekly'=>$weekly,
             ],
             'sync'=>is_wp_error($sync) ? ['warning'=>$sync->get_error_message()] : $sync,
+            'service'=>$service,
+            'streaming_lookup'=>$streaming_result,
         ];
     }
     public static function delete_show(WP_REST_Request $r) {

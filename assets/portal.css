@@ -226,3 +226,18 @@ body.mp-full-page.mp-theme-burgundy{background:#f9f0f3;color:#41212c}
 .mp-portal .mp-dk-form label:has(input[type=checkbox]){display:flex;align-items:center;gap:6px}
 .mp-portal .mp-dk-form small{color:var(--mp-muted);font-size:11px;line-height:1.4}
 @media(max-width:650px){.mp-portal .mp-dk-edit{max-width:none;width:100%}.mp-portal .mp-dk-form button{min-height:48px}}
+
+/* v0.1.11 – User-specific streaming subscriptions and catalogue status. */
+.mp-portal .mp-my-services{margin-bottom:16px}
+.mp-portal .mp-my-services details>summary{font-size:16px;font-weight:700;cursor:pointer;padding:8px 3px;min-height:44px}
+.mp-portal .mp-service-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;margin:14px 0}
+.mp-portal .mp-service-choice{display:flex;gap:9px;align-items:center;padding:11px;border:1px solid var(--mp-line);border-radius:10px;cursor:pointer;color:var(--mp-ink);background:var(--mp-card)}
+.mp-portal .mp-service-choice:has(input:checked){border-color:var(--mp-primary);box-shadow:0 0 0 1px var(--mp-primary);font-weight:700}
+.mp-portal .mp-service-choice input{width:19px;height:19px;accent-color:var(--mp-primary)}
+.mp-portal .mp-my-services button{min-height:48px}
+.mp-portal #mp-auto-status{border-left:3px solid var(--mp-primary);padding:8px 11px;background:var(--mp-status-bg,#e9f3ff)}
+.mp-portal .mp-source-credits{margin:18px 0;border:1px solid var(--mp-line);border-radius:10px;padding:12px;color:var(--mp-ink)}
+.mp-portal .mp-source-credits summary{cursor:pointer;font-weight:700}
+.mp-portal .mp-source-credits p{font-size:12px;line-height:1.5;color:var(--mp-muted)}
+.mp-portal .mp-tmdb-logo{height:38px;width:auto;vertical-align:middle;margin-right:10px}
+@media(max-width:450px){.mp-portal .mp-service-choices{grid-template-columns:repeat(2,minmax(0,1fr))}.mp-portal .mp-service-choice{font-size:13px;padding:8px}}

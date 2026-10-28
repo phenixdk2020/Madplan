@@ -112,3 +112,12 @@ Senere: automatiske indkøb fra opskrifter, tilbud, dansk premieredatakilde, ske
 - REST POST /shows/{id}/dk-schedule med WordPress REST nonce og can_write.
 - En kurateret kilde til Marshals season 2 dokumenterer 9 og 30 oktober 2026 på danske SkyShowtime. Øvrige fredage er estimater.
 - Tests: tests/dk_schedule.php og tv_portal_contract.py.
+
+
+## v0.1.11 – optional user-specific streaming services
+- Per-user subscriptions in mp_streaming_subscriptions_v1 user_meta; GET/POST streaming-services, GET streaming-lookup and POST shows/{id}/streaming-check.
+- Optional admin API credential in wp_option mp_tmdb_token_v1 (autoload false) or wp-config MP_TMDB_API_TOKEN; never exposed in REST or client JS.
+- TMDB search/tv maps an exact show name and premiere year; ambiguous titles rejected. tv/{id}/watch/providers uses region DK only and compares flatrate/free/ads with user subscriptions; rent/buy excluded.
+- Only one matched subscription is automatically saved when no streaming service is chosen; otherwise remains Ukendt. Manually pinned provider is never overwritten.
+- TMDB response transient cache six hours; fallback doesn't prevent adding/updating watchlist.
+- Tests in streaming_check.php and streaming_contract.py.

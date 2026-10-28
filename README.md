@@ -201,3 +201,20 @@ Kilder:
 - https://digitalt.tv/SkyShowtime/?wpv_paged=2&wpv_view_count=909221-CATTR97b879431a810c8fcbeb23adba90b4ae
 
 Test: `php tests/dk_schedule.php` verificerer, at fredag 30. oktober vinder over den amerikanske søndag, skelner mellem bekræftede og estimerede datoer, og at manuel sæson-korrektion har prioritet.
+
+
+## v0.1.11 – Mine streamingtjenester og dansk katalogopslag
+
+Alle loggede WordPress-brugere kan vælge deres abonnementer under TV-guide → Watchlist → Mine streamingtjenester. Gemmes per bruger i user-meta mp_streaming_subscriptions_v1, så valget følger både mobil og PC. Familiens madplan og fælles TV-watchlist deles stadig.
+
+Ved oprettelse af en serie kan dropdownen stå på Automatisk – søg blandt mine tjenester. Hvis administrator har konfigureret den gratis TMDB API, prøver pluginet at identificere serien entydigt ud fra navn og premiereår. Derefter hentes streamingtilgængelighed fra JustWatch via TMDB for Danmark (DK). Kun flatrate-abonnementer eller gratis/annoncefinansierede tilbud på brugerens valgte tjenester regnes som match.
+
+- Præcis ét match: streamingtjenesten udfyldes automatisk ved tilføjelse af serien.
+- Flere match: vis tjenesterne, men vælg ikke vilkårligt; brugeren kan vælge manuelt.
+- Ingen sikker match, ingen TMDB-nøgle eller midlertidig fejl: gem Ukendt, men bevar serien på watchlisten.
+- Eksisterende serier, hvor streamingtjenesten er Ukendt, har knappen Tjek mine tjenester. Manuelt valgte streamingtjenester overskrives aldrig.
+- Katalogdata siger ikke sikkert, om en bestemt sæson er med i abonnementet; danske premieredatoer og klokkeslæt kræver fortsat selvstændige kilder.
+
+Administratorkonfiguration: Gå til Hangar18 → Oversigt → Streamingtjenester og indsæt en gratis TMDB API Read Access Token eller v3 API key fra https://developer.themoviedb.org/docs/getting-started . TMDB developer API er gratis for ikke-kommerciel brug under deres vilkår og krav om attribution. Administrator kan også sætte konstanten MP_TMDB_API_TOKEN i wp-config.php. Nøglen sendes aldrig til browseren eller GitHub.
+
+Datakilder: TVmaze for afsnit og sæsoner, JustWatch via TMDB for danske streamingtjenester, seks timers cache. TMDB-logo og kreditering i TV-guidens Om streamingdata og kilder. This product uses the TMDB API but is not endorsed or certified by TMDB.

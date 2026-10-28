@@ -137,19 +137,30 @@ content.querySelector('#save-meals').onclick=async function(){
 }
 async function watch(){
 content.innerHTML='<p class="mp-help">Henter fælles watchlist…</p>';
-var items;try{items=await api('shows');}catch(e){return fail(e);}
+var items,prefs;try{var got=await Promise.all([api('shows'),api('streaming-services')]);items=got[0];prefs=got[1];}catch(e){return fail(e);}
 var html='';
 if(cfg.canEdit){
+ html+='<section class="mp-card mp-my-services"><details id="mp-services-details">'+
+ '<summary>Mine streamingtjenester ('+prefs.selected.length+' valgt)</summary>'+
+ '<p class="mp-help">Sæt flueben ved de tjenester, du har adgang til. Valgene gemmes på din WordPress-bruger på mobil og PC.</p>'+
+ '<form id="mp-save-services"><div class="mp-service-choices">';
+ prefs.options.forEach(function(name){
+  html+='<label class="mp-service-choice"><input type="checkbox" value="'+esc(name)+'" '+(prefs.selected.indexOf(name)!==-1?'checked':'')+'><span>'+esc(name)+'</span></label>';
+ });
+ html+='</div><button class="mp-btn mp-btn-primary" type="submit">Gem mine tjenester</button></form>'+
+ '<p class="mp-help">'+(prefs.configured?'Dansk streamingopslag er aktiveret.':
+ 'Automatisk søgning kræver, at administrator tilføjer en gratis TMDB API-nøgle under Hangar18 → Oversigt.')+'</p>'+
+ '</details></section>';
  html+='<section class="mp-card mp-tv-add-card"><h3>+ Tilføj TV-serie</h3>'+
- '<p class="mp-help">Søg serien frem, tryk på plakaten og vælg en streamingtjeneste i Danmark. Sæsoner og kendte premieredatoer hentes automatisk.</p>'+
+ '<p class="mp-help">Søg efter serien og tryk på billedet. Lad streamingtjenesten stå på Automatisk, så undersøger vi dine valgte tjenester i Danmark.</p>'+
  '<form id="mp-find-series"><div class="mp-field"><label for="search-term">Seriens navn</label>'+
  '<input id="search-term" name="search-term" placeholder="Skriv seriens navn" autocomplete="off" required minlength="2"></div>'+
  '<button type="submit" class="mp-btn mp-btn-primary">Find serie</button></form>'+
  '<div id="show-results" aria-live="polite"></div>'+
  '<form id="show-form" hidden><div id="mp-series-summary" class="mp-series-summary"></div>'+
  '<div class="mp-field"><label for="service">Streamingtjeneste i Danmark</label>'+
- '<select id="service" required>'+
- '<option value="" selected disabled>Vælg streamingtjeneste</option>'+
+ '<select id="service">'+
+ '<option value="" selected>Automatisk – søg blandt mine tjenester</option>'+
  '<optgroup label="Film og serier">'+
  '<option value="Netflix">Netflix</option>'+
  '<option value="HBO Max">HBO Max</option>'+
@@ -174,6 +185,7 @@ if(cfg.canEdit){
  '<option value="Norlys Play">Norlys Play</option>'+
  '</optgroup><option value="Ukendt">Ved ikke / ikke afklaret</option>'+
  '</select></div>'+
+ '<p class="mp-help" id="mp-auto-status" aria-live="polite"></p>'+
  '<p class="mp-help" id="mp-provider-note">Streamingudbyder vælges af dig. Kilden bekræfter ikke dansk tilgængelighed.</p>'+
  '<details class="mp-advanced"><summary>Vis eller ret sæsonoplysninger (valgfrit)</summary>'+
  '<div class="mp-form-row"><label class="mp-field">Sæson<select id="season"></select></label>'+
@@ -209,6 +221,7 @@ var w=x.monitor||{},state=w.state||'monitoring';
  '<small class="mp-help">Dansk premieredato endnu ikke bekræftet. TVmaze viser original udsendelse.</small>')+
  '<small class="mp-help">Serien bliver fortsat overvåget for nye sæsoner.</small></div>';
  if(cfg.canEdit)html+='<div class="mp-show-actions"><button class="mp-btn sync-show" data-id="'+x.id+'" type="button">Tjek nu</button>'+
+ ((x.service==='Ukendt'||!x.service)?'<button type="button" class="mp-btn check-streaming" data-id="'+x.id+'">Tjek mine tjenester</button>':'')+
  '<details class="mp-dk-edit"><summary>Ret dansk premieredag</summary>'+
  '<form class="mp-dk-form" data-id="'+x.id+'"><label>Første danske premieredato'+
  '<input type="date" class="mp-dk-first" value="'+esc(x.dk_schedule?x.dk_schedule.first_date:'')+'"></label>'+
@@ -221,7 +234,34 @@ var w=x.monitor||{},state=w.state||'monitoring';
  html+='</div>';
 });
 html+='</section>';
+html+='<details class="mp-source-credits"><summary>Om streamingdata og kilder</summary>'+
+ '<p><a href="https://www.themoviedb.org" target="_blank" rel="noopener"><img class="mp-tmdb-logo" src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_2-d537fb228cf3ded904ef09b136fe3fec72548ebc1fea3fbbd1ad9e36364db38b.svg" alt="TMDB" loading="lazy"></a> <strong>Streamingtjenester:</strong> JustWatch via TMDB (Danmark). Katalogdata garanterer ikke indholdet af dit abonnement eller bestemte sæsoner.</p>'+
+ '<p>This product uses the TMDB API but is not endorsed or certified by TMDB.</p>'+
+ '<p>Serie-/afsnitsdata: <a href="https://www.tvmaze.com" target="_blank" rel="noopener">TVmaze</a>. Bekræft altid hos streamingtjenesten.</p></details>';
 content.innerHTML=html;
+var servicesForm=content.querySelector('#mp-save-services');
+if(servicesForm)servicesForm.onsubmit=async function(ev){
+ ev.preventDefault();
+ var selected=Array.from(servicesForm.querySelectorAll('input:checked')).map(function(x){return x.value;});
+ var button=servicesForm.querySelector('button[type=submit]');button.disabled=true;
+ try{
+  var result=await api('streaming-services','POST',{services:selected});
+  prefs.selected=result.selected;
+  await watch();msg('Dine '+result.selected.length+' streamingtjenester er gemt på din bruger.');
+ }catch(e){fail(e);button.disabled=false;}
+};
+content.querySelectorAll('.check-streaming').forEach(function(b){b.onclick=async function(){
+ b.disabled=true;
+ try{
+  var result=await api('shows/'+b.dataset.id+'/streaming-check','POST',{});
+  var description=result.auto_assigned?'Fundet hos '+result.auto_assigned+' i Danmark. Tjenesten blev tilføjet.':
+    result.status==='not_configured'?'Den gratis TMDB API-nøgle mangler. Administrator skal konfigurere den.':
+    result.status==='no_services'?'Sæt først flueben ved dine tjenester ovenfor.':
+    result.status==='found'?'Flere af dine tjenester er registreret: '+result.matches.join(', ')+'. Vælg manuelt.':
+    'Ingen sikker match blandt dine tjenester. Serien forbliver på watchlisten.';
+  await watch();msg(description);
+ }catch(e){fail(e);b.disabled=false;}
+};});
 content.querySelectorAll('.sync-show').forEach(function(b){b.onclick=async function(){
  try{
  var result=await api('shows/'+b.dataset.id+'/sync','POST',{});
@@ -290,8 +330,26 @@ async function choose(result){
   setSeason();
   // If TVmaze identifies a web channel it can be suggested, NOT presented
   // as a Danish rights/availability confirmation.
-  // Original provider is not evidence of Danish rights: never auto-select it.
+  // TVmaze original channel alone cannot confirm Danish rights.
   serviceEl.value='';
+  var autoStatus=content.querySelector('#mp-auto-status');
+  if(!prefs.selected.length){autoStatus.textContent='Vælg dine streamingtjenester i feltet ovenfor først.';}
+  else if(!prefs.configured){autoStatus.textContent='Administrator skal tilføje en gratis TMDB API-nøgle for at aktivere opslag.';}
+  else{
+   autoStatus.textContent='Undersøger dine tjenester i Danmark via TMDB…';
+   api('streaming-lookup?tvmaze_id='+encodeURIComponent(result.id)).then(function(found){
+    if(!selected||selected.id!==result.id)return;
+    if(found.status==='found'){
+     autoStatus.textContent=found.matches.length===1?
+      'Fundet i det danske streamingkatalog: '+found.matches[0]+'. Udfyldes automatisk ved gem.':
+      'Fundet hos flere af dine tjenester: '+found.matches.join(', ')+'. Vælg gerne én i dropdownen.';
+    }else if(found.status==='unmatched'){
+     autoStatus.textContent='Serien kunne ikke matches sikkert, så ingen tjeneste vælges automatisk.';
+    }else if(found.status==='not_listed'||found.status==='no_dk_data'){
+     autoStatus.textContent='Ingen registreret match i Danmark. Det beviser ikke, at serien er utilgængelig.';
+    }else{autoStatus.textContent='Opslaget kunne ikke gennemføres. Serien kan stadig gemmes.';}
+   }).catch(function(){if(selected&&selected.id===result.id)autoStatus.textContent='Streamingopslag kunne ikke gennemføres.';});
+  }
   content.querySelector('#mp-provider-note').textContent=details.original_provider?
    'TVmaze angiver '+details.original_provider+' som oprindelig '+(details.provider_kind==='web'?'streamingtjeneste':'TV-kanal')+'. Bekræft selv streamingtjenesten i Danmark.':
    'TVmaze har ikke en kendt streamingtjeneste. Angiv den danske tjeneste manuelt.';
@@ -351,7 +409,7 @@ form.onsubmit=async function(ev){
  ev.preventDefault();
  if(!selected||!details)return msg('Vælg først en serie.',true);
  var provider=serviceEl.value.trim();
- if(!provider)return msg('Vælg streamingtjeneste i dropdownen.',true);
+ // Blank triggers auto-detection among the current user's selected services.
  var fields={
   tvmaze_id:Number(selected.id),
   service:provider,
@@ -366,8 +424,11 @@ form.onsubmit=async function(ev){
  try{
   var saved=await api('shows','POST',fields);
   await watch();
-  msg(saved.sync&&saved.sync.warning?'Serien er tilføjet, men afsnitsopdateringen fejlede: '+saved.sync.warning:
-  'Serien og de kendte afsnit er føjet til den fælles TV-plan.');
+  var message=saved.sync&&saved.sync.warning?'Serien er tilføjet, men afsnitsopdateringen fejlede: '+saved.sync.warning:
+   (saved.streaming_lookup&&saved.streaming_lookup.matches&&saved.streaming_lookup.matches.length===1?
+    'Serien er tilføjet. Fundet på '+saved.service+' i det danske streamingkatalog (TMDB/JustWatch).':
+    'Serien er tilføjet og overvåges. Streamingtjeneste: '+(saved.service==='Ukendt'?'ikke bekræftet.':saved.service+'.'));
+  msg(message);
  }catch(e){fail(e);saveButton.disabled=false;saveButton.textContent='Tilføj til watchlist';}
 };
 }
