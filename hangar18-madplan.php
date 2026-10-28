@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/phenixdk2020/Madplan
  * Update URI: https://github.com/phenixdk2020/Madplan
  * Description: Mobilvenlig familieportal med fælles TV-ugeplan, watchlist, madplan og opskrifter.
- * Version: 0.1.3
+ * Version: 0.1.4
  * Requires at least: 6.4
  * Requires PHP: 8.0
  * Text Domain: hangar18-madplan
@@ -12,7 +12,7 @@
 declare(strict_types=1);
 
 if (!defined('ABSPATH')) { exit; }
-define('MP_VERSION', '0.1.3');
+define('MP_VERSION', '0.1.4');
 define('MP_FILE', __FILE__);
 define('MP_DIR', plugin_dir_path(__FILE__));
 define('MP_URL', plugin_dir_url(__FILE__));
@@ -88,7 +88,10 @@ final class MP_Plugin {
         add_shortcode('hangar18_portal', [MP_Portal::class, 'render']);
     }
     public static function links(array $links): array {
-        array_unshift($links, '<a href="' . esc_url(admin_url('admin.php?page=mp-hangar18')) . '">Indstillinger</a>');
+        array_unshift($links,
+            '<a href="' . esc_url(admin_url('admin.php?page=mp-updates')) . '">Opdateringer</a>',
+            '<a href="' . esc_url(admin_url('admin.php?page=mp-hangar18')) . '">Indstillinger</a>'
+        );
         return $links;
     }
     public static function admin_menu(): void {
@@ -124,6 +127,9 @@ final class MP_Plugin {
         $people = MP_Storage::people();
         $page_id = (int)get_option('mp_portal_page');
         echo '<div class="wrap"><h1>Hangar18 Madplan & TV-plan</h1>';
+        echo '<p><a class="button button-primary" href="' . esc_url(admin_url('admin.php?page=mp-updates')) .
+             '">Åbn opdateringer</a> <a class="button" href="' . esc_url(admin_url('plugins.php')) .
+             '">Installerede plugins</a></p>';
         echo '<p>Fælles familieportal. Alle loggede brugere kan tilføje og redigere madplan og watchlist. Administratorer administrerer opskrifter, personnavne og sletning.</p>';
         $front = (int)get_option('page_on_front') === $page_id && get_option('show_on_front') === 'page';
         $homeResult = sanitize_key((string)($_GET['mp_home_result'] ?? ''));

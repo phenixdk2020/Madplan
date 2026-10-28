@@ -36,6 +36,7 @@ jobs:
           set -euo pipefail
           find . -name '*.php' -not -path './build/*' -print0 | xargs -0 -n1 php -l
           find assets -name '*.js' -print0 | xargs -0 -n1 node --check
+          python3 tests/updater_contract.py
       - name: Assemble versioned WordPress package
         shell: bash
         env:

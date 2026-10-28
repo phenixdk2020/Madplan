@@ -12,6 +12,7 @@ final class MP_Updater {
     private const REPO = 'https://github.com/phenixdk2020/Madplan';
     private const MANIFEST = 'https://raw.githubusercontent.com/phenixdk2020/Madplan/main/update.json';
     private const CACHE = 'mp_github_updater_v1';
+    private const ERROR_CACHE = 'mp_github_updater_error_v1';
 
     public static function register(): void {
         add_filter('pre_set_site_transient_update_plugins',[self::class,'updates']);
@@ -24,11 +25,24 @@ final class MP_Updater {
         add_action('admin_post_mp_test_backup',[self::class,'test_backup']);
         add_action('admin_post_mp_update_now',[self::class,'install_now']);
         add_action('admin_post_mp_rollback',[self::class,'rollback']);
-        add_action('admin_menu',[self::class,'add_page']);
+        add_action('admin_menu',[self::class,'add_page'], 50);
     }
     public static function clear_cache($upgrader = null, $extra = null): void {
         delete_site_transient(self::CACHE);
+        delete_site_transient(self::ERROR_CACHE);
         delete_site_transient('update_plugins');
+    }
+    public static function admin_url(): string {
+        // WordPress admin pages are reached through admin.php?page=<slug>,
+        // never /wp-admin/<slug>.
+        return admin_url('admin.php?page=mp-updates');
+    }
+    private static function manifest_error(string $message): void {
+        set_site_transient(self::ERROR_CACHE, $message, 30 * MINUTE_IN_SECONDS);
+    }
+    public static function last_manifest_error(): string {
+        $message = get_site_transient(self::ERROR_CACHE);
+        return is_string($message) ? $message : '';
     }
     private static function valid(array $data): bool {
         $version = (string)($data['version'] ?? '');
@@ -49,9 +63,21 @@ final class MP_Updater {
             'headers'=>['Accept'=>'application/json','Cache-Control'=>'no-cache'],
             'user-agent'=>'Hangar18-Madplan/' . MP_VERSION,
         ]);
-        if (is_wp_error($res) || (int)wp_remote_retrieve_response_code($res)!==200) { return null; }
+        if (is_wp_error($res)) {
+            self::manifest_error('Kunne ikke kontakte GitHub: ' . $res->get_error_message());
+            return null;
+        }
+        $http = (int)wp_remote_retrieve_response_code($res);
+        if ($http !== 200) {
+            self::manifest_error('GitHub returnerede HTTP ' . $http . ' ved hentning af update.json.');
+            return null;
+        }
         $payload = json_decode((string)wp_remote_retrieve_body($res), true);
-        if (!is_array($payload) || !self::valid($payload)) { return null; }
+        if (!is_array($payload) || !self::valid($payload)) {
+            self::manifest_error('GitHub-manifestet har forkert version, URL eller SHA-256.');
+            return null;
+        }
+        delete_site_transient(self::ERROR_CACHE);
         set_site_transient(self::CACHE,$payload,30*MINUTE_IN_SECONDS);
         return $payload;
     }
@@ -174,7 +200,7 @@ final class MP_Updater {
         return true;
     }
     private static function redirect(string $status): never {
-        wp_safe_redirect(add_query_arg('mp_result',$status,admin_url('admin.php?page=mp-updates')));
+        wp_safe_redirect(add_query_arg('mp_result',$status,self::admin_url()));
         exit;
     }
     public static function manual_check(): void {
@@ -191,13 +217,34 @@ final class MP_Updater {
         if (!current_user_can('update_plugins')) { wp_die('Ingen adgang.'); }
         check_admin_referer('mp_install_update');
         $s = self::status(true);
-        if (!$s['ok'] || !$s['available']) { self::redirect('no-update'); }
+        if (!$s['ok']) {
+            self::record_error(self::last_manifest_error() ?: 'Manifestet kunne ikke hentes fra GitHub.');
+            self::redirect('network-error');
+        }
+        if (!$s['available']) { self::redirect('no-update'); }
         require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
         require_once ABSPATH . 'wp-admin/includes/update.php';
         require_once ABSPATH . 'wp-admin/includes/plugin.php';
         self::clear_cache();
         wp_clean_plugins_cache(true);
         wp_update_plugins();
+        // Same upgrade path as Visual Designer Manager / WordPress' native plugin upgrader.
+        // Force the GitHub manifest response into the transient when another updater
+        // has filtered it out, so Plugin_Upgrader::upgrade() can find this package.
+        $transient = get_site_transient('update_plugins');
+        if (!is_object($transient)) { $transient = new stdClass(); }
+        if (!is_array($transient->checked ?? null)) { $transient->checked = []; }
+        if (!is_array($transient->response ?? null)) { $transient->response = []; }
+        $manifest = self::manifest(true);
+        if (!$manifest) {
+            self::record_error(self::last_manifest_error());
+            self::redirect('network-error');
+        }
+        $transient->response[self::PLUGIN] = self::update_obj($manifest);
+        if (is_array($transient->no_update ?? null)) {
+            unset($transient->no_update[self::PLUGIN]);
+        }
+        set_site_transient('update_plugins', $transient);
         $upgrader = new Plugin_Upgrader(new Automatic_Upgrader_Skin());
         $result = $upgrader->upgrade(self::PLUGIN);
         if ($result === false || is_wp_error($result)) {
@@ -261,6 +308,7 @@ final class MP_Updater {
             'backup-ok'=>'Testbackup er oprettet og kontrolleret. Opdateringsforudsætningen er på plads.',
         ];
         echo '<div class="wrap"><h1>Hangar18 – Opdateringer</h1>';
+        echo '<p>Samme WordPress/GitHub-opdateringsprincip som Visual Designer Manager.</p>';
         $lastError = (string)get_transient('mp_update_error_' . get_current_user_id());
         if ($lastError !== '') {
             echo '<div class="notice notice-error"><p><strong>Teknisk fejl:</strong> ' . esc_html($lastError) . '</p></div>';
@@ -272,7 +320,14 @@ final class MP_Updater {
         echo '<div class="card" style="max-width:none"><h2>Version</h2>';
         echo '<p>Installeret: <strong>'.esc_html(MP_VERSION).'</strong></p>';
         echo '<p>GitHub: <strong>'.esc_html($s['ok']?$s['latest']:'Manifest ikke tilgængeligt').'</strong></p>';
-        if ($s['available']) { echo '<p><strong>Ny version tilgængelig</strong></p>'; }
+        if ($s['available']) {
+            echo '<p><strong>Ny version tilgængelig</strong></p>';
+        } elseif (!$s['ok']) {
+            echo '<p style="color:#b32d2e"><strong>' .
+                esc_html(self::last_manifest_error() ?: 'Kunne ikke kontrollere GitHub.') . '</strong></p>';
+        } else {
+            echo '<p>Du har den seneste publicerede version.</p>';
+        }
         echo '<p>Opdateringspakken kontrolleres med SHA-256, og før opdateringen tages backup af både pluginfiler og Madplan-data. Backups skal ligge uden for webroden.</p>';
         $check = wp_nonce_url(admin_url('admin-post.php?action=mp_update_check'),'mp_check_update');
         echo '<p><a class="button" href="'.esc_url($check).'">Tjek GitHub-opdatering</a> ';
@@ -280,7 +335,8 @@ final class MP_Updater {
             $install = wp_nonce_url(admin_url('admin-post.php?action=mp_update_now'),'mp_install_update');
             echo '<a class="button button-primary" href="'.esc_url($install).'">Opdater nu</a> ';
         }
-        echo '<a class="button" href="'.esc_url(self::REPO.'/actions').'" target="_blank" rel="noopener">GitHub-builds</a></p>';
+        echo '<a class="button" href="'.esc_url(self::REPO.'/actions').'" target="_blank" rel="noopener">GitHub-builds</a> ';
+        echo '<a class="button" href="'.esc_url(admin_url('plugins.php')).'">WordPress plugins</a></p>';
         echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'">';
         echo '<input type="hidden" name="action" value="mp_test_backup">';
         wp_nonce_field('mp_test_backup');
