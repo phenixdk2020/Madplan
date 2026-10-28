@@ -20,6 +20,7 @@ final class MP_REST {
         self::route('/recipe/(?P<id>\d+)', 'GET', 'recipe');
         self::route('/shows', 'GET', 'shows');
         self::route('/tv-search', 'GET', 'tv_search', true);
+        self::route('/tv-details', 'GET', 'tv_details', true);
         self::route('/meal', 'POST', 'save_meal', true);
         self::route('/shows', 'POST', 'create_show', true);
         self::route('/shows/(?P<id>\d+)', 'DELETE', 'delete_show', true, true);
@@ -48,6 +49,9 @@ final class MP_REST {
     public static function shows() { return MP_TVmaze::shows(); }
     public static function tv_search(WP_REST_Request $r) {
         return MP_TVmaze::search(sanitize_text_field((string)$r->get_param('q')));
+    }
+    public static function tv_details(WP_REST_Request $r) {
+        return MP_TVmaze::details(absint($r->get_param('id')));
     }
     public static function save_meal(WP_REST_Request $r) {
         $date = sanitize_text_field((string)$r->get_param('date'));
@@ -79,31 +83,72 @@ final class MP_REST {
     public static function create_show(WP_REST_Request $r) {
         global $wpdb;
         $tvmaze = absint($r->get_param('tvmaze_id'));
-        $name = sanitize_text_field((string)$r->get_param('title'));
-        $service = sanitize_text_field((string)$r->get_param('service'));
-        $season = absint($r->get_param('season')) ?: 1;
-        $total = absint($r->get_param('season_total'));
-        $date = sanitize_text_field((string)$r->get_param('first_air_date'));
-        $time = sanitize_text_field((string)$r->get_param('time_label'));
-        $weekly = $r->get_param('weekly') ? 1 : 0;
-        if (!$tvmaze || $name === '' || $season > 100 || $total > 200 ||
-            (strlen($date) && !self::valid_date($date))) {
+        if (!$tvmaze) {
+            return new WP_Error('mp_tv_id','Vælg først en serie fra søgeresultaterne.', ['status'=>400]);
+        }
+        $details=MP_TVmaze::details($tvmaze);
+        if (is_wp_error($details)) { return $details; }
+
+        // Canonical TVmaze name prevents an arbitrary show title supplied by a client.
+        $name=sanitize_text_field((string)$details['title']);
+        $service=sanitize_text_field((string)$r->get_param('service'));
+        $service=$service !== '' ? $service : 'Ukendt';
+        $season=absint($r->get_param('season')) ?: (int)$details['suggested_season'];
+        $seasonData=null;
+        foreach ($details['seasons'] as $item) {
+            if ((int)$item['season']===$season) { $seasonData=$item; break; }
+        }
+
+        $total=absint($r->get_param('season_total')) ?: (int)($seasonData['total'] ?? 0);
+        $date=sanitize_text_field((string)$r->get_param('first_air_date'));
+        if ($date==='') { $date=(string)($seasonData['first_date'] ?? ''); }
+        $time=sanitize_text_field((string)$r->get_param('time_label'));
+        $weeklyParam=$r->get_param('weekly');
+        $weekly=$weeklyParam===null ? (int)($seasonData['weekly'] ?? false) : ($weeklyParam ? 1 : 0);
+
+        if ($name==='' || $season<1 || $season>100 || $total>200 ||
+            ($date!=='' && !self::valid_date($date))) {
             return new WP_Error('mp_show_invalid','Ugyldige serieoplysninger.', ['status'=>400]);
         }
-        if ($weekly && !$date) {
-            // A premiere date will be retrieved from episode one if the API has one.
+
+        $shows=MP_Storage::table('shows');
+        $exists=(int)$wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM $shows WHERE tvmaze_id=%d AND season=%d AND active=1 LIMIT 1",
+            $tvmaze,$season
+        ));
+        if ($exists) {
+            return new WP_Error('mp_show_exists', 'Serien og sæsonen findes allerede i den fælles watchlist.', ['status'=>409]);
         }
-        $weekday = $date ? (int)(new DateTimeImmutable($date, wp_timezone()))->format('N') : 0;
-        $wpdb->insert(MP_Storage::table('shows'), [
-            'tvmaze_id'=>$tvmaze, 'title'=>substr($name,0,255), 'service'=>substr($service,0,100),
-            'season'=>$season, 'season_total'=>$total, 'first_air_date'=>$date ?: null,
-            'weekday'=>$weekday, 'time_label'=>substr($time,0,40), 'weekly'=>$weekly,
-            'active'=>1, 'updated_at'=>current_time('mysql'),
-        ], ['%d','%s','%s','%d','%d','%s','%d','%s','%d','%d','%s']);
-        if (!$wpdb->insert_id) { return new WP_Error('mp_insert_failed','Kunne ikke tilføje serien.', ['status'=>500]); }
-        $id = (int)$wpdb->insert_id;
-        $sync = MP_TVmaze::sync_one($id);
-        return ['id'=>$id, 'sync'=>is_wp_error($sync) ? ['warning'=>$sync->get_error_message()] : $sync];
+        $weekday=$date ? (int)(new DateTimeImmutable($date, wp_timezone()))->format('N') : 0;
+        $wpdb->insert($shows, [
+            'tvmaze_id'=>$tvmaze,
+            'title'=>substr($name,0,255),
+            'service'=>substr($service,0,100),
+            'season'=>$season,
+            'season_total'=>$total,
+            'first_air_date'=>$date ?: null,
+            'weekday'=>$weekday,
+            'time_label'=>substr($time,0,40),
+            'weekly'=>$weekly,
+            'active'=>1,
+            'updated_at'=>current_time('mysql'),
+        ], ['%d','%s','%s','%d','%d','%s','%d','%s','%d','%s']);
+        if (!$wpdb->insert_id) {
+            return new WP_Error('mp_insert_failed','Kunne ikke tilføje serien.', ['status'=>500]);
+        }
+        $id=(int)$wpdb->insert_id;
+        $sync=MP_TVmaze::sync_one($id);
+        return [
+            'id'=>$id,
+            'detected'=>[
+                'season'=>$season,
+                'season_total'=>$total,
+                'first_air_date'=>$date,
+                'original_provider'=>$details['original_provider'],
+                'weekly'=>$weekly,
+            ],
+            'sync'=>is_wp_error($sync) ? ['warning'=>$sync->get_error_message()] : $sync,
+        ];
     }
     public static function delete_show(WP_REST_Request $r) {
         global $wpdb; $id = absint($r['id']);

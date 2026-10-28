@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/phenixdk2020/Madplan
  * Update URI: https://github.com/phenixdk2020/Madplan
  * Description: Mobilvenlig familieportal med fælles TV-ugeplan, watchlist, madplan og opskrifter.
- * Version: 0.1.4
+ * Version: 0.1.5
  * Requires at least: 6.4
  * Requires PHP: 8.0
  * Text Domain: hangar18-madplan
@@ -12,7 +12,7 @@
 declare(strict_types=1);
 
 if (!defined('ABSPATH')) { exit; }
-define('MP_VERSION', '0.1.4');
+define('MP_VERSION', '0.1.5');
 define('MP_FILE', __FILE__);
 define('MP_DIR', plugin_dir_path(__FILE__));
 define('MP_URL', plugin_dir_url(__FILE__));

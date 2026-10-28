@@ -30,7 +30,7 @@ REST endpoints (alle under /wp-json/hangar18/v1):
 - GET/POST shopping
 - POST/DELETE shopping/{id}
 
-Alle læseendpoints kræver login, admin kræves til redigering af madplan/watchlist/opskrifter; login er nok til at tilføje/afkrydse indkøbsvarer.
+Alle læseendpoints kræver login. Alle loggede brugere kan redigere den fælles madplan, tilføje TV-serier samt tilføje/afkrydse varer. Kun administratoren kan slette serier eller oprette avancerede opskrifter.
 
 ## Sikkerhed og QA
 
@@ -53,3 +53,14 @@ Senere: automatiske indkøb fra opskrifter, tilbud, dansk premieredatakilde, ske
 - "+ Tilføj TV-program" på TV-ugeplanen går til watchlist-søgning.
 - "+ Tilføj aftensmad" åbner dagen med fire personer.
 - QA: test både admin og subscriber med login, REST nonce, add show, add meal og denied DELETE.
+
+
+## 0.1.5 – TVmaze automatisk udfyldning
+- Endpoint GET /tv-details?id=N (kræver WordPress-login, nonce i portalens fetch).
+- TVmaze: shows/{id}, shows/{id}/seasons (episodeOrder, premiereDate), shows/{id}/episodes (season og airdate).
+- Cache i seks timer. Ukendt antal afsnit markeres 0 frem for at gætte.
+- UI: navn/søgning → vælg resultat → streamingtjeneste. Avancerede felter foldes ud efter behov.
+- Fra webChannel foreslås original streamingudbyder, men aldrig dansk rettighed/udgivelsestid.
+- Ugentlig forventet rytme kun hvis to efterfølgende kendte afsnit har præcis 7 dages mellemrum.
+- Tilbage til forsiden er en ren JavaScript-overgang til de to menuknapper; session forbliver aktiv.
+- Tests: tests/tv_auto.php (falske TVmaze JSON-svar), tests/tv_portal_contract.py og eksisterende updater_contract.py.

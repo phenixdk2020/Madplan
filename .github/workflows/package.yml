@@ -37,6 +37,8 @@ jobs:
           find . -name '*.php' -not -path './build/*' -print0 | xargs -0 -n1 php -l
           find assets -name '*.js' -print0 | xargs -0 -n1 node --check
           python3 tests/updater_contract.py
+          php tests/tv_auto.php
+          python3 tests/tv_portal_contract.py
       - name: Assemble versioned WordPress package
         shell: bash
         env:

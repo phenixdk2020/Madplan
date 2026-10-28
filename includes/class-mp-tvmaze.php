@@ -38,6 +38,98 @@ final class MP_TVmaze {
         set_transient($key, $found, 6 * HOUR_IN_SECONDS);
         return $found;
     }
+
+    /**
+     * Free TVmaze metadata for one selected series. Streaming origin is NEVER
+     * proof that a service streams that title in Denmark.
+     */
+    public static function details(int $id) {
+        if ($id < 1 || $id > 10000000) {
+            return new WP_Error('mp_bad_series', 'Ugyldigt serie-ID.', ['status'=>400]);
+        }
+        $key='mp_tv_details_' . $id;
+        $cached=get_transient($key);
+        if (is_array($cached)) { return $cached; }
+
+        $show=self::get('/shows/' . $id);
+        if (is_wp_error($show)) { return $show; }
+
+        $seasons=self::get('/shows/' . $id . '/seasons');
+        if (is_wp_error($seasons)) { $seasons=[]; }
+
+        $episodes=self::get('/shows/' . $id . '/episodes');
+        if (is_wp_error($episodes)) { $episodes=[]; }
+
+        $all=[];
+        foreach ($seasons as $season) {
+            if (!is_array($season)) { continue; }
+            $n=absint($season['number'] ?? 0);
+            if ($n < 1 || $n > 100) { continue; }
+            $order=absint($season['episodeOrder'] ?? 0);
+            $date=(string)($season['premiereDate'] ?? '');
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/',$date)) { $date=''; }
+            $provider=(string)($season['webChannel']['name'] ?? '');
+            $all[$n]=[
+                'season'=>$n,
+                'total'=>$order > 0 && $order <= 200 ? $order : 0,
+                'first_date'=>$date,
+                'provider'=>sanitize_text_field($provider),
+                'known'=>0,
+                'weekday'=>'',
+                'weekly'=>false,
+            ];
+        }
+        $dates=[];
+        foreach ($episodes as $ep) {
+            if (!is_array($ep)) { continue; }
+            $n=absint($ep['season'] ?? 0);
+            $index=absint($ep['number'] ?? 0);
+            if ($n < 1 || $n > 100 || $index < 1 || $index > 500) { continue; }
+            if (!isset($all[$n])) {
+                $all[$n]=['season'=>$n,'total'=>0,'first_date'=>'','provider'=>'','known'=>0,'weekday'=>'','weekly'=>false];
+            }
+            $all[$n]['known']++;
+            $date=(string)($ep['airdate'] ?? '');
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/',$date)) {
+                if ($index===1) { $all[$n]['first_date']=$date; }
+                $dates[$n][$index]=$date;
+            }
+        }
+        foreach ($all as $n => &$season) {
+            $ordered=$dates[$n] ?? [];
+            ksort($ordered, SORT_NUMERIC);
+            // Only suggest a weekly pattern if at least two sequential
+            // episodes have confirmed release dates exactly seven days apart.
+            $matches=0;
+            foreach ($ordered as $episodeNo=>$day) {
+                if (isset($ordered[$episodeNo+1]) &&
+                    (strtotime($ordered[$episodeNo+1] . ' UTC')-strtotime($day . ' UTC'))===7*DAY_IN_SECONDS) {
+                    $matches++;
+                }
+            }
+            $season['weekly']=$matches>=1;
+            if ($season['first_date'] !== '') {
+                $season['weekday']=(new DateTimeImmutable($season['first_date']))->format('l');
+            }
+        }
+        unset($season);
+        ksort($all,SORT_NUMERIC);
+        $primary=(string)($show['webChannel']['name'] ?? '');
+        $network=(string)($show['network']['name'] ?? '');
+        $origin=$primary!=='' ? $primary : $network;
+        $out=[
+            'id'=>$id,
+            'title'=>sanitize_text_field((string)($show['name'] ?? '')),
+            'original_provider'=>sanitize_text_field($origin),
+            'provider_kind'=>$primary!=='' ? 'web' : ($network!=='' ? 'broadcast' : 'unknown'),
+            'provider_note'=>'Kilden angiver oprindelig kanal eller streamingtjeneste. Dansk tilgængelighed er ikke bekræftet.',
+            'seasons'=>array_values($all),
+            'suggested_season'=>$all ? max(array_keys($all)) : 1,
+        ];
+        set_transient($key,$out,6*HOUR_IN_SECONDS);
+        return $out;
+    }
+
     public static function sync_one(int $id) {
         global $wpdb;
         $shows = MP_Storage::table('shows');

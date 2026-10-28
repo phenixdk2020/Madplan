@@ -56,10 +56,11 @@ final class MP_Portal {
             </div>
           </div>
           <div class="mp-main" id="mp-main" hidden>
-            <div class="mp-module-head"><button class="mp-back" id="mp-back" type="button">‹ Forside</button><h2 id="mp-module-title"></h2></div>
+            <div class="mp-module-head"><button class="mp-back" id="mp-back" type="button">← Tilbage til forsiden</button><h2 id="mp-module-title"></h2></div>
             <nav id="mp-tabs" class="mp-tabs" aria-label="Vælg funktion"></nav>
             <div id="mp-status" class="mp-status" role="status" aria-live="polite"></div>
             <div id="mp-content"></div>
+            <footer class="mp-portal-footer"><button type="button" class="mp-btn mp-btn-primary mp-return-home" id="mp-back-bottom">← Tilbage til forsiden</button></footer>
           </div>
         </section>
         <?php

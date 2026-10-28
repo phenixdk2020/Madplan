@@ -34,3 +34,17 @@
 .mp-portal .mp-btn,.mp-portal .mp-tab,.mp-portal .mp-result,.mp-portal .mp-home-card{min-height:44px;touch-action:manipulation}
 .mp-portal .mp-field input,.mp-portal .mp-edit-controls input,.mp-portal .mp-edit-controls select,.mp-portal .mp-shopping-form input{font-size:16px}
 @media(max-width:739px){.mp-portal .mp-edit-person{padding:14px 0}.mp-portal .mp-edit-person strong{font-size:15px}.mp-portal #save-meals{width:100%;min-height:50px;font-weight:700}.mp-portal .mp-result{min-height:52px}}
+
+/* 0.1.5: visible in-app return to menu (never WordPress logout). */
+.mp-module-head{position:sticky;top:0;z-index:10;background:#f5f8fd;padding:8px 0;min-height:54px}
+.mp-back{border:1px solid #d7e3f2;background:#fff;border-radius:10px;padding:10px 13px;font-weight:650;min-height:44px}
+.mp-portal-footer{padding:20px 0 26px;display:flex;justify-content:center}
+.mp-portal-footer .mp-return-home{min-width:220px;min-height:48px}
+.mp-tv-add-card{border-color:#9bbbe5}
+.mp-tv-add-card .mp-save-series{width:100%;min-height:50px;font-weight:700;margin-top:14px}
+.mp-series-summary{border-radius:10px;background:#f0f6fe;padding:12px;margin:12px 0}
+.mp-series-summary p{margin-bottom:0}
+.mp-advanced{margin-top:14px;border:1px solid #dfe5ed;border-radius:10px;padding:12px}
+.mp-advanced summary{cursor:pointer;font-weight:600;min-height:34px}
+.mp-advanced[open]{padding-bottom:16px}
+.mp-tv-add-card #search-term,.mp-tv-add-card #service{width:100%}

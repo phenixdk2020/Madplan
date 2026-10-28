@@ -27,7 +27,16 @@ function openHash(){
 }
 window.addEventListener('hashchange',openHash);
 openHash();
-root.querySelector('#mp-back').onclick=function(){home.hidden=false;main.hidden=true;msg('');if(window.history&&window.history.replaceState)window.history.replaceState(null,'',window.location.pathname+window.location.search);};
+function backToMenu(){
+ // In-app navigation only: preserve the WordPress authentication cookie.
+ home.hidden=false;main.hidden=true;s.module='';s.tab='week';msg('');
+ if(window.history&&window.history.replaceState){
+  window.history.replaceState(null,'',window.location.pathname+window.location.search);
+ }
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+root.querySelector('#mp-back').onclick=backToMenu;
+root.querySelector('#mp-back-bottom').onclick=backToMenu;
 function render(){msg('');if(s.tab==='week')return week();if(s.tab==='watch')return watch();if(s.tab==='recipes')return recipes();if(s.tab==='shopping')return shopping();}
 function toolbar(){return '<div class="mp-toolbar"><h3>Uge '+weekNo(s.start)+'</h3><div class="mp-toolbar-actions"><button type="button" class="mp-btn" id="prev">‹</button><button type="button" class="mp-btn" id="now">I dag</button><button type="button" class="mp-btn" id="next">›</button></div></div>';}
 function bindToolbar(){content.querySelector('#prev').onclick=function(){s.start=add(s.start,-7);week();};content.querySelector('#next').onclick=function(){s.start=add(s.start,7);week();};content.querySelector('#now').onclick=function(){s.start=mon(cfg.today);week();};}
