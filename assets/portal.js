@@ -141,18 +141,18 @@ var items,prefs;try{var got=await Promise.all([api('shows'),api('streaming-servi
 var html='';
 if(cfg.canEdit){
  html+='<section class="mp-card mp-my-services"><details id="mp-services-details">'+
- '<summary>Mine streamingtjenester ('+prefs.selected.length+' valgt)</summary>'+
- '<p class="mp-help">Sæt flueben ved de tjenester, du har adgang til. Valgene gemmes på din WordPress-bruger på mobil og PC.</p>'+
+ '<summary>Familiens streamingtjenester ('+prefs.selected.length+' valgt)</summary>'+
+ '<p class="mp-help">Sæt flueben ved de tjenester, familien har adgang til. Listen deles af alle brugere på både mobil og PC.</p>'+
  '<form id="mp-save-services"><div class="mp-service-choices">';
  prefs.options.forEach(function(name){
   html+='<label class="mp-service-choice"><input type="checkbox" value="'+esc(name)+'" '+(prefs.selected.indexOf(name)!==-1?'checked':'')+'><span>'+esc(name)+'</span></label>';
  });
- html+='</div><button class="mp-btn mp-btn-primary" type="submit">Gem mine tjenester</button></form>'+
+ html+='</div><button class="mp-btn mp-btn-primary" type="submit">Gem familiens tjenester</button></form>'+
  '<p class="mp-help">'+(prefs.configured?'Dansk streamingopslag er aktiveret.':
  'Automatisk søgning kræver, at administrator tilføjer en gratis TMDB API-nøgle under Hangar18 → Oversigt.')+'</p>'+
  '</details></section>';
  html+='<section class="mp-card mp-tv-add-card"><h3>+ Tilføj TV-serie</h3>'+
- '<p class="mp-help">Søg efter serien og tryk på billedet. Lad streamingtjenesten stå på Automatisk, så undersøger vi dine valgte tjenester i Danmark.</p>'+
+ '<p class="mp-help">Søg efter serien og tryk på billedet. Lad streamingtjenesten stå på Automatisk, så undersøger vi familiens valgte tjenester i Danmark.</p>'+
  '<form id="mp-find-series"><div class="mp-field"><label for="search-term">Seriens navn</label>'+
  '<input id="search-term" name="search-term" placeholder="Skriv seriens navn" autocomplete="off" required minlength="2"></div>'+
  '<button type="submit" class="mp-btn mp-btn-primary">Find serie</button></form>'+
@@ -160,7 +160,7 @@ if(cfg.canEdit){
  '<form id="show-form" hidden><div id="mp-series-summary" class="mp-series-summary"></div>'+
  '<div class="mp-field"><label for="service">Streamingtjeneste i Danmark</label>'+
  '<select id="service">'+
- '<option value="" selected>Automatisk – søg blandt mine tjenester</option>'+
+ '<option value="" selected>Automatisk – søg blandt familiens tjenester</option>'+
  '<optgroup label="Film og serier">'+
  '<option value="Netflix">Netflix</option>'+
  '<option value="HBO Max">HBO Max</option>'+
@@ -221,7 +221,7 @@ var w=x.monitor||{},state=w.state||'monitoring';
  '<small class="mp-help">Dansk premieredato endnu ikke bekræftet. TVmaze viser original udsendelse.</small>')+
  '<small class="mp-help">Serien bliver fortsat overvåget for nye sæsoner.</small></div>';
  if(cfg.canEdit)html+='<div class="mp-show-actions"><button class="mp-btn sync-show" data-id="'+x.id+'" type="button">Tjek nu</button>'+
- ((x.service==='Ukendt'||!x.service)?'<button type="button" class="mp-btn check-streaming" data-id="'+x.id+'">Tjek mine tjenester</button>':'')+
+ ((x.service==='Ukendt'||!x.service)?'<button type="button" class="mp-btn check-streaming" data-id="'+x.id+'">Tjek familiens tjenester</button>':'')+
  '<details class="mp-dk-edit"><summary>Ret dansk premieredag</summary>'+
  '<form class="mp-dk-form" data-id="'+x.id+'"><label>Første danske premieredato'+
  '<input type="date" class="mp-dk-first" value="'+esc(x.dk_schedule?x.dk_schedule.first_date:'')+'"></label>'+
@@ -247,7 +247,7 @@ if(servicesForm)servicesForm.onsubmit=async function(ev){
  try{
   var result=await api('streaming-services','POST',{services:selected});
   prefs.selected=result.selected;
-  await watch();msg('Dine '+result.selected.length+' streamingtjenester er gemt på din bruger.');
+  await watch();msg('Familiens '+result.selected.length+' streamingtjenester er gemt for alle brugere.');
  }catch(e){fail(e);button.disabled=false;}
 };
 content.querySelectorAll('.check-streaming').forEach(function(b){b.onclick=async function(){
@@ -257,8 +257,8 @@ content.querySelectorAll('.check-streaming').forEach(function(b){b.onclick=async
   var description=result.auto_assigned?'Fundet hos '+result.auto_assigned+' i Danmark. Tjenesten blev tilføjet.':
     result.status==='not_configured'?'Den gratis TMDB API-nøgle mangler. Administrator skal konfigurere den.':
     result.status==='no_services'?'Sæt først flueben ved dine tjenester ovenfor.':
-    result.status==='found'?'Flere af dine tjenester er registreret: '+result.matches.join(', ')+'. Vælg manuelt.':
-    'Ingen sikker match blandt dine tjenester. Serien forbliver på watchlisten.';
+    result.status==='found'?'Flere af familiens tjenester er registreret: '+result.matches.join(', ')+'. Vælg manuelt.':
+    'Ingen sikker match blandt familiens tjenester. Serien forbliver på watchlisten.';
   await watch();msg(description);
  }catch(e){fail(e);b.disabled=false;}
 };});
@@ -333,16 +333,16 @@ async function choose(result){
   // TVmaze original channel alone cannot confirm Danish rights.
   serviceEl.value='';
   var autoStatus=content.querySelector('#mp-auto-status');
-  if(!prefs.selected.length){autoStatus.textContent='Vælg dine streamingtjenester i feltet ovenfor først.';}
+  if(!prefs.selected.length){autoStatus.textContent='Vælg familiens streamingtjenester i feltet ovenfor først.';}
   else if(!prefs.configured){autoStatus.textContent='Administrator skal tilføje en gratis TMDB API-nøgle for at aktivere opslag.';}
   else{
-   autoStatus.textContent='Undersøger dine tjenester i Danmark via TMDB…';
+   autoStatus.textContent='Undersøger familiens tjenester i Danmark via TMDB…';
    api('streaming-lookup?tvmaze_id='+encodeURIComponent(result.id)).then(function(found){
     if(!selected||selected.id!==result.id)return;
     if(found.status==='found'){
      autoStatus.textContent=found.matches.length===1?
       'Fundet i det danske streamingkatalog: '+found.matches[0]+'. Udfyldes automatisk ved gem.':
-      'Fundet hos flere af dine tjenester: '+found.matches.join(', ')+'. Vælg gerne én i dropdownen.';
+      'Fundet hos flere af familiens tjenester: '+found.matches.join(', ')+'. Vælg gerne én i dropdownen.';
     }else if(found.status==='unmatched'){
      autoStatus.textContent='Serien kunne ikke matches sikkert, så ingen tjeneste vælges automatisk.';
     }else if(found.status==='not_listed'||found.status==='no_dk_data'){
@@ -409,7 +409,7 @@ form.onsubmit=async function(ev){
  ev.preventDefault();
  if(!selected||!details)return msg('Vælg først en serie.',true);
  var provider=serviceEl.value.trim();
- // Blank triggers auto-detection among the current user's selected services.
+ // Blank triggers auto-detection among shared household subscriptions.
  var fields={
   tvmaze_id:Number(selected.id),
   service:provider,

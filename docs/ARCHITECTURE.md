@@ -121,3 +121,12 @@ Senere: automatiske indkøb fra opskrifter, tilbud, dansk premieredatakilde, ske
 - Only one matched subscription is automatically saved when no streaming service is chosen; otherwise remains Ukendt. Manually pinned provider is never overwritten.
 - TMDB response transient cache six hours; fallback doesn't prevent adding/updating watchlist.
 - Tests in streaming_check.php and streaming_contract.py.
+
+
+## v0.1.12 – delt husholdningsindstilling
+- MP_Streaming::chosen() henter den samme globale wp_option mp_household_streaming_services_v1 for alle brugere.
+- MP_Streaming::save_shared() opdaterer den globale liste efter whitelistvalidering.
+- Valgfri migration fra det aktuelle login's gamle user_meta mp_streaming_subscriptions_v1 foretages højst én gang, hvis global option mangler og en bruger allerede har data. En gemt tom global liste nulstilles ikke.
+- REST /streaming-services GET/POST kræver WordPress-login og nonce for POST; ingen bruger-specifik præferencelagring.
+- Auto-opslag, manuelt Tjek familiens tjenester og nye serier bruger samme globale liste.
+- Farvetema forbliver WordPress user_meta og påvirkes ikke.

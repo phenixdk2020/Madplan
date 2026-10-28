@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/phenixdk2020/Madplan
  * Update URI: https://github.com/phenixdk2020/Madplan
  * Description: Mobilvenlig familieportal med fælles TV-ugeplan, watchlist, madplan og opskrifter.
- * Version: 0.1.11
+ * Version: 0.1.12
  * Requires at least: 6.4
  * Requires PHP: 8.0
  * Text Domain: hangar18-madplan
@@ -12,7 +12,7 @@
 declare(strict_types=1);
 
 if (!defined('ABSPATH')) { exit; }
-define('MP_VERSION', '0.1.11');
+define('MP_VERSION', '0.1.12');
 define('MP_FILE', __FILE__);
 define('MP_DIR', plugin_dir_path(__FILE__));
 define('MP_URL', plugin_dir_url(__FILE__));
@@ -167,7 +167,7 @@ final class MP_Plugin {
             echo '<button class="button" type="submit">Gendan tidligere WordPress-forside</button></form>';
         }
         echo '<hr><h2>Streamingtjenester – automatisk dansk katalogopslag</h2>';
-        echo '<p>TV-guiden kan undersøge streamingtjenester i Danmark via JustWatch-data fra TMDB. Gratis udvikleradgang til ikke-kommerciel brug kræver en TMDB API-nøgle. Familiemedlemmer vælger deres abonnementer under TV-guide → Watchlist.</p>';
+        echo '<p>TV-guiden kan undersøge streamingtjenester i Danmark via JustWatch-data fra TMDB. Gratis udvikleradgang til ikke-kommerciel brug kræver en TMDB API-nøgle. Familiens abonnementer vælges ét sted under TV-guide → Watchlist og deles af alle brugere.</p>';
         echo '<p>Status: <strong>' . (MP_Streaming::configured() ? 'TMDB er konfigureret' : 'TMDB mangler API-nøgle') . '</strong>. ';
         echo '<a href="https://developer.themoviedb.org/docs/getting-started" target="_blank" rel="noopener">Sådan får du en gratis TMDB API-nøgle</a>.</p>';
         echo '<form method="post">'; wp_nonce_field('mp_save_tmdb');

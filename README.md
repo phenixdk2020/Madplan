@@ -218,3 +218,18 @@ Ved oprettelse af en serie kan dropdownen stå på Automatisk – søg blandt mi
 Administratorkonfiguration: Gå til Hangar18 → Oversigt → Streamingtjenester og indsæt en gratis TMDB API Read Access Token eller v3 API key fra https://developer.themoviedb.org/docs/getting-started . TMDB developer API er gratis for ikke-kommerciel brug under deres vilkår og krav om attribution. Administrator kan også sætte konstanten MP_TMDB_API_TOKEN i wp-config.php. Nøglen sendes aldrig til browseren eller GitHub.
 
 Datakilder: TVmaze for afsnit og sæsoner, JustWatch via TMDB for danske streamingtjenester, seks timers cache. TMDB-logo og kreditering i TV-guidens Om streamingdata og kilder. This product uses the TMDB API but is not endorsed or certified by TMDB.
+
+
+## v0.1.12 – fælles streamingtjenester for hele familien
+
+**Ændret efter familiebeslutning:** Tjenesteabonnementer er fælles og ikke brugerafhængige. Under **TV-guide → Watchlist → Familiens streamingtjenester** kan alle loggede familiemedlemmer sætte flueben ved de tjenester, husstanden har adgang til. Gemte valg ligger i WordPress `wp_options` under `mp_household_streaming_services_v1`, og vises identisk på alle familiemedlemmers mobil og PC. Ændring fra én bruger slår igennem hos alle ved næste visning af watchlisten.
+
+Har et familiemedlem afkrydset tjenester i v0.1.11, kan disse valg indlæses én gang som husstandens startliste ved første besøg efter opgraderingen, hvis en fælles liste ikke allerede findes. Derefter bruges altid den fælles liste. En bevidst tom fælles liste forbliver tom; den bliver ikke genetableret fra gamle personlige valg.
+
+Automatisk DK streamingkatalogopslag via valgfri gratis TMDB API-nøgle bruger den **fælles husstandsliste** ved enhver oprettelse eller nyt opslag – uanset hvilken bruger der er logget ind. Kun ét sikkert match udfyldes automatisk; tvetydige eller ubekræftede resultater bevarer `Ukendt`. Medlemskaber verificeres ikke, og TMDB alene bekræfter ikke dansk afsnitspremiere.
+
+**Kun farvetemaet er personligt**, gemt separat som `mp_portal_theme` i WordPress user_meta. Opskrifter, watchlist, madplan og streamingtjenester er fælles.
+
+Ingen ekstra abonnementer introduceres. Eksterne streamingopslag virker kun, hvis administrator selv konfigurerer en gratis TMDB API-nøgle.
+
+Regressionstest i `tests/streaming_check.php` efterligner to WordPress-brugere og kontrollerer delte valg, overgang fra gammel indstilling, tom liste, flatrate-vs-leje og TMDB-fallback.

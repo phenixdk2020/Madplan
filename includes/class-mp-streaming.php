@@ -3,27 +3,41 @@ declare(strict_types=1);
 if (!defined('ABSPATH')) { exit; }
 /** Optional free non-commercial TMDB/JustWatch DK streaming lookup. */
 final class MP_Streaming {
-    private const PREF='mp_streaming_subscriptions_v1';
+    // Shared household subscriptions, unlike individual color themes.
+    private const PREF='mp_household_streaming_services_v1';
+    private const LEGACY_USER_PREF='mp_streaming_subscriptions_v1';
     private const TOKEN_OPTION='mp_tmdb_token_v1';
     public static function services(): array {
         return ['Netflix','HBO Max','Disney+','Prime Video','Apple TV+','SkyShowtime','Viaplay','TV 2 Play','DRTV','BritBox','Nordisk Film+','MUBI','Crunchyroll','hayu','Pluto TV','Filmstriben','Allente Stream','YouSee Play','Norlys Play'];
     }
     public static function chosen(int $user_id=0): array {
-        $user_id=$user_id ?: get_current_user_id();
-        if (!$user_id) { return []; }
-        $stored=get_user_meta($user_id,self::PREF,true);
-        return is_array($stored)?array_values(array_intersect(self::services(),$stored)):[];
+        // The optional argument is retained for compatibility with existing calls.
+        // Selection never depends on which household member is logged in.
+        $stored=get_option(self::PREF,null);
+        if (!is_array($stored)) {
+            // One-time migration: preserve pre-v0.1.12 checkboxes from the
+            // first signed-in household member who still has legacy selections.
+            // An explicitly saved empty global list is never re-populated.
+            $uid=$user_id ?: get_current_user_id();
+            $legacy=$uid>0 ? get_user_meta($uid,self::LEGACY_USER_PREF,true) : [];
+            $stored=is_array($legacy) ? array_values(array_intersect(self::services(),$legacy)) : [];
+            if ($uid>0 && $stored) {
+                update_option(self::PREF,$stored,false);
+            }
+        }
+        return array_values(array_intersect(self::services(),$stored));
     }
-    public static function save_for_user(int $user_id,array $services): array|WP_Error {
-        if ($user_id<1) { return new WP_Error('mp_login','Log ind for at vælge tjenester.',['status'=>401]); }
-        if (count($services)>40) { return new WP_Error('mp_services_too_many','For mange tjenester.',['status'=>400]); }
+    public static function save_shared(array $services): array|WP_Error {
+        if (count($services)>40) {
+            return new WP_Error('mp_services_too_many','For mange tjenester.',['status'=>400]);
+        }
         foreach ($services as $service) {
             if (!is_string($service) || !in_array($service,self::services(),true)) {
                 return new WP_Error('mp_service_invalid','Ukendt streamingtjeneste.',['status'=>400]);
             }
         }
-        update_user_meta($user_id,self::PREF,array_values(array_unique($services)));
-        return ['saved'=>true,'selected'=>self::chosen($user_id)];
+        update_option(self::PREF,array_values(array_unique($services)),false);
+        return ['saved'=>true,'shared'=>true,'selected'=>self::chosen()];
     }
     public static function api_token(): string {
         if (defined('MP_TMDB_API_TOKEN') && is_string(MP_TMDB_API_TOKEN) && MP_TMDB_API_TOKEN !== '') { return MP_TMDB_API_TOKEN; }

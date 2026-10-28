@@ -25,7 +25,7 @@ final class MP_REST {
         return ['theme'=>$theme, 'saved'=>true];
     }
     public static function streaming_services(): array {
-        return ['options'=>MP_Streaming::services(),'selected'=>MP_Streaming::chosen(),
+        return ['options'=>MP_Streaming::services(),'selected'=>MP_Streaming::chosen(),'shared'=>true,
             'configured'=>MP_Streaming::configured(),
             'credits'=>'Streaming availability: JustWatch via TMDB (DK).'];
     }
@@ -34,7 +34,7 @@ final class MP_REST {
         if (!is_array($services)) {
             return new WP_Error('mp_services_invalid','Send en liste med streamingtjenester.',['status'=>400]);
         }
-        return MP_Streaming::save_for_user(get_current_user_id(),$services);
+        return MP_Streaming::save_shared($services);
     }
     public static function streaming_lookup(WP_REST_Request $r): array {
         return MP_Streaming::lookup(absint($r->get_param('tvmaze_id')));
