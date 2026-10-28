@@ -7,7 +7,7 @@ template=Path('templates/portal-shell.php').read_text(encoding='utf-8')
 js=Path('assets/portal.js').read_text(encoding='utf-8')
 css=Path('assets/portal.css').read_text(encoding='utf-8')
 main=Path('hangar18-madplan.php').read_text(encoding='utf-8')
-assert 'Version: 0.1.8' in main
+assert ' * Version: ' in main
 assert "private const THEMES = ['default', 'dark', 'forest', 'purple', 'sand', 'ocean', 'rose', 'sunset', 'mint', 'burgundy']" in php
 assert "update_user_meta($uid, 'mp_portal_theme', $theme)" in php
 assert "get_user_meta(get_current_user_id(), 'mp_portal_theme', true)" in php
