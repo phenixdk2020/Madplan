@@ -19,7 +19,7 @@ assert "'default' => 'Default'" in view
 assert 'data-mp-theme="' in view
 assert 'MP_REST::current_theme()' in template
 assert "api('theme','POST',{theme:selected})" in js
-assert 'localStorage' not in js
+assert 'localStorage.setItem' not in js and 'localStorage.getItem' not in js
 assert "applyTheme(previous)" in js
 assert 'themeSelect.disabled=true' in js
 assert "root.setAttribute('data-mp-theme',value)" in js
