@@ -14,6 +14,10 @@ jobs:
       - name: PHP lint
         run: |
           find . -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: JavaScript syntax check
+        run: |
+          node --check assets/portal.js
+          node --check assets/admin.js
       - name: Build WordPress ZIP
         run: |
           mkdir -p build/hangar18-madplan dist
@@ -23,6 +27,8 @@ jobs:
           zip -qr ../dist/hangar18-madplan-0.1.0.zip hangar18-madplan
           cd ..
           sha256sum dist/hangar18-madplan-0.1.0.zip > dist/SHA256SUMS
+      - name: Verify ZIP integrity
+        run: unzip -t dist/hangar18-madplan-0.1.0.zip
       - name: Publish installable ZIP artifact
         uses: actions/upload-artifact@v4
         with:
