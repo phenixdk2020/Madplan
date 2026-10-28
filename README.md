@@ -3,7 +3,7 @@
 WordPress-plugin med mobil-first familieportal og desktop-orienteret opskriftseditor.
 Repository: https://github.com/phenixdk2020/Madplan
 
-## Version 0.1.6 — første testversion
+## Version 0.1.7 — første testversion
 
 - WordPress-login med Husk mig, ingen egen passwordopbevaring.
 - Én fælles TV-ugeplan/watchlist og én madplan for alle loggede brugere.
@@ -36,7 +36,7 @@ TVmaze leverer oprindelige/internationale udsendelsesdatoer, ikke verificerede d
 TVmaze: https://www.tvmaze.com/api
 TV-opdateringer bruger daglig WP-Cron, som kræver sitebesøg eller serverbaseret cron.
 
-## Ikke færdigt i 0.1.6
+## Ikke færdigt i 0.1.7
 
 - Automatisk indkøbsliste baseret på opskrifter/portioner
 - Danske verificerede streamingpremierer og streamingklokkeslæt
@@ -62,12 +62,12 @@ define('MP_BACKUP_DIR', '/home/ACCOUNT/private-backups/madplan');
 
 Vælg en reel, privat sti — ikke en mappe under `public_html`, `www`, `wp-content` eller en anden webtilgængelig mappe. Kan checkpointet ikke oprettes, **stoppes opdateringen**. Kræver PHP ZipArchive. Tag separat backup af WordPress-databasen og mediebiblioteket før produktionsinstallation.
 
-**Bootstrap:** Hvis 0.1.0 er installeret, kræver overgangen til 0.1.6 en sidste manuel ZIP-installation. Alle efterfølgende publicerede versioner kan opdateres via Hangar18 → Opdateringer. Udviklingsversioner fra GitHub Actions er ikke automatisk en del af update-kanalen, før GitHub Actions har publiceret `update.json` og `dist/` på `main`.
+**Bootstrap:** Hvis 0.1.0 er installeret, kræver overgangen til 0.1.7 en sidste manuel ZIP-installation. Alle efterfølgende publicerede versioner kan opdateres via Hangar18 → Opdateringer. Udviklingsversioner fra GitHub Actions er ikke automatisk en del af update-kanalen, før GitHub Actions har publiceret `update.json` og `dist/` på `main`.
 
 
-## 0.1.6 – forside, TV-guide og opdateringsdiagnose
+## 0.1.7 – forside, TV-guide og opdateringsdiagnose
 
-**Vigtigt ved eksisterende installation:** Første besøg efter installation/opgradering til 0.1.6 finder/opretter siden Familieplan og gør den til **statisk forside**. Den tidligere indstilling for blog/statisk forside gemmes til senere gendannelse. Andre eksisterende sider/indlæg slettes ikke. Hvis /familieplan/ allerede eksisterer med andet indhold, oprettes i stedet en separat side under /hangar18-familieplan/. 
+**Vigtigt ved eksisterende installation:** Første besøg efter installation/opgradering til 0.1.7 finder/opretter siden Familieplan og gør den til **statisk forside**. Den tidligere indstilling for blog/statisk forside gemmes til senere gendannelse. Andre eksisterende sider/indlæg slettes ikke. Hvis /familieplan/ allerede eksisterer med andet indhold, oprettes i stedet en separat side under /hangar18-familieplan/. 
 
 Den nye forsideskabelon viser kun Hangar18-appen (ikke WordPress-temaets header, men med WordPress' scripts og hooks). Start på https://hangar18.dk/ og log ind med din almindelige WordPress-bruger.
 
@@ -81,12 +81,12 @@ Den nye forsideskabelon viser kun Hangar18-appen (ikke WordPress-temaets header,
 
 TV-ugen er **tom**, indtil der er tilføjet en serie i watchlisten. TVmaze-datoer er oprindelige/internationale, ikke bekræftede danske premieredatoer eller klokkeslæt.
 
-**Opdateringer:** Version 0.1.6 inkluderer WordPress' native Update URI-hook, opdateringsknap samt "Test backup og rettigheder" under Hangar18 → Opdateringer. Resultater og fejlmeddelelser vises på siden. Hvis hosting blokerer private backups eller GitHub-HTTPS, kan WordPress-opdateringen ikke gennemføres. Manuel ZIP-installation/erstatning er en engangs-fallback for overgang fra 0.1.1.
+**Opdateringer:** Version 0.1.7 inkluderer WordPress' native Update URI-hook, opdateringsknap samt "Test backup og rettigheder" under Hangar18 → Opdateringer. Resultater og fejlmeddelelser vises på siden. Hvis hosting blokerer private backups eller GitHub-HTTPS, kan WordPress-opdateringen ikke gennemføres. Manuel ZIP-installation/erstatning er en engangs-fallback for overgang fra 0.1.1.
 
 **Gendan tidligere forside:** Hangar18 → Oversigt → Gendan tidligere WordPress-forside. Opskrifter og madplan-data påvirkes ikke.
 
 
-## 0.1.6 – mobiloprettelse af TV-programmer og aftensmad
+## 0.1.7 – mobiloprettelse af TV-programmer og aftensmad
 
 Efter login er hovedmenuen TV-guide og Madplan. På mobil kan **alle loggede brugere**:
 - Trykke **TV-guide → + Tilføj TV-program**. Søg efter en serie på TVmaze, vælg sæson, antal afsnit, første forventede dato og streamingtjeneste, og tilføj til den fælles watchlist.
@@ -99,7 +99,7 @@ Sletning af en TV-serie fra watchlisten og oprettelse/redigering af opskrifter i
 Mobilvisningen bruger store knapper og iPhone-venlige tekstfelter. Ingen ekstra API-abonnementer.
 
 
-## 0.1.6 – WordPress opdateringsmenu og fejldiagnose
+## 0.1.7 – WordPress opdateringsmenu og fejldiagnose
 
 Opdateringsmenuen åbnes fra **Hangar18 → Opdateringer** eller direkte på:
 https://hangar18.dk/wp-admin/admin.php?page=mp-updates
@@ -113,7 +113,7 @@ Ved serverfejl vises årsagen: GitHub netværksfejl/HTTP-kode, ugyldigt manifest
 Hvis hosten ikke har en skrivbar privat backup-mappe uden for webroden, stoppes opdateringen med en fejl for at undgå usikre/offentlige backupfiler. Kontakt hosting og opsæt `MP_BACKUP_DIR` i wp-config.php. Manuel ZIP upload er mulig som alternativ; tag databackup først.
 
 
-## 0.1.6 – serie med navn + streamingtjeneste, og tilbage til portalmenuen
+## 0.1.7 – serie med navn + streamingtjeneste, og tilbage til portalmenuen
 
 - TV-guide → + Tilføj TV-program: søg seriens navn i TVmaze og vælg den rigtige fra søgeresultaterne. Vælg/bekræft streamingtjenesten i Danmark. Klik "Tilføj til watchlist". Alt andet hentes automatisk når TVmaze har oplysninger.
 - TVmaze /shows/{id}, /shows/{id}/seasons og /shows/{id}/episodes anvendes til sæson, planlagt sæsonantal (episodeOrder), første kendte premieredato og episodehistorik. Data caches i 6 timer. Hvis samlet antal episoder er ukendt, vises kun kendte episoder.
@@ -125,6 +125,23 @@ Hvis hosten ikke har en skrivbar privat backup-mappe uden for webroden, stoppes 
 Ingen ekstra betalte API'er. TVmaze er en gratis kilde til originale afsnitsdata. Danmarksspecifikke streamingrettigheder og klokkeslæt kræver en separat datakilde eller manuel bekræftelse.
 
 
-## 0.1.6 – hele ugen på alle skærme
+## 0.1.7 – hele ugen på alle skærme
 
 Ugeplanen i **både TV-guide og Madplan** viser nu altid syv dage fra mandag til søndag. På en mobil i lodret format står dagene under hinanden og kan scrolles; på mobilen i vandret format og PC vises de i syv kolonner. Dagens dato fremhæves. Ugen indeholder præcis syv kalenderdage, ikke et skjult eller ekstra udsnit af den følgende uge. Forrige/næste uge virker stadig.
+
+
+## 0.1.7 – personlige farvetemaer
+
+Den oprindelige blå farvepalette hedder **Default** og er fortsat standard for nye brugere. I topmenuen på mobil og PC vælges ét af fem temaer:
+
+1. **Default:** Oprindeligt blå.
+2. **Mørk:** Mørk blå/sort med lys tekst.
+3. **Skovgrøn:** Grønne accenter og lyst grønt underlag.
+4. **Lilla:** Lilla nuancer.
+5. **Sand:** Varme beige- og brune farver.
+
+Temaet gemmes i WordPress `user_meta` under nøglen `mp_portal_theme` på den **indloggede bruger**, ikke i cookies eller browserens localStorage. Dermed følger temaet brugeren på tværs af PC/mobil og nye login. En anden bruger kan vælge en anden farve. Kun den fælles madplan/TV-watchlist deles.
+
+API: `POST /wp-json/hangar18/v1/theme` med JSON `{"theme":"dark"}`. Kræver login, WordPress REST-nonce og en tilladt temaværdi. Serveren afviser ukendte temaer. Browseren viser et preview med det samme; hvis lagringen fejler, gendannes den tidligere farve, og fejlen vises.
+
+Login-skærmen før man er logget ind anvender altid Default. Efter login læses brugerens gemte tema på serveren og sættes på siden allerede i HTML, så farven også vises før JavaScript starter. Alle fem temaer er understøttet på mobil og desktop.

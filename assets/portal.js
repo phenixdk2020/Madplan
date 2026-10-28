@@ -3,6 +3,35 @@
 var root=document.getElementById('mp-app'), cfg=window.MP_PORTAL;if(!root||!cfg)return;
 var content=root.querySelector('#mp-content'),status=root.querySelector('#mp-status'),home=root.querySelector('#mp-home'),main=root.querySelector('#mp-main'),tabs=root.querySelector('#mp-tabs');
 var s={module:'',tab:'week',start:mon(cfg.today),week:null,next:null,recipes:null};
+/* Personal preferences are stored in WordPress user_meta, not localStorage. */
+var themeOptions=['default','dark','forest','purple','sand'];
+var themeSelect=root.querySelector('#mp-theme-select');
+function applyTheme(value){
+ if(themeOptions.indexOf(value)===-1)value='default';
+ root.setAttribute('data-mp-theme',value);
+ for(var i=0;i<themeOptions.length;i++)document.body.classList.remove('mp-theme-'+themeOptions[i]);
+ document.body.classList.add('mp-theme-'+value);
+ if(themeSelect)themeSelect.value=value;
+}
+applyTheme(cfg.theme||'default');
+if(themeSelect)themeSelect.addEventListener('change',async function(){
+ var previous=(cfg.theme||'default'),selected=themeSelect.value;
+ if(themeOptions.indexOf(selected)===-1){applyTheme(previous);return;}
+ applyTheme(selected);
+ themeSelect.disabled=true;
+ try{
+  var saved=await api('theme','POST',{theme:selected});
+  if(!saved.saved||saved.theme!==selected)throw new Error('Serveren kunne ikke gemme temaet.');
+  cfg.theme=selected;
+  msg('Farvetemaet er gemt på din bruger og bruges ved næste login.');
+ }catch(error){
+  applyTheme(previous);
+  fail(error);
+ }finally{
+  themeSelect.disabled=false;
+ }
+});
+
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function url(v){v=String(v||'');return /^(https?:\/\/|\/)/i.test(v)?esc(v):'';}
 function dt(s){return new Date(s+'T12:00:00Z');}

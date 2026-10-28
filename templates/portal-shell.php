@@ -21,7 +21,7 @@ if (!defined('ABSPATH')) { exit; }
     @media(min-width:960px){body.mp-full-page .mp-portal{padding:0 22px}}
   </style>
 </head>
-<body <?php body_class('mp-full-page'); ?>>
+<body <?php body_class(['mp-full-page', 'mp-theme-' . MP_REST::current_theme()]); ?>>
 <?php wp_body_open(); ?>
 <main id="main" role="main">
   <?php echo MP_Portal::render(); // HTML is escaped in portal renderer. ?>

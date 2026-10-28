@@ -71,3 +71,12 @@ Senere: automatiske indkøb fra opskrifter, tilbud, dansk premieredatakilde, ske
 - Frontend gengiver altid syv kort. Ingen skjulte dage ved stående mobil.
 - Portrait: én kolonne og scroll. Landscape (fra 520px) og desktop (fra 960px): syv kolonner.
 - Dagens kort markeres med mp-today; uge-navigationen er uændret.
+
+
+## 0.1.7: brugerdefinerede temaer
+- User meta mp_portal_theme, en række per WordPress-bruger, ingen ny databasetabel.
+- Default er den tidligere blå palette; øvrige temaer dark, forest, purple og sand.
+- Server-side aktivering ved render af portalens data-attribut og body_class; REST POST /theme.
+- Inputvalidering mod statisk whitelist; WordPress REST nonce og login.
+- Optimistisk JS-opdatering rulles tilbage ved fejl. Ingen lagring i localStorage.
+- Tests: PHP user-meta isolering samt statisk integritetskontrol af frontend og tema-CSS.

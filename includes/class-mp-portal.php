@@ -20,6 +20,7 @@ final class MP_Portal {
                 'today'=>current_datetime()->format('Y-m-d'),
                 'admin'=>current_user_can('manage_options'),
                 'canEdit'=>is_user_logged_in(),
+                'theme'=>MP_REST::current_theme(),
                 'recipesAdmin'=>admin_url('edit.php?post_type=mp_recipe'),
                 'recipeCreate'=>admin_url('post-new.php?post_type=mp_recipe'),
             ]) . ';', 'before');
@@ -41,12 +42,31 @@ final class MP_Portal {
             return (string)ob_get_clean();
         }
         self::assets();
+        $theme = MP_REST::current_theme();
+        $themes = [
+            'default' => 'Default',
+            'dark' => 'Mørk',
+            'forest' => 'Skovgrøn',
+            'purple' => 'Lilla',
+            'sand' => 'Sand',
+        ];
         ob_start();
         ?>
-        <section class="mp-portal" id="mp-app" aria-label="Hangar18 Familieplan">
+        <section class="mp-portal" id="mp-app" data-mp-theme="<?php echo esc_attr($theme); ?>" aria-label="Hangar18 Familieplan">
           <header class="mp-topbar">
             <div class="mp-brand"><span aria-hidden="true">⌂</span><div><strong>Hangar18</strong><small>Familieplan</small></div></div>
-            <div class="mp-header-right"><span class="mp-welcome"><?php echo esc_html(wp_get_current_user()->display_name); ?></span><a class="mp-logout" href="<?php echo esc_url(wp_logout_url(get_permalink())); ?>">Log ud</a></div>
+            <div class="mp-header-right">
+              <label class="mp-theme-control" for="mp-theme-select">
+                <span>Farvetema</span>
+                <select id="mp-theme-select" name="mp-theme" aria-label="Vælg dit personlige farvetema">
+                  <?php foreach ($themes as $value => $label) : ?>
+                    <option value="<?php echo esc_attr($value); ?>" <?php selected($theme, $value); ?>><?php echo esc_html($label); ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </label>
+              <span class="mp-welcome"><?php echo esc_html(wp_get_current_user()->display_name); ?></span>
+              <a class="mp-logout" href="<?php echo esc_url(wp_logout_url(get_permalink())); ?>">Log ud</a>
+            </div>
           </header>
           <div class="mp-home" id="mp-home">
             <p class="mp-intro">Hvad vil du se?</p>

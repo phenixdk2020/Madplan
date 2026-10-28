@@ -8,6 +8,22 @@ final class MP_REST {
     // Every logged-in family member may edit the shared meal plan and add shows.
     public static function can_write(): bool { return is_user_logged_in(); }
     public static function can_manage(): bool { return current_user_can('manage_options'); }
+    private const THEMES = ['default', 'dark', 'forest', 'purple', 'sand'];
+    public static function current_theme(): string {
+        if (!is_user_logged_in()) { return 'default'; }
+        $theme = (string)get_user_meta(get_current_user_id(), 'mp_portal_theme', true);
+        return in_array($theme, self::THEMES, true) ? $theme : 'default';
+    }
+    public static function save_theme(WP_REST_Request $r) {
+        $theme = sanitize_key((string)$r->get_param('theme'));
+        if (!in_array($theme, self::THEMES, true)) {
+            return new WP_Error('mp_theme_invalid', 'Ukendt farvetema.', ['status'=>400]);
+        }
+        $uid = get_current_user_id();
+        if (!$uid) { return new WP_Error('mp_login_required', 'Log ind for at vælge tema.', ['status'=>401]); }
+        update_user_meta($uid, 'mp_portal_theme', $theme);
+        return ['theme'=>$theme, 'saved'=>true];
+    }
     private static function route(string $path, string $method, string $callback, bool $write = false, bool $admin_only = false): void {
         register_rest_route(self::NS, $path, [
             'methods'=>$method, 'callback'=>[self::class, $callback],
@@ -15,6 +31,7 @@ final class MP_REST {
         ]);
     }
     public static function register(): void {
+        self::route('/theme', 'POST', 'save_theme', true);
         self::route('/week', 'GET', 'week');
         self::route('/recipes', 'GET', 'recipes');
         self::route('/recipe/(?P<id>\d+)', 'GET', 'recipe');
