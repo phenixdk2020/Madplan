@@ -43,6 +43,7 @@ test($reset['saved']===true && MP_REST::current_theme()==='default','Default can
 $GLOBALS['mp_current_test_user']=0;
 $guest=MP_REST::save_theme(new WP_REST_Request(['theme'=>'purple']));
 test($guest instanceof WP_Error && !isset($GLOBALS['mp_test_meta'][0]),'Guests cannot save');
+$GLOBALS['mp_current_test_user']=101;
 foreach (['ocean','rose','sunset','mint','burgundy'] as $t) {
   $r=MP_REST::save_theme(new WP_REST_Request(['theme'=>$t]));
   test($r['saved'] && MP_REST::current_theme()===$t,'New personal theme '.$t);
