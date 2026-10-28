@@ -1,37 +1,121 @@
-name: Build WordPress plugin ZIP
+name: Build and Publish Hangar18 WordPress Plugin
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   package:
+    if: ${{ !contains(github.event.head_commit.message || '', '[skip package]') }}
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: PHP lint
+      - name: Resolve version and ensure headers agree
+        id: info
+        shell: bash
         run: |
-          find . -name '*.php' -print0 | xargs -0 -n1 php -l
-      - name: JavaScript syntax check
+          set -euo pipefail
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import re
+          from pathlib import Path
+          main = Path('hangar18-madplan.php').read_text(encoding='utf-8')
+          a = re.search(r'^\s*\*\s*Version:\s*([^\s]+)', main, re.M)
+          b = re.search(r"define\('MP_VERSION',\s*'([^']+)'\);", main)
+          assert a and b and a.group(1) == b.group(1), "Version header and MP_VERSION must agree"
+          version = a.group(1)
+          assert re.fullmatch(r'\d+\.\d+\.\d+(?:-(?:alpha|beta|rc)\.\d+)?', version)
+          print('version=' + version)
+          PY
+      - name: Lint source code
+        shell: bash
         run: |
-          node --check assets/portal.js
-          node --check assets/admin.js
-      - name: Build WordPress ZIP
+          set -euo pipefail
+          find . -name '*.php' -not -path './build/*' -print0 | xargs -0 -n1 php -l
+          find assets -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Assemble versioned WordPress package
+        shell: bash
+        env:
+          VERSION: ${{ steps.info.outputs.version }}
         run: |
-          mkdir -p build/hangar18-madplan dist
-          cp hangar18-madplan.php build/hangar18-madplan/
+          set -euo pipefail
+          mkdir -p build/hangar18-madplan
+          cp hangar18-madplan.php README.md build/hangar18-madplan/
           cp -R includes assets build/hangar18-madplan/
-          cd build
-          zip -qr ../dist/hangar18-madplan-0.1.0.zip hangar18-madplan
-          cd ..
-          sha256sum dist/hangar18-madplan-0.1.0.zip > dist/SHA256SUMS
-      - name: Verify ZIP integrity
-        run: unzip -t dist/hangar18-madplan-0.1.0.zip
-      - name: Publish installable ZIP artifact
+          export TZ=UTC
+          find build/hangar18-madplan -exec touch -t 202001010000.00 {} +
+          (
+            cd build
+            LC_ALL=C find hangar18-madplan -type f | sort | zip -X -q "../hangar18-madplan-v${VERSION}.zip" -@
+          )
+          sha256sum "hangar18-madplan-v${VERSION}.zip"
+      - name: Verify archive identity and ZIP integrity
+        shell: bash
+        env:
+          VERSION: ${{ steps.info.outputs.version }}
+        run: |
+          set -euo pipefail
+          unzip -t "hangar18-madplan-v${VERSION}.zip"
+          python3 - <<'PY'
+          from zipfile import ZipFile
+          from pathlib import Path
+          import os
+          version=os.environ['VERSION']
+          file=Path(f'hangar18-madplan-v{version}.zip')
+          with ZipFile(file) as z:
+              names=z.namelist()
+              assert len(names)==len(set(n.casefold() for n in names)), 'Duplicate ZIP paths'
+              assert len(names)>5
+              assert all(n.startswith('hangar18-madplan/') and '\\' not in n and '..' not in n.split('/') for n in names)
+              assert 'hangar18-madplan/hangar18-madplan.php' in names
+              assert 'hangar18-madplan/includes/class-mp-updater.php' in names
+              assert 'hangar18-madplan/includes/class-mp-checkpoints.php' in names
+              main=z.read('hangar18-madplan/hangar18-madplan.php').decode('utf-8')
+              assert 'Version: '+version in main
+          PY
+      - name: Publish version ZIP and update manifest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          VERSION: ${{ steps.info.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp "hangar18-madplan-v${VERSION}.zip" "dist/hangar18-madplan-v${VERSION}.zip"
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          version=os.environ['VERSION']
+          p=Path(f'dist/hangar18-madplan-v{version}.zip')
+          manifest={
+            'name':'Hangar18 Madplan & TV-plan',
+            'slug':'hangar18-madplan',
+            'version':version,
+            'homepage':'https://github.com/phenixdk2020/Madplan',
+            'requires':'6.4',
+            'requires_php':'8.0',
+            'package':f'https://raw.githubusercontent.com/phenixdk2020/Madplan/main/dist/hangar18-madplan-v{version}.zip',
+            'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),
+            'source_commit':os.environ['GITHUB_SHA'],
+          }
+          Path('update.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "dist/hangar18-madplan-v${VERSION}.zip" update.json
+          if git diff --cached --quiet; then
+            echo "Already published."
+          else
+            git commit -m "Publish Hangar18 Madplan v${VERSION} [skip ci] [skip package]"
+            git push origin HEAD:main
+          fi
+      - name: Upload installable ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: hangar18-madplan-0.1.0
-          path: dist/
+          name: hangar18-madplan-${{ steps.info.outputs.version }}
+          path: hangar18-madplan-v${{ steps.info.outputs.version }}.zip
           if-no-files-found: error
+          retention-days: 30

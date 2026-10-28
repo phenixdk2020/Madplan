@@ -2,8 +2,9 @@
 /**
  * Plugin Name: Hangar18 Madplan & TV-plan
  * Plugin URI: https://github.com/phenixdk2020/Madplan
+ * Update URI: https://github.com/phenixdk2020/Madplan
  * Description: Mobilvenlig familieportal med fælles TV-ugeplan, watchlist, madplan og opskrifter.
- * Version: 0.1.0
+ * Version: 0.1.1
  * Requires at least: 6.4
  * Requires PHP: 8.0
  * Text Domain: hangar18-madplan
@@ -11,7 +12,7 @@
 declare(strict_types=1);
 
 if (!defined('ABSPATH')) { exit; }
-define('MP_VERSION', '0.1.0');
+define('MP_VERSION', '0.1.1');
 define('MP_FILE', __FILE__);
 define('MP_DIR', plugin_dir_path(__FILE__));
 define('MP_URL', plugin_dir_url(__FILE__));
@@ -20,9 +21,13 @@ require_once MP_DIR . 'includes/class-mp-storage.php';
 require_once MP_DIR . 'includes/class-mp-tvmaze.php';
 require_once MP_DIR . 'includes/class-mp-rest.php';
 require_once MP_DIR . 'includes/class-mp-portal.php';
+require_once MP_DIR . 'includes/class-mp-checkpoints.php';
+require_once MP_DIR . 'includes/class-mp-updater.php';
 
 final class MP_Plugin {
     public static function boot(): void {
+        MP_Checkpoints::register();
+        MP_Updater::register();
         add_action('init', [self::class, 'recipes']);
         add_action('init', [self::class, 'shortcodes']);
         add_action('rest_api_init', [MP_REST::class, 'register']);

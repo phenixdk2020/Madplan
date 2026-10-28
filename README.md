@@ -3,7 +3,7 @@
 WordPress-plugin med mobil-first familieportal og desktop-orienteret opskriftseditor.
 Repository: https://github.com/phenixdk2020/Madplan
 
-## Version 0.1.0 — første testversion
+## Version 0.1.1 — første testversion
 
 - WordPress-login med Husk mig, ingen egen passwordopbevaring.
 - Én fælles TV-ugeplan/watchlist og én madplan for alle loggede brugere.
@@ -36,13 +36,30 @@ TVmaze leverer oprindelige/internationale udsendelsesdatoer, ikke verificerede d
 TVmaze: https://www.tvmaze.com/api
 TV-opdateringer bruger daglig WP-Cron, som kræver sitebesøg eller serverbaseret cron.
 
-## Ikke færdigt i 0.1.0
+## Ikke færdigt i 0.1.1
 
 - Automatisk indkøbsliste baseret på opskrifter/portioner
 - Danske verificerede streamingpremierer og streamingklokkeslæt
 - Opskriftssnapshots i historikken
 - Prissammenligning og supermarkedstilbud
-- VDM-lignende automatisk GitHub-opdateringskanal med SHA-256-kontrol og rollback
+- Automatisk restaurering af databasen ved rollback (program-rollback gendanner ikke data)
 - End-to-end-test i WordPress og på faktiske mobilskærme
 
 Se docs/ARCHITECTURE.md for tekniske detaljer og testplan.
+
+
+## GitHub-opdateringer (fra 0.1.1)
+
+WordPress → **Hangar18 → Opdateringer** giver **Tjek GitHub-opdatering**, **Opdater nu**, SHA-256-verificeret download og versionshistorik. WordPress → Plugins bruger samme opdateringskilde. GitHub Actions publicerer automatisk versioneret ZIP under `dist/` og et `update.json`-manifest på `main`.
+
+Ved plugin-opdatering oprettes automatisk to SHA-256-verificerede backups: program-ZIP og data-ZIP. Data omfatter egne Madplan-tabeller, opskrifter, relevante metadata og indstillinger. **Uploadede WordPress-mediebilleder er ikke inkluderet** (de påvirkes normalt ikke af plugin-opdateringer). Op til 12 checkpoint-par beholdes, og filer kan kun downloades gennem et administrator-autoriseret WordPress-endpoint. Rollback kan geninstallere den tidligere programkode; nye data bevares. En data-gendannelse kræver manuel behandling.
+
+**Sikker backupplacering:** Som standard anvendes mappen `hangar18-madplan-backups` i overmappen til WordPress-installationen. Den skal være skrivbar og befinde sig udenfor webroden. På hosting med en anden struktur angives eksempelvis i `wp-config.php`:
+
+```php
+define('MP_BACKUP_DIR', '/home/ACCOUNT/private-backups/madplan');
+```
+
+Vælg en reel, privat sti — ikke en mappe under `public_html`, `www`, `wp-content` eller en anden webtilgængelig mappe. Kan checkpointet ikke oprettes, **stoppes opdateringen**. Kræver PHP ZipArchive. Tag separat backup af WordPress-databasen og mediebiblioteket før produktionsinstallation.
+
+**Bootstrap:** Hvis 0.1.0 er installeret, kræver overgangen til 0.1.1 en sidste manuel ZIP-installation. Alle efterfølgende publicerede versioner kan opdateres via Hangar18 → Opdateringer. Udviklingsversioner fra GitHub Actions er ikke automatisk en del af update-kanalen, før GitHub Actions har publiceret `update.json` og `dist/` på `main`.
