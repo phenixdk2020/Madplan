@@ -59,4 +59,43 @@ check($b['seasons'][0]['first_date']==='','no invented premiere date');
 
 $again=MP_TVmaze::details(99);
 check($again===$a,'transient cache reuse');
+
+/* Regression: watchlist persists after last episode and automatically detects S3. */
+$completed=[];
+$first=new DateTimeImmutable('2026-09-03',new DateTimeZone('UTC'));
+for($i=1;$i<=8;$i++){
+    $completed[]=['season'=>2,'number'=>$i,
+                  'airdate'=>$first->modify('+'.(($i-1)*7).' days')->format('Y-m-d')];
+}
+$two=[['number'=>1,'episodeOrder'=>8,'premiereDate'=>'2025-09-04'],
+      ['number'=>2,'episodeOrder'=>8,'premiereDate'=>'2026-09-03',
+       'endDate'=>'2026-10-22','webChannel'=>['name'=>'Prime Video']]];
+$waiting=MP_TVmaze::watch_state($two,$completed,2,'2026-10-28');
+check($waiting['state']==='awaiting_next_season','Completed last season remains watched');
+check($waiting['season']===2 && !$waiting['new_season'],'No phantom new season');
+check($waiting['original_provider']==='Prime Video','Original provider retained');
+$three=array_merge($two,[
+ ['number'=>3,'episodeOrder'=>8,'premiereDate'=>'2027-02-04',
+  'webChannel'=>['name'=>'Prime Video']],
+]);
+$new=MP_TVmaze::watch_state($three,$completed,2,'2026-10-28');
+check($new['state']==='new_season' && $new['new_season'],'Detects next season announcement');
+check($new['season']===3 && $new['season_total']===8,'Tracks new season and planned episode count');
+check($new['first_air_date']==='2027-02-04','Tracks original upcoming premiere');
+check($new['original_provider']==='Prime Video' && $new['provider_kind']==='web',
+      'Identifies original Prime Video premiere; no Denmark claim');
+$upcoming=MP_TVmaze::watch_state($three,$completed,3,'2026-10-28');
+check($upcoming['state']==='upcoming' && !$upcoming['new_season'],
+      'Repeated daily checks keep upcoming premiere visible');
+$unknown=MP_TVmaze::watch_state(
+ [['number'=>1,'episodeOrder'=>null,'premiereDate'=>null]],
+ [['season'=>1,'number'=>1,'airdate'=>'2026-01-01']],
+ 1,'2026-10-28'
+);
+check($unknown['state']==='monitoring','Unknown season total must not be marked completed');
+$summary=MP_TVmaze::season_summary(99);
+check(!is_wp_error($summary) && $summary['season_count']===1,'Search displays season count');
+$summaryCached=MP_TVmaze::season_summary(99);
+check($summaryCached===$summary,'Season count cached independently');
+echo "Watchlist season monitoring tests PASS\n";
 echo "TVmaze auto-series tests PASS\n";

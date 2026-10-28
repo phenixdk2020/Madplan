@@ -49,6 +49,11 @@ final class MP_Portal {
             'forest' => 'Skovgrøn',
             'purple' => 'Lilla',
             'sand' => 'Sand',
+            'ocean' => 'Havblå',
+            'rose' => 'Rosa',
+            'sunset' => 'Solnedgang',
+            'mint' => 'Mint',
+            'burgundy' => 'Bordeaux',
         ];
         ob_start();
         ?>

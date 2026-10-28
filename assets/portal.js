@@ -4,7 +4,7 @@ var root=document.getElementById('mp-app'), cfg=window.MP_PORTAL;if(!root||!cfg)
 var content=root.querySelector('#mp-content'),status=root.querySelector('#mp-status'),home=root.querySelector('#mp-home'),main=root.querySelector('#mp-main'),tabs=root.querySelector('#mp-tabs');
 var s={module:'',tab:'week',start:mon(cfg.today),week:null,next:null,recipes:null};
 /* Personal preferences are stored in WordPress user_meta, not localStorage. */
-var themeOptions=['default','dark','forest','purple','sand'];
+var themeOptions=['default','dark','forest','purple','sand','ocean','rose','sunset','mint','burgundy'];
 var themeSelect=root.querySelector('#mp-theme-select');
 function applyTheme(value){
  if(themeOptions.indexOf(value)===-1)value='default';
@@ -127,15 +127,39 @@ var items;try{items=await api('shows');}catch(e){return fail(e);}
 var html='';
 if(cfg.canEdit){
  html+='<section class="mp-card mp-tv-add-card"><h3>+ Tilføj TV-serie</h3>'+
- '<p class="mp-help">Søg serien frem og vælg streamingtjenesten. Sæson og kendte premieredatoer hentes automatisk.</p>'+
+ '<p class="mp-help">Søg serien frem, tryk på plakaten og vælg en streamingtjeneste i Danmark. Sæsoner og kendte premieredatoer hentes automatisk.</p>'+
  '<form id="mp-find-series"><div class="mp-field"><label for="search-term">Seriens navn</label>'+
  '<input id="search-term" name="search-term" placeholder="Skriv seriens navn" autocomplete="off" required minlength="2"></div>'+
  '<button type="submit" class="mp-btn mp-btn-primary">Find serie</button></form>'+
  '<div id="show-results" aria-live="polite"></div>'+
  '<form id="show-form" hidden><div id="mp-series-summary" class="mp-series-summary"></div>'+
  '<div class="mp-field"><label for="service">Streamingtjeneste i Danmark</label>'+
- '<input id="service" list="mp-service-list" required placeholder="Fx Netflix, Max, Disney+ eller DRTV" maxlength="100">'+
- '<datalist id="mp-service-list"><option value="Netflix"><option value="Max"><option value="Disney+"><option value="Prime Video"><option value="Apple TV+"><option value="Viaplay"><option value="TV 2 Play"><option value="DRTV"><option value="SkyShowtime"></datalist></div>'+
+ '<select id="service" required>'+
+ '<option value="" selected disabled>Vælg streamingtjeneste</option>'+
+ '<optgroup label="Film og serier">'+
+ '<option value="Netflix">Netflix</option>'+
+ '<option value="HBO Max">HBO Max</option>'+
+ '<option value="Disney+">Disney+</option>'+
+ '<option value="Prime Video">Prime Video</option>'+
+ '<option value="Apple TV+">Apple TV+</option>'+
+ '<option value="SkyShowtime">SkyShowtime</option>'+
+ '<option value="Viaplay">Viaplay</option>'+
+ '<option value="TV 2 Play">TV 2 Play</option>'+
+ '<option value="BritBox">BritBox</option>'+
+ '<option value="Nordisk Film+">Nordisk Film+</option>'+
+ '<option value="MUBI">MUBI</option>'+
+ '<option value="Crunchyroll">Crunchyroll</option>'+
+ '<option value="hayu">hayu</option>'+
+ '</optgroup><optgroup label="Gratis tjenester">'+
+ '<option value="DRTV">DRTV</option>'+
+ '<option value="Pluto TV">Pluto TV</option>'+
+ '<option value="Filmstriben">Filmstriben</option>'+
+ '</optgroup><optgroup label="TV- og streamingpakker">'+
+ '<option value="Allente Stream">Allente Stream</option>'+
+ '<option value="YouSee Play">YouSee Play</option>'+
+ '<option value="Norlys Play">Norlys Play</option>'+
+ '</optgroup><option value="Ukendt">Ved ikke / ikke afklaret</option>'+
+ '</select></div>'+
  '<p class="mp-help" id="mp-provider-note">Streamingudbyder vælges af dig. Kilden bekræfter ikke dansk tilgængelighed.</p>'+
  '<details class="mp-advanced"><summary>Vis eller ret sæsonoplysninger (valgfrit)</summary>'+
  '<div class="mp-form-row"><label class="mp-field">Sæson<select id="season"></select></label>'+
@@ -148,17 +172,36 @@ if(cfg.canEdit){
 html+='<section class="mp-card"><h3>Fælles watchlist</h3>';
 if(!items.length)html+='<p>Ingen serier tilføjet endnu.</p>';
 items.forEach(function(x){
+var w=x.monitor||{},state=w.state||'monitoring';
+ var stateText={
+  new_season:'Ny sæson registreret',
+  upcoming:'Kommende premiere/afsnit',
+  awaiting_next_season:'Afventer næste sæson',
+  monitoring:'Overvåges for nye sæsoner'
+ }[state]||'Overvåges for nye sæsoner';
+ var origin=w.original_provider?
+  'Original premiere: '+w.original_provider+(w.provider_kind==='web'?' (streaming)':' (TV)'):
+  'Oprindelig premiereudbyder ukendt';
  html+='<div class="mp-show"><div><strong>'+esc(x.title)+'</strong><small>'+
- esc(x.service||'Streaming ukendt')+' · Sæson '+esc(x.season)+' · '+(Number(x.season_total)||'ukendt antal')+' afsnit</small>'+
- '<small>'+(Number(x.weekly)?'Ugentlige forventede datoer tilladt':'Kun kendte afsnitsdatoer')+'</small></div>';
- if(cfg.canEdit)html+='<div class="mp-show-actions"><button class="mp-btn sync-show" data-id="'+x.id+'" type="button">Opdater</button>'+
+ esc(x.service||'Streaming ikke afklaret')+' · Sæson '+esc(x.season)+' · '+(Number(x.season_total)||'ukendt antal')+' afsnit</small>'+
+ '<span class="mp-watch-status '+(state==='new_season'?'mp-watch-new':'')+'">'+esc(stateText)+'</span>'+
+ '<small>'+esc(origin)+'</small>'+
+ (w.first_air_date?'<small>Original sæsonpremiere: '+esc(w.first_air_date)+'</small>':'')+
+ (w.next_air_date?'<small>Næste registrerede originaldato: '+esc(w.next_air_date)+'</small>':'')+
+ '<small class="mp-help">Overvåges fortsat automatisk. TVmaze bekræfter ikke dansk streamingpremiere.</small></div>';
+ if(cfg.canEdit)html+='<div class="mp-show-actions"><button class="mp-btn sync-show" data-id="'+x.id+'" type="button">Tjek nu</button>'+
  (cfg.admin?'<button class="mp-btn remove-show" data-id="'+x.id+'" type="button">Fjern</button>':'')+'</div>';
  html+='</div>';
 });
 html+='</section>';
 content.innerHTML=html;
 content.querySelectorAll('.sync-show').forEach(function(b){b.onclick=async function(){
- try{await api('shows/'+b.dataset.id+'/sync','POST',{});msg('Afsnit er opdateret.');}catch(e){fail(e);}
+ try{
+ var result=await api('shows/'+b.dataset.id+'/sync','POST',{});
+ await watch();
+ msg(result.new_season?'Ny sæson '+result.season+' blev fundet og følges nu automatisk.':
+ 'Overvågningen er opdateret – serien bliver på watchlisten.');
+}catch(e){fail(e);}
 };});
 content.querySelectorAll('.remove-show').forEach(function(b){b.onclick=async function(){
  if(!window.confirm('Fjern serien fra den fælles watchlist?'))return;
@@ -182,7 +225,9 @@ function setSeason(){
  preview+=row&&Number(row.total)>0?row.total+' planlagte afsnit':(row&&row.known?row.known+' kendte afsnit, samlet antal ukendt':'Antal afsnit ukendt');
  preview+=' · '+(row&&row.first_date?('Første oprindelige premieredato '+row.first_date):'Ingen premieredato endnu');
  if(row&&row.weekly)preview+=' · Ugentlig rytme fundet i kendte datoer';
- content.querySelector('#mp-series-summary').innerHTML='<strong>'+esc(details.title)+'</strong><p class="mp-help">'+esc(preview)+'</p>';
+ content.querySelector('#mp-series-summary').innerHTML='<div class="mp-selected-series">'+
+  (selected&&selected.image?'<img src="'+url(selected.image)+'" alt="" loading="lazy" decoding="async">':'')+
+  '<div><strong>'+esc(details.title)+'</strong><p class="mp-help">'+esc(preview)+'</p></div></div>';
 }
 async function choose(result){
  selected=result;resultsEl.innerHTML='<p class="mp-help">Henter sæsoner, afsnit og kendte premieredatoer…</p>';
@@ -203,7 +248,8 @@ async function choose(result){
   setSeason();
   // If TVmaze identifies a web channel it can be suggested, NOT presented
   // as a Danish rights/availability confirmation.
-  serviceEl.value=details.provider_kind==='web'?details.original_provider:'';
+  // Original provider is not evidence of Danish rights: never auto-select it.
+  serviceEl.value='';
   content.querySelector('#mp-provider-note').textContent=details.original_provider?
    'TVmaze angiver '+details.original_provider+' som oprindelig '+(details.provider_kind==='web'?'streamingtjeneste':'TV-kanal')+'. Bekræft selv streamingtjenesten i Danmark.':
    'TVmaze har ikke en kendt streamingtjeneste. Angiv den danske tjeneste manuelt.';
@@ -219,13 +265,43 @@ searchForm.onsubmit=async function(ev){
  try{
   var list=await api('tv-search?q='+encodeURIComponent(query));
   resultsEl.innerHTML=list.length?'':'<p>Ingen serier fundet.</p>';
+  if(list.length)resultsEl.innerHTML='<p class="mp-help">Tryk på billedet eller kortet for at vælge serien. Sæsonantal hentes separat fra TVmaze.</p>';
+  var cards=[];
   list.forEach(function(row){
    var b=document.createElement('button');
-   b.type='button';b.className='mp-result';
-   b.innerHTML='<strong>'+esc(row.name)+'</strong><small>'+esc(row.premiered||'Udgivelsesår ukendt')+'</small>';
+   b.type='button';b.className='mp-result mp-tv-result';
+   var image=row.image?
+     '<img class="mp-tv-poster" src="'+url(row.image)+'" alt="" loading="lazy" decoding="async">':
+     '<span class="mp-tv-no-poster" aria-hidden="true">📺</span>';
+   var year=String(row.premiered||'').slice(0,4)||'Ukendt år';
+   b.innerHTML=image+'<span class="mp-tv-result-info"><strong>'+esc(row.name)+'</strong>'+
+      '<small>'+esc(year)+(row.original_channel?' · '+esc(row.original_channel):'')+'</small>'+
+      '<span class="mp-season-count">Henter sæsoner…</span>'+
+      '<span class="mp-result-choose">Tryk for at vælge serien</span></span>';
    b.onclick=function(){choose(row);};
    resultsEl.appendChild(b);
+   cards.push({id:Number(row.id), badge:b.querySelector('.mp-season-count')});
   });
+  // Posters and buttons are immediately usable. Season counts load progressively
+  // with max 3 parallel requests, avoiding excessive bursts against TVmaze.
+  var next=0;
+  async function fillSeasons(){
+    while(next<cards.length){
+      var entry=cards[next++];
+      if(!entry.badge.isConnected)continue;
+      try {
+        var d=await api('tv-seasons?id='+encodeURIComponent(entry.id));
+        if(!entry.badge.isConnected)continue;
+        var number=Number(d.season_count)||0,latest=Number(d.latest_season)||0;
+        entry.badge.textContent=number?
+          number+' '+(number===1?'sæson':'sæsoner')+(latest>number?' · seneste S'+latest:''):
+          'Sæsoner endnu ikke registreret';
+      }catch(e){
+        if(entry.badge.isConnected)entry.badge.textContent='Sæsonantal ikke tilgængeligt';
+      }
+    }
+  }
+  for(var worker=0;worker<Math.min(3,cards.length);worker++)fillSeasons();
  }catch(e){resultsEl.innerHTML='';fail(e);}
 };
 seasonEl.onchange=setSeason;
@@ -233,7 +309,7 @@ form.onsubmit=async function(ev){
  ev.preventDefault();
  if(!selected||!details)return msg('Vælg først en serie.',true);
  var provider=serviceEl.value.trim();
- if(!provider)return msg('Vælg streamingtjenesten, fx Netflix, Viaplay eller DRTV.',true);
+ if(!provider)return msg('Vælg streamingtjeneste i dropdownen.',true);
  var fields={
   tvmaze_id:Number(selected.id),
   service:provider,

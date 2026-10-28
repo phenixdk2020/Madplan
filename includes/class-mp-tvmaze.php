@@ -28,12 +28,13 @@ final class MP_TVmaze {
         $result = self::get('/search/shows?q=' . rawurlencode($term));
         if (is_wp_error($result)) { return $result; }
         $found = [];
-        foreach (array_slice($result, 0, 15) as $item) {
+        foreach (array_slice($result, 0, 10) as $item) {
             $show = $item['show'] ?? [];
             if (empty($show['id'])) { continue; }
             $found[] = ['id'=>(int)$show['id'], 'name'=>sanitize_text_field($show['name'] ?? ''),
                 'premiered'=>(string)($show['premiered'] ?? ''),
-                'image'=>esc_url_raw($show['image']['medium'] ?? '')];
+                'image'=>esc_url_raw($show['image']['medium'] ?? ''),
+                'original_channel'=>sanitize_text_field((string)($show['webChannel']['name'] ?? $show['network']['name'] ?? ''))];
         }
         set_transient($key, $found, 6 * HOUR_IN_SECONDS);
         return $found;
@@ -130,51 +131,193 @@ final class MP_TVmaze {
         return $out;
     }
 
+    /**
+     * Lightweight season count for search cards. Do not download episode lists
+     * for every search hit; cache separately and reuse full metadata if present.
+     * Excludes season 0 (specials), and never guesses unknown seasons.
+     */
+    public static function season_summary(int $id) {
+        if ($id < 1 || $id > 10000000) {
+            return new WP_Error('mp_bad_series', 'Ugyldigt serie-ID.', ['status'=>400]);
+        }
+        $key = 'mp_tv_season_summary_' . $id;
+        $cached = get_transient($key);
+        if (is_array($cached)) { return $cached; }
+        $full = get_transient('mp_tv_details_' . $id);
+        if (is_array($full) && isset($full['seasons']) && is_array($full['seasons'])) {
+            $seasons = $full['seasons'];
+        } else {
+            $seasons = self::get('/shows/' . $id . '/seasons');
+            if (is_wp_error($seasons)) { return $seasons; }
+        }
+        $unique = [];
+        foreach ($seasons as $season) {
+            if (!is_array($season)) { continue; }
+            $no = absint($season['number'] ?? $season['season'] ?? 0);
+            if ($no >= 1 && $no <= 100) { $unique[$no] = true; }
+        }
+        $out = [
+            'id'=>$id,
+            'season_count'=>count($unique),
+            'latest_season'=>$unique ? max(array_keys($unique)) : 0,
+            'source'=>'TVmaze',
+        ];
+        set_transient($key, $out, 12 * HOUR_IN_SECONDS);
+        return $out;
+    }
+
+
+    /**
+     * Determine the next/active season from original TVmaze metadata.
+     * No Danish availability claim can be inferred from TVmaze.
+     * This pure helper is tested against completed, pending and announced seasons.
+     */
+    public static function watch_state(array $seasons, array $episodes, int $tracked, string $today): array {
+        $bySeason=[];
+        foreach ($seasons as $season) {
+            if (!is_array($season)) { continue; }
+            $n=absint($season['number'] ?? 0);
+            if ($n < 1 || $n > 100) { continue; }
+            $bySeason[$n]=$season;
+        }
+        $latest=max(array_keys($bySeason ?: [$tracked ?: 1 => null]));
+        $selected=max(1, $tracked);
+        $advanced=$latest>$selected;
+        if ($advanced) { $selected=$latest; }
+        $s=$bySeason[$selected] ?? [];
+        $dates=[];
+        $numbers=[];
+        $weekly=false;
+        foreach ($episodes as $ep) {
+            if (!is_array($ep) || (int)($ep['season']??0)!==$selected) { continue; }
+            $no=absint($ep['number']??0);
+            if (!$no || $no>500) { continue; }
+            $numbers[$no]=true;
+            $date=(string)($ep['airdate'] ?? '');
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/',$date)) { $dates[$no]=$date; }
+        }
+        ksort($dates,SORT_NUMERIC);
+        foreach ($dates as $n=>$date) {
+            if (isset($dates[$n+1]) &&
+                (strtotime($dates[$n+1].' UTC')-strtotime($date.' UTC'))===7*DAY_IN_SECONDS) {
+                $weekly=true;
+                break;
+            }
+        }
+        $total=absint($s['episodeOrder'] ?? 0);
+        $total=$total<=200?$total:0;
+        $premiere=(string)($dates[1] ?? $s['premiereDate'] ?? '');
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/',$premiere)) { $premiere=''; }
+        $last=$dates ? max(array_values($dates)) : '';
+        $ended=(string)($s['endDate'] ?? '');
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/',$ended)) { $ended=''; }
+        $provider=(string)($s['webChannel']['name'] ?? '');
+        $network=(string)($s['network']['name'] ?? '');
+        $isWeb=$provider!=='';
+        if (!$isWeb) { $provider=$network; }
+        $completed=($total>0 && count(array_filter($dates,static fn($d)=>$d<=$today)) >= $total) ||
+            ($ended!=='' && $ended<$today);
+        $future=array_filter($dates,static fn($d)=>$d>=$today);
+        $next=$future ? min(array_values($future)) : '';
+        if ($advanced) { $state='new_season'; }
+        elseif ($next!=='' || ($premiere!=='' && $premiere>=$today)) { $state='upcoming'; }
+        elseif ($completed) { $state='awaiting_next_season'; }
+        else { $state='monitoring'; }
+        return [
+            'state'=>$state, 'season'=>$selected, 'new_season'=>$advanced,
+            'season_total'=>$total, 'known_episodes'=>count($numbers),
+            'first_air_date'=>$premiere,
+            'last_air_date'=>$last, 'next_air_date'=>$next ?: ($premiere>=$today?$premiere:''),
+            'original_provider'=>sanitize_text_field($provider),
+            'provider_kind'=>$isWeb?'web':($network!==''?'broadcast':'unknown'),
+            'origin_label'=>'TVmaze: oprindelig kanal/tjeneste, ikke bekræftet dansk streamingpremiere',
+            'weekly'=>$weekly,
+            'checked_utc'=>gmdate('c'),
+        ];
+    }
+
+    private static function save_watch_state(int $id, array $state): void {
+        $all=get_option('mp_watch_monitor_v1',[]);
+        if (!is_array($all)) { $all=[]; }
+        $all[(string)$id]=$state;
+        update_option('mp_watch_monitor_v1',$all,false);
+    }
+
     public static function sync_one(int $id) {
         global $wpdb;
-        $shows = MP_Storage::table('shows');
-        $eps = MP_Storage::table('episodes');
-        $show = $wpdb->get_row($wpdb->prepare("SELECT * FROM $shows WHERE id=%d", $id), ARRAY_A);
-        if (!$show) { return new WP_Error('mp_no_show', 'Serien findes ikke.', ['status'=>404]); }
-        $items = self::get('/shows/' . (int)$show['tvmaze_id'] . '/episodes');
+        $shows=MP_Storage::table('shows');
+        $eps=MP_Storage::table('episodes');
+        $show=$wpdb->get_row($wpdb->prepare("SELECT * FROM $shows WHERE id=%d", $id), ARRAY_A);
+        if (!$show) { return new WP_Error('mp_no_show','Serien findes ikke.', ['status'=>404]); }
+        $maze=absint($show['tvmaze_id']);
+        $items=self::get('/shows/'.$maze.'/episodes');
         if (is_wp_error($items)) { return $items; }
-        $count = 0;
-        $first = null;
+
+        $seasons=self::get('/shows/'.$maze.'/seasons');
+        // A temporary season endpoint outage must not silently remove a watch.
+        if (is_wp_error($seasons)) { $seasons=[]; }
+        $state=self::watch_state($seasons,$items,(int)$show['season'],current_datetime()->format('Y-m-d'));
+        $season=(int)$state['season'];
+        $count=0;
         foreach ($items as $item) {
             if (!is_array($item)) { continue; }
-            $season = absint($item['season'] ?? 0);
-            $number = absint($item['number'] ?? 0);
-            if ($season !== (int)$show['season'] || $number < 1 || $number > 500) { continue; }
-            $air = (string)($item['airdate'] ?? '');
-            if ($air && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $air)) { $air = ''; }
-            if ($number === 1 && $air) { $first = $air; }
-            $wpdb->replace($eps, [
-                'show_id'=>$id, 'season'=>$season, 'episode_no'=>$number,
-                'title'=>sanitize_text_field($item['name'] ?? ''),
-                'air_date'=>$air ?: null,
-                'original_time'=>sanitize_text_field((string)($item['airtime'] ?? '')),
-            ], ['%d','%d','%d','%s','%s','%s']);
-            $count++;
+            $n=absint($item['season']??0);
+            $number=absint($item['number']??0);
+            if ($n!==$season || $number<1 || $number>500) { continue; }
+            $air=(string)($item['airdate']??'');
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/',$air)) { $air=''; }
+            $ok=$wpdb->replace($eps,[
+                'show_id'=>$id,'season'=>$n,'episode_no'=>$number,
+                'title'=>sanitize_text_field((string)($item['name']??'')),
+                'air_date'=>$air?:null,
+                'original_time'=>sanitize_text_field((string)($item['airtime']??'')),
+            ],['%d','%d','%d','%s','%s','%s']);
+            if ($ok!==false) { $count++; }
         }
-        if ($first && !$show['first_air_date']) {
-            $wpdb->update($shows, ['first_air_date'=>$first], ['id'=>$id], ['%s'], ['%d']);
+        $values=['updated_at'=>current_time('mysql')];
+        $formats=['%s'];
+        if ((int)$show['season']!==$season) {
+            $values['season']=$season; $formats[]='%d';
+            $values['season_total']=$state['season_total']; $formats[]='%d';
+            $values['first_air_date']=$state['first_air_date']?:null; $formats[]='%s';
+            $values['weekly']=$state['weekly']?1:0; $formats[]='%d';
+            $values['time_label']=''; $formats[]='%s'; // Don't carry a Danish time into a new season.
+            $values['weekday']=0; $formats[]='%d';
+        } elseif ((int)$show['season_total']===0 && $state['season_total']>0) {
+            $values['season_total']=$state['season_total']; $formats[]='%d';
         }
-        $wpdb->update($shows, ['updated_at'=>current_time('mysql')], ['id'=>$id], ['%s'], ['%d']);
-        return ['imported'=>$count, 'source'=>'TVmaze – oprindelige/internationale datoer'];
+        $wpdb->update($shows,$values,['id'=>$id],$formats,['%d']);
+        // Keep manually selected service, do NOT replace with TVmaze's original provider.
+        self::save_watch_state($id,$state);
+        return [
+            'imported'=>$count,'season'=>$season,'new_season'=>$state['new_season'],
+            'state'=>$state['state'],'original_provider'=>$state['original_provider'],
+            'source'=>'TVmaze: oprindelige internationale datoer',
+        ];
     }
     public static function sync_all(): void {
         global $wpdb;
-        $shows = MP_Storage::table('shows');
-        $ids = $wpdb->get_col("SELECT id FROM $shows WHERE active=1 ORDER BY updated_at ASC LIMIT 10");
+        $shows=MP_Storage::table('shows');
+        $ids=$wpdb->get_col("SELECT id FROM $shows WHERE active=1 ORDER BY updated_at ASC LIMIT 10");
         foreach ($ids as $id) {
             self::sync_one((int)$id);
         }
     }
     public static function shows(): array {
         global $wpdb;
-        $table = MP_Storage::table('shows');
-        return $wpdb->get_results("SELECT id,tvmaze_id,title,service,season,season_total,first_air_date,weekday,time_label,weekly,updated_at FROM $table WHERE active=1 ORDER BY title ASC", ARRAY_A) ?: [];
+        $table=MP_Storage::table('shows');
+        $list=$wpdb->get_results("SELECT id,tvmaze_id,title,service,season,season_total,first_air_date,weekday,time_label,weekly,updated_at FROM $table WHERE active=1 ORDER BY title ASC", ARRAY_A) ?: [];
+        $states=get_option('mp_watch_monitor_v1',[]);
+        if (!is_array($states)) { $states=[]; }
+        foreach ($list as &$show) {
+            $state=$states[(string)$show['id']]??[];
+            $show['monitor']=is_array($state)?$state:[];
+            $show['watching']=true;
+        }
+        unset($show);
+        return $list;
     }
+
     public static function schedule(string $start, string $end): array {
         global $wpdb;
         $shows = self::shows();

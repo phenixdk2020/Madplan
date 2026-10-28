@@ -3,7 +3,7 @@
 WordPress-plugin med mobil-first familieportal og desktop-orienteret opskriftseditor.
 Repository: https://github.com/phenixdk2020/Madplan
 
-## Version 0.1.7 — første testversion
+## Version 0.1.8 — TV-guide, serieovervågning og temaer
 
 - WordPress-login med Husk mig, ingen egen passwordopbevaring.
 - Én fælles TV-ugeplan/watchlist og én madplan for alle loggede brugere.
@@ -145,3 +145,21 @@ Temaet gemmes i WordPress `user_meta` under nøglen `mp_portal_theme` på den **
 API: `POST /wp-json/hangar18/v1/theme` med JSON `{"theme":"dark"}`. Kræver login, WordPress REST-nonce og en tilladt temaværdi. Serveren afviser ukendte temaer. Browseren viser et preview med det samme; hvis lagringen fejler, gendannes den tidligere farve, og fejlen vises.
 
 Login-skærmen før man er logget ind anvender altid Default. Efter login læses brugerens gemte tema på serveren og sættes på siden allerede i HTML, så farven også vises før JavaScript starter. Alle fem temaer er understøttet på mobil og desktop.
+
+
+## v0.1.8 – seriekort med plakat, tjeneste-dropdown og sæsonovervågning
+
+TV-søgning viser op til 10 TVmaze-serier i trykbare kort med plakat, startår, oprindelig kanal og sæsonantal. Sæsonantal hentes løbende fra TVmaze, med op til 3 samtidige opslag og 12-timers cache. Hvis data ikke findes, vises det som ukendt. Serien vælges ved tryk på hele kortet.
+
+Dansk streamingtjeneste vælges i en dropdown (Netflix, HBO Max, Disney+, Prime Video, Apple TV+, SkyShowtime, Viaplay, TV 2 Play, DRTV, BritBox, Nordisk Film+, MUBI, Crunchyroll, hayu, Pluto TV, Filmstriben, Allente Stream, YouSee Play, Norlys Play eller Ukendt). At en tjeneste findes i Danmark betyder **ikke** at den valgte serie kan ses der. TVmaze kan oplyse **oprindelig** tjeneste og premieredato, men ikke garantere dansk tilgængelighed eller dansk premieredato.
+
+### Watchlist kører videre efter sidste afsnit
+- Serier forbliver på den fælles watchlist, indtil en administrator vælger "Fjern".
+- Daglig WordPress-Cron (når webstedet besøges) tjekker serien, også når alle kendte afsnit fra seneste sæson er udgivet. Maks. 10 serier pr. jobkørsel, ældst opdaterede først, så større watchlists gennemløbes over flere kørsler.
+- Når TVmaze registrerer sæson N+1, skifter serien automatisk til den nye sæson i ugeplanen, henter kendte afsnit og viser "Ny sæson registreret". Dato og original udbyder oplyses, hvis TVmaze har dem.
+- Efter en færdig sæson vises "Afventer næste sæson"; ukendt sæsonantal vises fortsat som "Overvåges", ikke fejlagtigt som færdig. Kommende kendte premieredatoer vises som kommende.
+- **Valgt dansk streamingtjeneste overskrives aldrig** ved sæsonskifte. Originalpremiereudbyder vises særskilt og mærkes "ikke bekræftet dansk premiere". Klokkeslæt fra tidligere sæson kopieres ikke til den nye sæson.
+- Tryk "Tjek nu" på watchlisten for øjeblikkelig synkronisering. Seneste status gemmes i WordPress option `mp_watch_monitor_v1`. Daglige kontroller og oprindelige premieredatoer er ikke et pris- eller rettighedsovervågningsabonnement.
+- Der foretages ikke automatisk opslag på betalte eller uofficielle streamingkatalog-API'er. En verificeret dansk premiere hos Netflix/Prime Video/TV 2 Play kræver en kilde med danske rettigheder og kalenderoplysninger.
+
+Temaer: eksisterende Default, Mørk, Skovgrøn, Lilla, Sand samt nye Havblå, Rosa, Solnedgang, Mint og Bordeaux. Alle 10 gemmes på WordPress-brugeren.

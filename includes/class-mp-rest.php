@@ -8,7 +8,7 @@ final class MP_REST {
     // Every logged-in family member may edit the shared meal plan and add shows.
     public static function can_write(): bool { return is_user_logged_in(); }
     public static function can_manage(): bool { return current_user_can('manage_options'); }
-    private const THEMES = ['default', 'dark', 'forest', 'purple', 'sand'];
+    private const THEMES = ['default', 'dark', 'forest', 'purple', 'sand', 'ocean', 'rose', 'sunset', 'mint', 'burgundy'];
     public static function current_theme(): string {
         if (!is_user_logged_in()) { return 'default'; }
         $theme = (string)get_user_meta(get_current_user_id(), 'mp_portal_theme', true);
@@ -38,6 +38,7 @@ final class MP_REST {
         self::route('/shows', 'GET', 'shows');
         self::route('/tv-search', 'GET', 'tv_search', true);
         self::route('/tv-details', 'GET', 'tv_details', true);
+        self::route('/tv-seasons', 'GET', 'tv_seasons');
         self::route('/meal', 'POST', 'save_meal', true);
         self::route('/shows', 'POST', 'create_show', true);
         self::route('/shows/(?P<id>\d+)', 'DELETE', 'delete_show', true, true);
@@ -66,6 +67,9 @@ final class MP_REST {
     public static function shows() { return MP_TVmaze::shows(); }
     public static function tv_search(WP_REST_Request $r) {
         return MP_TVmaze::search(sanitize_text_field((string)$r->get_param('q')));
+    }
+    public static function tv_seasons(WP_REST_Request $r) {
+        return MP_TVmaze::season_summary(absint($r->get_param('id')));
     }
     public static function tv_details(WP_REST_Request $r) {
         return MP_TVmaze::details(absint($r->get_param('id')));
@@ -171,6 +175,11 @@ final class MP_REST {
         global $wpdb; $id = absint($r['id']);
         $wpdb->delete(MP_Storage::table('shows'), ['id'=>$id], ['%d']);
         $wpdb->delete(MP_Storage::table('episodes'), ['show_id'=>$id], ['%d']);
+        $states=get_option('mp_watch_monitor_v1',[]);
+        if (is_array($states) && isset($states[(string)$id])) {
+            unset($states[(string)$id]);
+            update_option('mp_watch_monitor_v1',$states,false);
+        }
         return ['deleted'=>true];
     }
     public static function sync_show(WP_REST_Request $r) { return MP_TVmaze::sync_one(absint($r['id'])); }

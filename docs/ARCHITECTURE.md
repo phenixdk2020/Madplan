@@ -80,3 +80,15 @@ Senere: automatiske indkøb fra opskrifter, tilbud, dansk premieredatakilde, ske
 - Inputvalidering mod statisk whitelist; WordPress REST nonce og login.
 - Optimistisk JS-opdatering rulles tilbage ved fejl. Ingen lagring i localStorage.
 - Tests: PHP user-meta isolering samt statisk integritetskontrol af frontend og tema-CSS.
+
+
+## 0.1.8 – serieovervågning
+- Watchlist tabellen bevares uændret; watchlist poster forbliver active=1, også efter sidste afsnit.
+- MP_TVmaze::sync_one henter både /shows/{id}/episodes og /shows/{id}/seasons og sammenholder dem.
+- Hvis ny sæson opdages, opdateres season, antal episoder og original first_air_date, og nye afsnit gemmes i eksisterende tabel. Ældre episoders data forbliver, men ugeplanen viser den nu fulgte sæson.
+- Overvågningsmetadata i WP option mp_watch_monitor_v1 pr. lokal show-id: state, original provider/kind, første og næste dato, tjekdato. Ingen ekstra migrering.
+- Status: monitoring, awaiting_next_season, upcoming eller new_season. Ukendt samlet afsnitsantal kan ikke markeres som afsluttet uden bekræftet slutdato.
+- Service-feltet er manuelt valgt DK-tjeneste; provider i monitorering er TVmaze-original og ikke bekræftet dansk.
+- Sæsonmetadata kan mangle eller fejle; serien må ikke fjernes eller afbrydes.
+- REST /shows returnerer monitor/status; /shows/{id}/sync returnerer new_season og state.
+- Der er ingen push-alarm; UI opdateres ved åbning og næste synkronisering.
