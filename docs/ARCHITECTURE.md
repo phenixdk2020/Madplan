@@ -64,3 +64,10 @@ Senere: automatiske indkøb fra opskrifter, tilbud, dansk premieredatakilde, ske
 - Ugentlig forventet rytme kun hvis to efterfølgende kendte afsnit har præcis 7 dages mellemrum.
 - Tilbage til forsiden er en ren JavaScript-overgang til de to menuknapper; session forbliver aktiv.
 - Tests: tests/tv_auto.php (falske TVmaze JSON-svar), tests/tv_portal_contract.py og eksisterende updater_contract.py.
+
+
+## 0.1.6 – kalender-layout
+- REST week endpoint henter præcis mandag–søndag (7 dage).
+- Frontend gengiver altid syv kort. Ingen skjulte dage ved stående mobil.
+- Portrait: én kolonne og scroll. Landscape (fra 520px) og desktop (fra 960px): syv kolonner.
+- Dagens kort markeres med mp-today; uge-navigationen er uændret.

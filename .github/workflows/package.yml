@@ -39,6 +39,7 @@ jobs:
           python3 tests/updater_contract.py
           php tests/tv_auto.php
           python3 tests/tv_portal_contract.py
+          python3 tests/week_layout_contract.py
       - name: Assemble versioned WordPress package
         shell: bash
         env:

@@ -41,17 +41,17 @@ function rows(){return (s.week.meals||[]).concat(s.next?s.next.meals:[]);}
 function episodes(){return (s.week.episodes||[]).concat(s.next?s.next.episodes:[]);}
 function meal(date,p){return rows().find(function(r){return r.meal_date===date&&Number(r.person)===p;});}
 function mealTitle(date,p,seen){seen=seen||[];if(seen.indexOf(p)>=0)return 'Ugyldig henvisning';var x=meal(date,p);if(!x)return 'Ikke planlagt';return x.mode==='same'?mealTitle(date,Number(x.source_person),seen.concat([p])):(x.title||'Ikke planlagt');}
-async function load(){var tasks=[api('week?start='+encodeURIComponent(s.start))];if(s.start===mon(cfg.today))tasks.push(api('week?start='+encodeURIComponent(add(s.start,7))));var list=await Promise.all(tasks);s.week=list[0];s.next=list[1]||null;}
+async function load(){s.week=await api('week?start='+encodeURIComponent(s.start));s.next=null;}
 async function week(){
 content.innerHTML=toolbar()+'<p>Henter planen…</p>';bindToolbar();
 try{await load();}catch(e){return fail(e);}
-var current=s.start===mon(cfg.today),focus=current?(dt(cfg.today).getUTCDay()+6)%7:0,limit=current?9:7;
+var current=s.start===mon(cfg.today),limit=7;
 var addText=s.module==='tv'?'+ Tilføj TV-program':'+ Tilføj aftensmad';
 var html=toolbar()+'<div class="mp-mobile-actions"><button type="button" id="mp-quick-add" class="mp-btn mp-btn-primary mp-add-primary">'+addText+'</button></div>'+
 '<p class="mp-help">'+(s.module==='tv'?'TVmaze-datoer er internationale/originale. Gule datoer er forventede, og dansk klokkeslæt er manuelt angivet.':'Hver dag har fire personrækker. Alle tidligere uger gemmes.')+'</p><div class="mp-days">';
 for(var i=0;i<limit;i++){
- var date=add(s.start,i),showPortrait=i>=focus&&i<focus+3;
- html+='<section class="mp-day '+(date===cfg.today?'mp-today ':'')+(!showPortrait?'mp-portrait-hide ':'')+(i>=7?'mp-landscape-hide':'')+'"><h4>'+esc(label(date))+(date===cfg.today?'<small>I dag</small>':'')+'</h4>';
+ var date=add(s.start,i);
+ html+='<section class="mp-day '+(date===cfg.today?'mp-today':'')+'" data-day="'+date+'"><h4>'+esc(label(date))+(date===cfg.today?'<small>I dag</small>':'')+'</h4>';
  if(s.module==='tv'){
   var dayEpisodes=episodes().filter(function(e){return e.date===date;});
   if(!dayEpisodes.length)html+='<p class="mp-help">Ingen afsnit</p>';
