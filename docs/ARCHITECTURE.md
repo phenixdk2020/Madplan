@@ -102,3 +102,13 @@ Senere: automatiske indkøb fra opskrifter, tilbud, dansk premieredatakilde, ske
 - Der foretages ikke automatisk aktivering af plugins, der var inaktive.
 - WP core's Plugin_Upgrader::deactivate_plugin_before_upgrade() står for deaktiveringen, ikke vores egen kode.
 - Isolerede PHP-tests i tests/updater_reactivation.php.
+
+
+## v0.1.10 – regionale streamingdatoer
+- Datoprioritet: aktuel sæsons familievalgte danske første dato → dokumenteret dansk udgivelseskalender → TVmaze originaldato.
+- Opt-in til ugentlig fremskrivning; kun særskilt bekræftede episodedatoer mærkes dk_confirmed.
+- Option mp_dk_schedules_v1 pr. lokalt show-id med season, first_date, weekly, changed_by, changed_at. Der ændres ikke i WP databasetabeller.
+- Sæsonovervågning bevares. Manuel DK-plan gælder kun den sæson, den blev angivet for.
+- REST POST /shows/{id}/dk-schedule med WordPress REST nonce og can_write.
+- En kurateret kilde til Marshals season 2 dokumenterer 9 og 30 oktober 2026 på danske SkyShowtime. Øvrige fredage er estimater.
+- Tests: tests/dk_schedule.php og tv_portal_contract.py.

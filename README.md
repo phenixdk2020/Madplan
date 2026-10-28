@@ -180,3 +180,24 @@ Temaer: eksisterende Default, Mørk, Skovgrøn, Lilla, Sand samt nye Havblå, Ro
 **Recovery for eksisterende installationer, der blev deaktiveret:** Åbn /wp-admin/plugins.php → Aktivér Hangar18 Madplan & TV-plan. Upload derefter ZIP v0.1.9 og vælg "Erstat eksisterende", eller installer via en opdateringsmetode, der garanterer aktivering. Undgå knappen "Opdater nu" fra ældre Hangar18-versioner, da buggen er i dem. Slet ikke pluginet og slet ikke data.
 
 **Test:** Isoleret PHP regression tester normal og multisite-aktivering, ikke-genaktivering af inaktive plugins, andres plugins, allerede aktiv, aktiveringsfejl og manglende pluginfil. Integration i WordPress-webhotel skal stadig testes.
+
+
+## v0.1.10 – danske streamingdatoer før TVmaze originaldatoer
+
+Fejl eksempel: Marshals sæson 2 udsendes oprindeligt om søndagen, men danske SkyShowtime har premierer om fredagen. SkyShowtime bekræfter fredag 9. oktober 2026 som dansk sæsonpremiere; den danske streamingkalender viser også nyt afsnit fredag 30. oktober 2026.
+
+- TV-guide vælger dansk udgivelsesdato **før** den oprindelige TVmaze-dato, når en dansk plan findes.
+- Indbygget dokumenteret undtagelse: **Marshals sæson 2 + SkyShowtime**: 9. oktober 2026, ugentlig fredag, med bekræftede specifikke datoer 9. oktober og 30. oktober. Andre fredage beregnes og mærkes **Forventet DK**; de påstås ikke individuelt bekræftet.
+- Watchlist viser status/kilde og link til SkyShowtime Danmark. Under **Ret dansk premieredag** kan en indlogget bruger angive en anden første dansk dato og vælge ugentlig rytme.
+- REST POST `/shows/{id}/dk-schedule` gemmer en familieangivet dato for **aktuel sæson**. Tom dato fjerner den manuelle overstyring. Overstyringer lagres i `mp_dk_schedules_v1` som WordPress option og påvirker hele familiens fælles TV-guide.
+- Manuelle rettelser overstyrer kuraterede kilder, og en gammel sæsons overstyring påvirker ikke automatisk næste sæson.
+- Der er klare markeringer: **Bekræftet DK** (konkret dokumenteret), **Forventet DK** (beregnet), **Angivet af familien**, **TVmaze-dato** og **Forventet originaldato**.
+- Oprindelige amerikanske premieredatoer vises stadig, når der ikke er en dansk kilde eller manuel overstyring.
+- Intet automatisk abonnement på SkyShowtime eller tredjeparter; koden foretager ikke uautoriserede API-kald til streamingtjenester. Dansk datadækning udvides med kildebelagte regler fremover.
+
+Kilder:
+- https://www.skyshowtime.com/dk/its-time-for/marshals-a-yellowstone-story
+- https://digitalt.tv/nyt-paa-skyshowtime-oktober-2026/
+- https://digitalt.tv/SkyShowtime/?wpv_paged=2&wpv_view_count=909221-CATTR97b879431a810c8fcbeb23adba90b4ae
+
+Test: `php tests/dk_schedule.php` verificerer, at fredag 30. oktober vinder over den amerikanske søndag, skelner mellem bekræftede og estimerede datoer, og at manuel sæson-korrektion har prioritet.

@@ -77,14 +77,28 @@ try{await load();}catch(e){return fail(e);}
 var current=s.start===mon(cfg.today),limit=7;
 var addText=s.module==='tv'?'+ Tilføj TV-program':'+ Tilføj aftensmad';
 var html=toolbar()+'<div class="mp-mobile-actions"><button type="button" id="mp-quick-add" class="mp-btn mp-btn-primary mp-add-primary">'+addText+'</button></div>'+
-'<p class="mp-help">'+(s.module==='tv'?'TVmaze-datoer er internationale/originale. Gule datoer er forventede, og dansk klokkeslæt er manuelt angivet.':'Hver dag har fire personrækker. Alle tidligere uger gemmes.')+'</p><div class="mp-days">';
+'<p class="mp-help">'+(s.module==='tv'?'Danske streamingdatoer prioriteres, når de er kendt. Andre datoer er originale TVmaze-datoer eller beregnede forventninger.':'Hver dag har fire personrækker. Alle tidligere uger gemmes.')+'</p><div class="mp-days">';
 for(var i=0;i<limit;i++){
  var date=add(s.start,i);
  html+='<section class="mp-day '+(date===cfg.today?'mp-today':'')+'" data-day="'+date+'"><h4>'+esc(label(date))+(date===cfg.today?'<small>I dag</small>':'')+'</h4>';
  if(s.module==='tv'){
   var dayEpisodes=episodes().filter(function(e){return e.date===date;});
   if(!dayEpisodes.length)html+='<p class="mp-help">Ingen afsnit</p>';
-  dayEpisodes.forEach(function(e){html+='<div class="mp-episode"><span class="mp-time">'+esc(e.time_label||'—')+'</span><div class="mp-episode-body"><strong>'+esc(e.show)+'</strong><small>S'+esc(e.season)+' · A'+esc(e.episode)+(e.episode_title?' · '+esc(e.episode_title):'')+'</small><small>'+esc(e.service||'Streaming ukendt')+'</small><span class="mp-tag '+(e.status==='estimated'?'mp-estimate':'')+'">'+(e.status==='estimated'?'Forventet':'TVmaze-dato')+'</span><small>'+esc(e.note)+'</small></div></div>';});
+  dayEpisodes.forEach(function(e){
+    var label={
+     dk_confirmed:'Bekræftet DK',dk_estimated:'Forventet DK',
+     dk_manual:'Angivet af familien',estimated:'Forventet originaldato',original:'TVmaze-dato'
+    }[e.status]||'Dato ikke verificeret';
+    var statusClass=(e.status==='estimated'||e.status==='dk_estimated')?'mp-estimate':
+      e.status==='dk_confirmed'?'mp-dk-confirmed':'';
+    html+='<div class="mp-episode"><span class="mp-time">'+esc(e.time_label||'—')+
+    '</span><div class="mp-episode-body"><strong>'+esc(e.show)+'</strong><small>S'+
+    esc(e.season)+' · A'+esc(e.episode)+(e.episode_title?' · '+esc(e.episode_title):'')+
+    '</small><small>'+esc(e.service||'Streaming ukendt')+'</small><span class="mp-tag '+
+    statusClass+'">'+esc(label)+'</span><small>'+esc(e.note)+'</small>'+
+    (e.source_url?'<small><a href="'+url(e.source_url)+'" target="_blank" rel="noopener noreferrer">Se dansk kilde</a></small>':'')+
+    '</div></div>';
+   });
  }else{
   s.week.people.forEach(function(name,n){var p=n+1,x=meal(date,p);html+='<div class="mp-person"><strong>'+esc(name)+'</strong><span class="mp-meal-label">'+esc(mealTitle(date,p))+'</span>'+(x&&x.mode==='same'?'<span class="mp-same-as">Samme som '+esc(s.week.people[Number(x.source_person)-1])+'</span>':'')+'</div>';});
   if(cfg.canEdit)html+='<button type="button" class="mp-btn edit-day" data-date="'+date+'">+ Tilføj / rediger</button>';
@@ -188,8 +202,21 @@ var w=x.monitor||{},state=w.state||'monitoring';
  '<small>'+esc(origin)+'</small>'+
  (w.first_air_date?'<small>Original sæsonpremiere: '+esc(w.first_air_date)+'</small>':'')+
  (w.next_air_date?'<small>Næste registrerede originaldato: '+esc(w.next_air_date)+'</small>':'')+
- '<small class="mp-help">Overvåges fortsat automatisk. TVmaze bekræfter ikke dansk streamingpremiere.</small></div>';
+ (x.dk_schedule?
+ '<span class="mp-watch-status">'+esc(x.dk_schedule.source_label)+'</span>'+
+ '<small>Dansk første dato: '+esc(x.dk_schedule.first_date)+(x.dk_schedule.weekly?' · ugentlig':'')+'</small>'+
+ (x.dk_schedule.source_url?'<small><a target="_blank" rel="noopener noreferrer" href="'+url(x.dk_schedule.source_url)+'">Se dansk premiere-kilde</a></small>':''):
+ '<small class="mp-help">Dansk premieredato endnu ikke bekræftet. TVmaze viser original udsendelse.</small>')+
+ '<small class="mp-help">Serien bliver fortsat overvåget for nye sæsoner.</small></div>';
  if(cfg.canEdit)html+='<div class="mp-show-actions"><button class="mp-btn sync-show" data-id="'+x.id+'" type="button">Tjek nu</button>'+
+ '<details class="mp-dk-edit"><summary>Ret dansk premieredag</summary>'+
+ '<form class="mp-dk-form" data-id="'+x.id+'"><label>Første danske premieredato'+
+ '<input type="date" class="mp-dk-first" value="'+esc(x.dk_schedule?x.dk_schedule.first_date:'')+'"></label>'+
+ '<label><input type="checkbox" class="mp-dk-weekly" '+(x.dk_schedule&&x.dk_schedule.weekly?'checked':'')+
+ '> Nyt afsnit hver uge</label>'+
+ '<button type="submit" class="mp-btn mp-btn-primary">Gem dansk plan</button>'+
+ '<small>En manuel dato overstyrer TVmaze. Lad dato stå tom for at bruge den oprindelige eller dokumenterede plan igen.</small>'+
+ '</form></details>'+
  (cfg.admin?'<button class="mp-btn remove-show" data-id="'+x.id+'" type="button">Fjern</button>':'')+'</div>';
  html+='</div>';
 });
@@ -203,6 +230,21 @@ content.querySelectorAll('.sync-show').forEach(function(b){b.onclick=async funct
  'Overvågningen er opdateret – serien bliver på watchlisten.');
 }catch(e){fail(e);}
 };});
+content.querySelectorAll('.mp-dk-form').forEach(function(form){
+ form.onsubmit=async function(ev){
+  ev.preventDefault();
+  var date=form.querySelector('.mp-dk-first').value;
+  var weekly=form.querySelector('.mp-dk-weekly').checked;
+  var btn=form.querySelector('button[type="submit"]');
+  btn.disabled=true;
+  try{
+   await api('shows/'+encodeURIComponent(form.dataset.id)+'/dk-schedule','POST',{
+    first_date:date,weekly:weekly
+   });
+   await watch();msg(date?'Dansk streamingplan gemt for denne sæson.':'Manuel overstyring nulstillet.');
+  }catch(e){fail(e);btn.disabled=false;}
+ };
+});
 content.querySelectorAll('.remove-show').forEach(function(b){b.onclick=async function(){
  if(!window.confirm('Fjern serien fra den fælles watchlist?'))return;
  try{await api('shows/'+b.dataset.id,'DELETE');await watch();msg('Serie fjernet.');}catch(e){fail(e);}

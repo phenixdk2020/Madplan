@@ -313,9 +313,122 @@ final class MP_TVmaze {
             $state=$states[(string)$show['id']]??[];
             $show['monitor']=is_array($state)?$state:[];
             $show['watching']=true;
+            $show['dk_schedule']=self::dk_schedule($show);
         }
         unset($show);
         return $list;
+    }
+
+    /**
+     * Danish release calendars take precedence over original TVmaze airdates.
+     * A verified dated listing is distinct from extrapolating a weekly pattern.
+     * The bundled curated entry is season-specific, source-cited and can be
+     * superseded by a per-show manual correction at any time.
+     */
+    public static function dk_schedule(array $show): ?array {
+        $season = (int)($show['season'] ?? 0);
+        $id = (string)($show['id'] ?? '');
+        $saved = get_option('mp_dk_schedules_v1', []);
+        if (is_array($saved) && isset($saved[$id]) &&
+            is_array($saved[$id]) && (int)($saved[$id]['season'] ?? 0) === $season) {
+            $entry = $saved[$id];
+            $date=(string)($entry['first_date'] ?? '');
+            $dt=DateTimeImmutable::createFromFormat('!Y-m-d',$date,new DateTimeZone('UTC'));
+            if ($dt !== false && $dt->format('Y-m-d') === $date) {
+                return [
+                    'first_date'=>$date, 'weekly'=>!empty($entry['weekly']),
+                    'source_type'=>'manual',
+                    'source_label'=>'Familien har angivet dansk premieredato',
+                    'source_url'=>'', 'confirmed_dates'=>[],
+                ];
+            }
+        }
+        $title=trim((string)($show['title'] ?? ''));
+        $service=strtolower(trim((string)($show['service'] ?? '')));
+        // Danish SkyShowtime official launch 9 Oct 2026; independent calendar
+        // confirms a new episode Friday 30 Oct 2026. Not a generic Sunday shift.
+        if ($season === 2 && $service === 'skyshowtime' &&
+            preg_match('/^marshals(?:: a yellowstone story)?$/iu',$title)) {
+            return [
+                'first_date'=>'2026-10-09', 'weekly'=>true,
+                'source_type'=>'verified',
+                'source_label'=>'SkyShowtime Danmark · sæson 2 · ugentlige fredage',
+                'source_url'=>'https://www.skyshowtime.com/dk/its-time-for/marshals-a-yellowstone-story',
+                'confirmed_dates'=>[1=>'2026-10-09',4=>'2026-10-30'],
+            ];
+        }
+        return null;
+    }
+
+    public static function set_dk_schedule(int $show_id, string $date, bool $weekly): array|WP_Error {
+        global $wpdb;
+        $table=MP_Storage::table('shows');
+        $show=$wpdb->get_row($wpdb->prepare("SELECT id,season,title,service FROM $table WHERE id=%d AND active=1",$show_id),ARRAY_A);
+        if (!$show) {
+            return new WP_Error('mp_show_missing','Serien findes ikke på watchlisten.',['status'=>404]);
+        }
+        $all=get_option('mp_dk_schedules_v1',[]);
+        if (!is_array($all)) { $all=[]; }
+        $key=(string)$show_id;
+        if ($date === '') {
+            unset($all[$key]); // Re-enable sourced DK schedule or original TVmaze.
+            update_option('mp_dk_schedules_v1',$all,false);
+            return ['saved'=>true,'schedule'=>self::dk_schedule($show)];
+        }
+        $parsed=DateTimeImmutable::createFromFormat('!Y-m-d',$date,new DateTimeZone('UTC'));
+        if (!$parsed || $parsed->format('Y-m-d')!==$date) {
+            return new WP_Error('mp_bad_dk_date','Vælg en gyldig premieredato.',['status'=>400]);
+        }
+        $all[$key]=[
+            'season'=>(int)$show['season'],'first_date'=>$date,
+            'weekly'=>$weekly,'changed_by'=>get_current_user_id(),
+            'changed_at'=>gmdate('c'),
+        ];
+        update_option('mp_dk_schedules_v1',$all,false);
+        return ['saved'=>true,'schedule'=>self::dk_schedule($show)];
+    }
+
+    /**
+     * Resolve the date for an episode. If we have a DK release pattern, it
+     * always wins over US/original air dates. Only explicitly documented DK
+     * dates are labelled confirmed; weekly extrapolations are estimated.
+     */
+    public static function episode_date(array $show, int $episode_number, ?array $episode, ?array $dk): array {
+        if ($dk !== null && !empty($dk['first_date'])) {
+            $first=DateTimeImmutable::createFromFormat('!Y-m-d',(string)$dk['first_date'],new DateTimeZone('UTC'));
+            if ($first) {
+                $exact=(string)($dk['confirmed_dates'][$episode_number] ?? '');
+                if ($exact !== '') {
+                    return ['date'=>$exact,'status'=>'dk_confirmed',
+                        'note'=>'Bekræftet dato for dansk streaming. Kilde: '.$dk['source_label']];
+                }
+                if (!empty($dk['weekly'])) {
+                    $date=$first->modify('+'.(($episode_number-1)*7).' days')->format('Y-m-d');
+                    return ['date'=>$date,'status'=>'dk_estimated',
+                        'note'=>'Forventet dansk streamingdato ud fra ugentlig rytme. '.$dk['source_label']];
+                }
+                if ($episode_number===1) {
+                    return ['date'=>$first->format('Y-m-d'),
+                        'status'=>$dk['source_type']==='verified'?'dk_confirmed':'dk_manual',
+                        'note'=>$dk['source_label']];
+                }
+                // Do not mix original dates with a DK one-time premiere.
+                return ['date'=>'','status'=>'unknown','note'=>'Dansk dato for dette afsnit er endnu ikke kendt'];
+            }
+        }
+        $date=(string)($episode['air_date'] ?? '');
+        $status='original';
+        if ($date==='' && (int)($show['weekly'] ?? 0)===1 && !empty($show['first_air_date'])) {
+            $first=DateTimeImmutable::createFromFormat('!Y-m-d',(string)$show['first_air_date'],new DateTimeZone('UTC'));
+            if ($first) {
+                $date=$first->modify('+'.(($episode_number-1)*7).' days')->format('Y-m-d');
+                $status='estimated';
+            }
+        }
+        return ['date'=>$date,'status'=>$status,
+            'note'=>$status==='estimated'
+                ?'Beregnet originaldato – dansk streaming ikke bekræftet'
+                :'TVmaze: international/original dato – dansk streaming ikke bekræftet'];
     }
 
     public static function schedule(string $start, string $end): array {
@@ -332,27 +445,23 @@ final class MP_TVmaze {
                 $n = (int)$episode['episode_no'];
                 $known[$n] = $episode;
             }
-            $count = (int)$show['season_total'];
-            // If the user has not configured a total, only schedule explicitly known episodes.
-            $count = $count > 0 ? min($count, 200) : max(array_keys($known ?: [0=>null]));
-            for ($n = 1; $n <= $count; $n++) {
-                $episode = $known[$n] ?? null;
-                $date = $episode['air_date'] ?? null;
-                $status = 'original';
-                if (!$date && (int)$show['weekly'] === 1 && $show['first_air_date']) {
-                    try {
-                        $anchor = new DateTimeImmutable($show['first_air_date'], new DateTimeZone('UTC'));
-                        $date = $anchor->modify('+' . (($n - 1) * 7) . ' days')->format('Y-m-d');
-                        $status = 'estimated';
-                    } catch (Exception $e) { $date = null; }
-                }
-                if (!$date || $date < $start || $date > $end) { continue; }
-                $out[] = [
-                    'date'=>$date, 'show_id'=>(int)$show['id'], 'show'=>$show['title'],
-                    'service'=>$show['service'], 'season'=>(int)$show['season'], 'episode'=>$n,
+            $dk=self::dk_schedule($show);
+            $count=(int)$show['season_total'];
+            $count=$count>0?min($count,200):max(array_keys($known ?: [0=>null]));
+            // For a verified Danish release weekly we can display episodes
+            // only within a known total, avoiding fabricated episode counts.
+            for ($n=1; $n<=$count; $n++) {
+                $episode=$known[$n]??null;
+                $resolved=self::episode_date($show,$n,$episode,$dk);
+                $date=$resolved['date'];
+                if ($date==='' || $date<$start || $date>$end) { continue; }
+                $out[]=[
+                    'date'=>$date,'show_id'=>(int)$show['id'],'show'=>$show['title'],
+                    'service'=>$show['service'],'season'=>(int)$show['season'],'episode'=>$n,
                     'episode_title'=>(string)($episode['title'] ?? ''),
-                    'status'=>$status, 'time_label'=>$show['time_label'],
-                    'note'=>$status === 'estimated' ? 'Beregnet ugentlig dato – ikke bekræftet' : 'TVmaze: oprindelig/international dato – dansk premiere ikke bekræftet',
+                    'status'=>$resolved['status'],'time_label'=>in_array($resolved['status'],['original','estimated'],true)?$show['time_label']:'',
+                    'note'=>$resolved['note'],
+                    'source_url'=>$dk['source_url']??'',
                 ];
             }
         }

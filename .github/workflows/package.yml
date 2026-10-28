@@ -39,6 +39,7 @@ jobs:
           python3 tests/updater_contract.py
           php tests/updater_reactivation.php
           php tests/tv_auto.php
+          php tests/dk_schedule.php
           python3 tests/tv_portal_contract.py
           python3 tests/week_layout_contract.py
           php tests/theme_user_meta.php

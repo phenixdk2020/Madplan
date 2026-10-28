@@ -43,6 +43,7 @@ final class MP_REST {
         self::route('/shows', 'POST', 'create_show', true);
         self::route('/shows/(?P<id>\d+)', 'DELETE', 'delete_show', true, true);
         self::route('/shows/(?P<id>\d+)/sync', 'POST', 'sync_show', true);
+        self::route('/shows/(?P<id>\d+)/dk-schedule', 'POST', 'save_danish_schedule', true);
         self::route('/shopping', 'GET', 'shopping');
         self::route('/shopping', 'POST', 'add_shopping');
         self::route('/shopping/(?P<id>\d+)', 'POST', 'toggle_shopping');
@@ -180,9 +181,20 @@ final class MP_REST {
             unset($states[(string)$id]);
             update_option('mp_watch_monitor_v1',$states,false);
         }
+        $dk=get_option('mp_dk_schedules_v1',[]);
+        if (is_array($dk) && isset($dk[(string)$id])) {
+            unset($dk[(string)$id]);
+            update_option('mp_dk_schedules_v1',$dk,false);
+        }
         return ['deleted'=>true];
     }
     public static function sync_show(WP_REST_Request $r) { return MP_TVmaze::sync_one(absint($r['id'])); }
+    public static function save_danish_schedule(WP_REST_Request $r) {
+        $id=absint($r['id']);
+        $date=sanitize_text_field((string)$r->get_param('first_date'));
+        $weekly=rest_sanitize_boolean($r->get_param('weekly'));
+        return MP_TVmaze::set_dk_schedule($id,$date,$weekly);
+    }
     public static function shopping() {
         global $wpdb;
         $table = MP_Storage::table('shopping');

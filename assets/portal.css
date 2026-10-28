@@ -214,3 +214,15 @@ body.mp-full-page.mp-theme-burgundy{background:#f9f0f3;color:#41212c}
 .mp-portal .mp-watch-status.mp-watch-new{background:#d5f4e1;color:#1d613a}
 .mp-portal .mp-show>div:first-child{flex:1;min-width:0}
 @media(max-width:600px){.mp-portal .mp-show{flex-direction:column}.mp-portal .mp-show-actions{justify-content:flex-start}}
+
+/* v0.1.10: per-season Danish streaming schedule and source labels */
+.mp-portal .mp-tag.mp-dk-confirmed{background:#d9f5e7;color:#156844;font-weight:750}
+.mp-portal[data-mp-theme="dark"] .mp-tag.mp-dk-confirmed{background:#174733;color:#b4f6d1}
+.mp-portal .mp-dk-edit{min-width:195px;max-width:290px;padding:6px 8px;border:1px solid var(--mp-line);border-radius:9px}
+.mp-portal .mp-dk-edit summary{cursor:pointer;font-size:12px;font-weight:700;min-height:30px;display:flex;align-items:center}
+.mp-portal .mp-dk-form{display:grid;gap:11px;margin-top:9px}
+.mp-portal .mp-dk-form label{display:grid;gap:5px;font-size:13px}
+.mp-portal .mp-dk-form input[type=date]{width:100%;font-size:16px;min-height:44px;border:1px solid var(--mp-line);border-radius:8px;padding:6px;background:var(--mp-card);color:var(--mp-ink)}
+.mp-portal .mp-dk-form label:has(input[type=checkbox]){display:flex;align-items:center;gap:6px}
+.mp-portal .mp-dk-form small{color:var(--mp-muted);font-size:11px;line-height:1.4}
+@media(max-width:650px){.mp-portal .mp-dk-edit{max-width:none;width:100%}.mp-portal .mp-dk-form button{min-height:48px}}

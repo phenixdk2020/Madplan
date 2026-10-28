@@ -18,6 +18,11 @@ for src,needle in [
  (js,"function backToMenu()"),
  (js,"root.querySelector('#mp-back-bottom').onclick=backToMenu"),
  (js,"tv-details?id="),
+ (rest,"'/dk-schedule'"),
+ (tv,"function dk_schedule("),
+ (tv,"function episode_date("),
+ (js,"mp-dk-form"),
+ (js,"dk_confirmed"),
  (js,"find-series"),
  (js,"session"),  # session identity is WordPress-controlled; checked below
  (js,"setSeason()"),
