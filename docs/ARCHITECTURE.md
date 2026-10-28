@@ -43,3 +43,13 @@ Alle læseendpoints kræver login, admin kræves til redigering af madplan/watch
 Inden produktion: WordPress staging, PHP-lint, gæsteadgang til REST, test af person-cyklus, årsskifte/uge 53, portrait/landscape, TVmaze timeout, serie med batch-udgivelse, mediegalleri samt backup og genaktivering.
 
 Senere: automatiske indkøb fra opskrifter, tilbud, dansk premieredatakilde, skema-migrationer, sikker GitHub-updater og rollback.
+
+
+## 0.1.3: Mobil-redigering og adgang
+- REST can_read/can_write: loggede WordPress-brugere.
+- REST can_manage: WordPress-administrator.
+- POST meal, POST shows og tv-search for loggede brugere. DELETE shows og DELETE shopping kun admin.
+- Frontend canEdit for redigering og admin til sletning/WordPress-opskrifter.
+- "+ Tilføj TV-program" på TV-ugeplanen går til watchlist-søgning.
+- "+ Tilføj aftensmad" åbner dagen med fire personer.
+- QA: test både admin og subscriber med login, REST nonce, add show, add meal og denied DELETE.

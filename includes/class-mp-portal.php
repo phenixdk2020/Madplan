@@ -19,6 +19,7 @@ final class MP_Portal {
                 'nonce'=>wp_create_nonce('wp_rest'),
                 'today'=>current_datetime()->format('Y-m-d'),
                 'admin'=>current_user_can('manage_options'),
+                'canEdit'=>is_user_logged_in(),
                 'recipesAdmin'=>admin_url('edit.php?post_type=mp_recipe'),
                 'recipeCreate'=>admin_url('post-new.php?post_type=mp_recipe'),
             ]) . ';', 'before');
@@ -50,8 +51,8 @@ final class MP_Portal {
           <div class="mp-home" id="mp-home">
             <p class="mp-intro">Hvad vil du se?</p>
             <div class="mp-home-cards">
-              <button type="button" class="mp-home-card" data-module="tv"><span class="mp-emoji" aria-hidden="true">📺</span><strong>TV-ugeplan</strong><span>Ugeplan og watchlist</span></button>
-              <button type="button" class="mp-home-card" data-module="food"><span class="mp-emoji" aria-hidden="true">🍽️</span><strong>Madplan</strong><span>Aftensmad, opskrifter og indkøb</span></button>
+              <button type="button" class="mp-home-card" data-module="tv"><span class="mp-emoji" aria-hidden="true">📺</span><strong>TV-guide</strong><span>Se ugeplan og tilføj programmer</span></button>
+              <button type="button" class="mp-home-card" data-module="food"><span class="mp-emoji" aria-hidden="true">🍽️</span><strong>Madplan</strong><span>Tilføj aftensmad til de fire personer</span></button>
             </div>
           </div>
           <div class="mp-main" id="mp-main" hidden>

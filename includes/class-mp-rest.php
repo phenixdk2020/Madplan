@@ -5,11 +5,13 @@ if (!defined('ABSPATH')) { exit; }
 final class MP_REST {
     private const NS = 'hangar18/v1';
     public static function can_read(): bool { return is_user_logged_in(); }
-    public static function can_write(): bool { return current_user_can('manage_options'); }
-    private static function route(string $path, string $method, string $callback, bool $write = false): void {
+    // Every logged-in family member may edit the shared meal plan and add shows.
+    public static function can_write(): bool { return is_user_logged_in(); }
+    public static function can_manage(): bool { return current_user_can('manage_options'); }
+    private static function route(string $path, string $method, string $callback, bool $write = false, bool $admin_only = false): void {
         register_rest_route(self::NS, $path, [
             'methods'=>$method, 'callback'=>[self::class, $callback],
-            'permission_callback'=>[self::class, $write ? 'can_write' : 'can_read'],
+            'permission_callback'=>[self::class, $admin_only ? 'can_manage' : ($write ? 'can_write' : 'can_read')],
         ]);
     }
     public static function register(): void {
@@ -20,12 +22,12 @@ final class MP_REST {
         self::route('/tv-search', 'GET', 'tv_search', true);
         self::route('/meal', 'POST', 'save_meal', true);
         self::route('/shows', 'POST', 'create_show', true);
-        self::route('/shows/(?P<id>\d+)', 'DELETE', 'delete_show', true);
+        self::route('/shows/(?P<id>\d+)', 'DELETE', 'delete_show', true, true);
         self::route('/shows/(?P<id>\d+)/sync', 'POST', 'sync_show', true);
         self::route('/shopping', 'GET', 'shopping');
         self::route('/shopping', 'POST', 'add_shopping');
         self::route('/shopping/(?P<id>\d+)', 'POST', 'toggle_shopping');
-        self::route('/shopping/(?P<id>\d+)', 'DELETE', 'delete_shopping', true);
+        self::route('/shopping/(?P<id>\d+)', 'DELETE', 'delete_shopping', true, true);
     }
     private static function valid_date(string $date): bool {
         $dt = DateTimeImmutable::createFromFormat('!Y-m-d', $date);

@@ -23,3 +23,14 @@
 @media(min-width:740px){.mp-home-cards{gap:22px}.mp-home-card{min-height:200px;padding:25px}.mp-form-row{grid-template-columns:repeat(2,1fr)}.mp-recipes{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(orientation:landscape) and (min-width:520px),(min-width:960px){.mp-days{grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}.mp-day{padding:8px}.mp-day h4{font-size:11px;display:block}.mp-day h4 small{display:block}.mp-day.mp-portrait-hide{display:block}.mp-day.mp-landscape-hide{display:none}.mp-person{gap:4px;padding:7px 0}.mp-person strong,.mp-person .mp-meal-label,.mp-episode-body strong{font-size:11px}.mp-time{font-size:10px;min-width:unset}.mp-episode{display:block}.mp-episode-body small{font-size:10px}.mp-edit-controls input,.mp-edit-controls select{font-size:11px;padding:5px}.mp-edit-controls button{font-size:10px;padding:6px}.mp-tag{font-size:9px}}
 @media(max-width:420px){.mp-welcome{display:none}.mp-home-card strong{font-size:16px}.mp-home-card{padding:13px;min-height:160px}.mp-shopping-form{grid-template-columns:1fr 75px}.mp-shopping-form button{grid-column:1/-1}}
+
+/* v0.1.3: touch-first editing of shared schedules on mobile. */
+.mp-mobile-actions{display:flex;margin:2px 0 12px;gap:10px}
+.mp-mobile-actions .mp-add-primary{width:100%;font-size:16px;font-weight:700;min-height:50px}
+.mp-edit-person .mp-edit-controls{width:100%}
+.mp-edit-person .own{display:grid;gap:8px;width:100%}
+.mp-edit-person .own[hidden]{display:none}
+.mp-edit-person .meal-name,.mp-edit-person .recipe{width:100%}
+.mp-portal .mp-btn,.mp-portal .mp-tab,.mp-portal .mp-result,.mp-portal .mp-home-card{min-height:44px;touch-action:manipulation}
+.mp-portal .mp-field input,.mp-portal .mp-edit-controls input,.mp-portal .mp-edit-controls select,.mp-portal .mp-shopping-form input{font-size:16px}
+@media(max-width:739px){.mp-portal .mp-edit-person{padding:14px 0}.mp-portal .mp-edit-person strong{font-size:15px}.mp-portal #save-meals{width:100%;min-height:50px;font-weight:700}.mp-portal .mp-result{min-height:52px}}

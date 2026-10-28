@@ -3,7 +3,7 @@
 WordPress-plugin med mobil-first familieportal og desktop-orienteret opskriftseditor.
 Repository: https://github.com/phenixdk2020/Madplan
 
-## Version 0.1.2 — første testversion
+## Version 0.1.3 — første testversion
 
 - WordPress-login med Husk mig, ingen egen passwordopbevaring.
 - Én fælles TV-ugeplan/watchlist og én madplan for alle loggede brugere.
@@ -27,7 +27,7 @@ Repository: https://github.com/phenixdk2020/Madplan
 
 ## Adgang
 
-Alle loggede brugere kan se fælles TV-plan, madplan og opskrifter samt tilføje/afkrydse varer. Administratorer kan redigere madplaner, watchlist og opskrifter. WordPress står for adgangskoder og login-session. HTTPS og bypass af offentlig side-cache er påkrævet.
+Alle loggede brugere kan se og redigere den fælles madplan, tilføje TV-serier til watchlisten og tilføje/afkrydse varer. Administratorer kan desuden slette TV-serier, administrere personnavne og oprette opskrifter. WordPress står for adgangskoder og login-session. HTTPS og bypass af offentlig side-cache er påkrævet.
 
 ## TV-datoer
 
@@ -36,7 +36,7 @@ TVmaze leverer oprindelige/internationale udsendelsesdatoer, ikke verificerede d
 TVmaze: https://www.tvmaze.com/api
 TV-opdateringer bruger daglig WP-Cron, som kræver sitebesøg eller serverbaseret cron.
 
-## Ikke færdigt i 0.1.2
+## Ikke færdigt i 0.1.3
 
 - Automatisk indkøbsliste baseret på opskrifter/portioner
 - Danske verificerede streamingpremierer og streamingklokkeslæt
@@ -62,12 +62,12 @@ define('MP_BACKUP_DIR', '/home/ACCOUNT/private-backups/madplan');
 
 Vælg en reel, privat sti — ikke en mappe under `public_html`, `www`, `wp-content` eller en anden webtilgængelig mappe. Kan checkpointet ikke oprettes, **stoppes opdateringen**. Kræver PHP ZipArchive. Tag separat backup af WordPress-databasen og mediebiblioteket før produktionsinstallation.
 
-**Bootstrap:** Hvis 0.1.0 er installeret, kræver overgangen til 0.1.2 en sidste manuel ZIP-installation. Alle efterfølgende publicerede versioner kan opdateres via Hangar18 → Opdateringer. Udviklingsversioner fra GitHub Actions er ikke automatisk en del af update-kanalen, før GitHub Actions har publiceret `update.json` og `dist/` på `main`.
+**Bootstrap:** Hvis 0.1.0 er installeret, kræver overgangen til 0.1.3 en sidste manuel ZIP-installation. Alle efterfølgende publicerede versioner kan opdateres via Hangar18 → Opdateringer. Udviklingsversioner fra GitHub Actions er ikke automatisk en del af update-kanalen, før GitHub Actions har publiceret `update.json` og `dist/` på `main`.
 
 
-## 0.1.2 – forside, TV-guide og opdateringsdiagnose
+## 0.1.3 – forside, TV-guide og opdateringsdiagnose
 
-**Vigtigt ved eksisterende installation:** Første besøg efter installation/opgradering til 0.1.2 finder/opretter siden Familieplan og gør den til **statisk forside**. Den tidligere indstilling for blog/statisk forside gemmes til senere gendannelse. Andre eksisterende sider/indlæg slettes ikke. Hvis /familieplan/ allerede eksisterer med andet indhold, oprettes i stedet en separat side under /hangar18-familieplan/. 
+**Vigtigt ved eksisterende installation:** Første besøg efter installation/opgradering til 0.1.3 finder/opretter siden Familieplan og gør den til **statisk forside**. Den tidligere indstilling for blog/statisk forside gemmes til senere gendannelse. Andre eksisterende sider/indlæg slettes ikke. Hvis /familieplan/ allerede eksisterer med andet indhold, oprettes i stedet en separat side under /hangar18-familieplan/. 
 
 Den nye forsideskabelon viser kun Hangar18-appen (ikke WordPress-temaets header, men med WordPress' scripts og hooks). Start på https://hangar18.dk/ og log ind med din almindelige WordPress-bruger.
 
@@ -81,6 +81,19 @@ Den nye forsideskabelon viser kun Hangar18-appen (ikke WordPress-temaets header,
 
 TV-ugen er **tom**, indtil der er tilføjet en serie i watchlisten. TVmaze-datoer er oprindelige/internationale, ikke bekræftede danske premieredatoer eller klokkeslæt.
 
-**Opdateringer:** Version 0.1.2 inkluderer WordPress' native Update URI-hook, opdateringsknap samt "Test backup og rettigheder" under Hangar18 → Opdateringer. Resultater og fejlmeddelelser vises på siden. Hvis hosting blokerer private backups eller GitHub-HTTPS, kan WordPress-opdateringen ikke gennemføres. Manuel ZIP-installation/erstatning er en engangs-fallback for overgang fra 0.1.1.
+**Opdateringer:** Version 0.1.3 inkluderer WordPress' native Update URI-hook, opdateringsknap samt "Test backup og rettigheder" under Hangar18 → Opdateringer. Resultater og fejlmeddelelser vises på siden. Hvis hosting blokerer private backups eller GitHub-HTTPS, kan WordPress-opdateringen ikke gennemføres. Manuel ZIP-installation/erstatning er en engangs-fallback for overgang fra 0.1.1.
 
 **Gendan tidligere forside:** Hangar18 → Oversigt → Gendan tidligere WordPress-forside. Opskrifter og madplan-data påvirkes ikke.
+
+
+## 0.1.3 – mobiloprettelse af TV-programmer og aftensmad
+
+Efter login er hovedmenuen TV-guide og Madplan. På mobil kan **alle loggede brugere**:
+- Trykke **TV-guide → + Tilføj TV-program**. Søg efter en serie på TVmaze, vælg sæson, antal afsnit, første forventede dato og streamingtjeneste, og tilføj til den fælles watchlist.
+- Trykke **Madplan → + Tilføj aftensmad** for at redigere dagens fire personrækker, eller **+ Tilføj / rediger** ved en anden dag.
+- Vælge en ret for hver person eller "Samme som person 1, 2, 3 eller 4".
+- Se den fælles indkøbsliste og sætte flueben ved købte varer.
+
+Sletning af en TV-serie fra watchlisten og oprettelse/redigering af opskrifter i WordPress-administrationen forbeholdes administratorer. Alle kalenderdata deles mellem brugerne; historik bevares.
+
+Mobilvisningen bruger store knapper og iPhone-venlige tekstfelter. Ingen ekstra API-abonnementer.

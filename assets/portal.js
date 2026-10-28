@@ -40,7 +40,9 @@ async function week(){
 content.innerHTML=toolbar()+'<p>Henter planen…</p>';bindToolbar();
 try{await load();}catch(e){return fail(e);}
 var current=s.start===mon(cfg.today),focus=current?(dt(cfg.today).getUTCDay()+6)%7:0,limit=current?9:7;
-var html=toolbar()+'<p class="mp-help">'+(s.module==='tv'?'TVmaze-datoer er internationale/originale. Gule datoer er forventede, og dansk klokkeslæt er manuelt angivet.':'Hver dag har fire personrækker. Alle tidligere uger gemmes.')+'</p><div class="mp-days">';
+var addText=s.module==='tv'?'+ Tilføj TV-program':'+ Tilføj aftensmad';
+var html=toolbar()+'<div class="mp-mobile-actions"><button type="button" id="mp-quick-add" class="mp-btn mp-btn-primary mp-add-primary">'+addText+'</button></div>'+
+'<p class="mp-help">'+(s.module==='tv'?'TVmaze-datoer er internationale/originale. Gule datoer er forventede, og dansk klokkeslæt er manuelt angivet.':'Hver dag har fire personrækker. Alle tidligere uger gemmes.')+'</p><div class="mp-days">';
 for(var i=0;i<limit;i++){
  var date=add(s.start,i),showPortrait=i>=focus&&i<focus+3;
  html+='<section class="mp-day '+(date===cfg.today?'mp-today ':'')+(!showPortrait?'mp-portrait-hide ':'')+(i>=7?'mp-landscape-hide':'')+'"><h4>'+esc(label(date))+(date===cfg.today?'<small>I dag</small>':'')+'</h4>';
@@ -50,11 +52,16 @@ for(var i=0;i<limit;i++){
   dayEpisodes.forEach(function(e){html+='<div class="mp-episode"><span class="mp-time">'+esc(e.time_label||'—')+'</span><div class="mp-episode-body"><strong>'+esc(e.show)+'</strong><small>S'+esc(e.season)+' · A'+esc(e.episode)+(e.episode_title?' · '+esc(e.episode_title):'')+'</small><small>'+esc(e.service||'Streaming ukendt')+'</small><span class="mp-tag '+(e.status==='estimated'?'mp-estimate':'')+'">'+(e.status==='estimated'?'Forventet':'TVmaze-dato')+'</span><small>'+esc(e.note)+'</small></div></div>';});
  }else{
   s.week.people.forEach(function(name,n){var p=n+1,x=meal(date,p);html+='<div class="mp-person"><strong>'+esc(name)+'</strong><span class="mp-meal-label">'+esc(mealTitle(date,p))+'</span>'+(x&&x.mode==='same'?'<span class="mp-same-as">Samme som '+esc(s.week.people[Number(x.source_person)-1])+'</span>':'')+'</div>';});
-  if(cfg.admin)html+='<button type="button" class="mp-btn edit-day" data-date="'+date+'">Rediger</button>';
+  if(cfg.canEdit)html+='<button type="button" class="mp-btn edit-day" data-date="'+date+'">+ Tilføj / rediger</button>';
  }
  html+='</section>';
 }
-content.innerHTML=html+'</div>';bindToolbar();content.querySelectorAll('.edit-day').forEach(function(b){b.onclick=function(){editDay(b.dataset.date);};});
+content.innerHTML=html+'</div>';bindToolbar();
+content.querySelector('#mp-quick-add').onclick=function(){
+ if(s.module==='tv') { setTab('watch'); }
+ else { editDay(current?cfg.today:s.start); }
+};
+content.querySelectorAll('.edit-day').forEach(function(b){b.onclick=function(){editDay(b.dataset.date);};});
 }
 async function getRecipes(){if(s.recipes===null)s.recipes=await api('recipes');return s.recipes;}
 async function editDay(date){
@@ -86,11 +93,16 @@ var html='<div class="mp-card"><h3>Fælles watchlist</h3>';
 if(!items.length)html+='<p>Der er endnu ingen serier.</p>';
 items.forEach(function(x){html+='<div class="mp-show"><div><strong>'+esc(x.title)+'</strong><small>'+esc(x.service||'Streaming ukendt')+' · Sæson '+esc(x.season)+' · '+(Number(x.season_total)||'?')+' afsnit</small><small>'+(Number(x.weekly)?'Ugentlig beregning':'Kun kendte afsnitsdatoer')+'</small></div>'+(cfg.admin?'<div class="mp-show-actions"><button class="mp-btn sync-show" data-id="'+x.id+'">Opdater</button><button class="mp-btn remove-show" data-id="'+x.id+'">Fjern</button></div>':'')+'</div>';});
 html+='</div>';
-if(cfg.admin)html+='<div class="mp-card"><h3>Tilføj serie</h3><div class="mp-field"><label>Søg på TVmaze</label><input id="search-term" placeholder="Seriens navn"></div><button type="button" class="mp-btn" id="search-shows">Søg</button><div id="show-results"></div><form id="show-form" hidden><p><strong id="selected-show"></strong></p><input type="hidden" id="show-id"><div class="mp-form-row"><label class="mp-field">Streaming i Danmark (manuel)<input id="service" placeholder="Netflix"></label><label class="mp-field">Sæson<input id="season" type="number" min="1" max="100" value="1"></label><label class="mp-field">Antal afsnit<input id="total" type="number" min="0" max="200" value="0"></label><label class="mp-field">Første dato (valgfri)<input id="first" type="date"></label><label class="mp-field">Dansk klokkeslæt (manuel)<input id="time" placeholder="09:00"></label></div><p><label><input id="weekly" type="checkbox"> Beregn forventet udgivelse hver 7. dag</label></p><p class="mp-help">Internationale TVmaze-datoer er ikke bekræftede danske datoer.</p><button type="submit" class="mp-btn mp-btn-primary">Tilføj</button></form></div>';
+if(cfg.canEdit)html+='<div class="mp-card"><h3>+ Tilføj TV-program fra mobilen</h3><div class="mp-field"><label>Søg på TVmaze</label><input id="search-term" placeholder="Seriens navn"></div><button type="button" class="mp-btn" id="search-shows">Søg</button><div id="show-results"></div><form id="show-form" hidden><p><strong id="selected-show"></strong></p><input type="hidden" id="show-id"><div class="mp-form-row"><label class="mp-field">Streaming i Danmark (manuel)<input id="service" placeholder="Netflix"></label><label class="mp-field">Sæson<input id="season" type="number" min="1" max="100" value="1"></label><label class="mp-field">Antal afsnit<input id="total" type="number" min="0" max="200" value="0"></label><label class="mp-field">Første dato (valgfri)<input id="first" type="date"></label><label class="mp-field">Dansk klokkeslæt (manuel)<input id="time" placeholder="09:00"></label></div><p><label><input id="weekly" type="checkbox"> Beregn forventet udgivelse hver 7. dag</label></p><p class="mp-help">Internationale TVmaze-datoer er ikke bekræftede danske datoer.</p><button type="submit" class="mp-btn mp-btn-primary">Tilføj</button></form></div>';
 content.innerHTML=html;
+var addCard=content.querySelector('#show-form');
+if(addCard){
+ addCard=addCard.closest('.mp-card');
+ if(addCard) content.insertBefore(addCard,content.firstChild);
+}
 content.querySelectorAll('.sync-show').forEach(function(b){b.onclick=async function(){try{await api('shows/'+b.dataset.id+'/sync','POST',{});msg('Afsnit opdateret.');}catch(e){fail(e);}};});
 content.querySelectorAll('.remove-show').forEach(function(b){b.onclick=async function(){if(!window.confirm('Fjern serien fra watchlisten?'))return;try{await api('shows/'+b.dataset.id,'DELETE');watch();}catch(e){fail(e);}};});
-if(!cfg.admin)return;
+if(!cfg.canEdit)return;
 content.querySelector('#search-shows').onclick=async function(){
  var q=content.querySelector('#search-term').value.trim();if(q.length<2)return msg('Skriv mindst to bogstaver.',true);
  try{var list=await api('tv-search?q='+encodeURIComponent(q)),results=content.querySelector('#show-results');results.innerHTML=list.length?'':'<p>Ingen serier fundet.</p>';

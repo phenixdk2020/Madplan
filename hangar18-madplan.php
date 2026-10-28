@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/phenixdk2020/Madplan
  * Update URI: https://github.com/phenixdk2020/Madplan
  * Description: Mobilvenlig familieportal med fælles TV-ugeplan, watchlist, madplan og opskrifter.
- * Version: 0.1.2
+ * Version: 0.1.3
  * Requires at least: 6.4
  * Requires PHP: 8.0
  * Text Domain: hangar18-madplan
@@ -12,7 +12,7 @@
 declare(strict_types=1);
 
 if (!defined('ABSPATH')) { exit; }
-define('MP_VERSION', '0.1.2');
+define('MP_VERSION', '0.1.3');
 define('MP_FILE', __FILE__);
 define('MP_DIR', plugin_dir_path(__FILE__));
 define('MP_URL', plugin_dir_url(__FILE__));
@@ -124,7 +124,7 @@ final class MP_Plugin {
         $people = MP_Storage::people();
         $page_id = (int)get_option('mp_portal_page');
         echo '<div class="wrap"><h1>Hangar18 Madplan & TV-plan</h1>';
-        echo '<p>Fælles portal for alle loggede WordPress-brugere. Kun administratorer kan redigere.</p>';
+        echo '<p>Fælles familieportal. Alle loggede brugere kan tilføje og redigere madplan og watchlist. Administratorer administrerer opskrifter, personnavne og sletning.</p>';
         $front = (int)get_option('page_on_front') === $page_id && get_option('show_on_front') === 'page';
         $homeResult = sanitize_key((string)($_GET['mp_home_result'] ?? ''));
         if ($homeResult === 'set') { echo '<div class="notice notice-success"><p>Familieplan er nu forsiden.</p></div>'; }
@@ -147,7 +147,7 @@ final class MP_Plugin {
         }
         echo '<hr>';
         echo '<p>Portal: <a href="' . esc_url($page_id ? get_permalink($page_id) : home_url('/familieplan/')) . '" target="_blank" rel="noopener">Åbn Familieplan</a>. Indsæt <code>[hangar18_portal]</code> på en anden side efter behov.</p>';
-        echo '<p>Opskrifter oprettes i menupunktet <strong>Hangar18 → Opskrifter</strong> på PC. Portalens madplan og TV-watchlist redigeres af administrator i portalen.</p>';
+        echo '<p>Opskrifter oprettes i menupunktet <strong>Hangar18 → Opskrifter</strong> på PC. Madplan og TV-watchlist kan redigeres af alle loggede brugere direkte på mobilen.</p>';
         echo '<form method="post">';
         wp_nonce_field('mp_save_settings');
         echo '<h2>Fire faste personer</h2><table class="form-table"><tbody>';
