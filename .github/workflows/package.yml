@@ -44,7 +44,7 @@ jobs:
           set -euo pipefail
           mkdir -p build/hangar18-madplan
           cp hangar18-madplan.php README.md build/hangar18-madplan/
-          cp -R includes assets build/hangar18-madplan/
+          cp -R includes assets templates build/hangar18-madplan/
           export TZ=UTC
           find build/hangar18-madplan -exec touch -t 202001010000.00 {} +
           (
@@ -73,6 +73,8 @@ jobs:
               assert 'hangar18-madplan/hangar18-madplan.php' in names
               assert 'hangar18-madplan/includes/class-mp-updater.php' in names
               assert 'hangar18-madplan/includes/class-mp-checkpoints.php' in names
+              assert 'hangar18-madplan/includes/class-mp-home.php' in names
+              assert 'hangar18-madplan/templates/portal-shell.php' in names
               main=z.read('hangar18-madplan/hangar18-madplan.php').decode('utf-8')
               assert 'Version: '+version in main
           PY

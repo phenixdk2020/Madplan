@@ -15,9 +15,19 @@ function msg(m,error){status.textContent=m||'';status.classList.toggle('mp-error
 function fail(e){msg(e&&e.message?e.message:'Ukendt fejl',true);}
 async function api(path,method,body){var opt={method:method||'GET',credentials:'same-origin',headers:{'X-WP-Nonce':cfg.nonce}};if(body!==undefined){opt.headers['Content-Type']='application/json';opt.body=JSON.stringify(body);}var r=await fetch(cfg.api+path,opt),j=await r.json().catch(function(){return {};});if(!r.ok)throw new Error(j.message||'Serverfejl');return j;}
 function setTab(t){s.tab=t;tabs.innerHTML=(s.module==='tv'?[['week','Ugeplan'],['watch','Watchlist']]:[['week','Madplan'],['recipes','Opskrifter'],['shopping','Indkøbsliste']]).map(function(x){return '<button type="button" class="mp-tab" data-tab="'+x[0]+'" '+(t===x[0]?'aria-current="page"':'')+'>'+x[1]+'</button>';}).join('');tabs.querySelectorAll('button').forEach(function(b){b.onclick=function(){setTab(b.dataset.tab);render();};});render();}
-function module(name){s.module=name;home.hidden=true;main.hidden=false;root.querySelector('#mp-module-title').textContent=name==='tv'?'TV-ugeplan':'Madplan';setTab('week');}
+function module(name,tab){s.module=name;home.hidden=true;main.hidden=false;root.querySelector('#mp-module-title').textContent=name==='tv'?'TV-ugeplan':'Madplan';setTab(tab||'week');}
 root.querySelectorAll('[data-module]').forEach(function(b){b.onclick=function(){module(b.dataset.module);};});
-root.querySelector('#mp-back').onclick=function(){home.hidden=false;main.hidden=true;msg('');};
+function openHash(){
+ var hash=(window.location.hash||'').replace(/^#/,'').toLowerCase();
+ if(hash==='tv'||hash==='tv-guide')module('tv','week');
+ else if(hash==='tv-watch'||hash==='watchlist')module('tv','watch');
+ else if(hash==='food'||hash==='madplan')module('food','week');
+ else if(hash==='shopping'||hash==='indkoeb')module('food','shopping');
+ else if(hash==='recipes'||hash==='opskrifter')module('food','recipes');
+}
+window.addEventListener('hashchange',openHash);
+openHash();
+root.querySelector('#mp-back').onclick=function(){home.hidden=false;main.hidden=true;msg('');if(window.history&&window.history.replaceState)window.history.replaceState(null,'',window.location.pathname+window.location.search);};
 function render(){msg('');if(s.tab==='week')return week();if(s.tab==='watch')return watch();if(s.tab==='recipes')return recipes();if(s.tab==='shopping')return shopping();}
 function toolbar(){return '<div class="mp-toolbar"><h3>Uge '+weekNo(s.start)+'</h3><div class="mp-toolbar-actions"><button type="button" class="mp-btn" id="prev">‹</button><button type="button" class="mp-btn" id="now">I dag</button><button type="button" class="mp-btn" id="next">›</button></div></div>';}
 function bindToolbar(){content.querySelector('#prev').onclick=function(){s.start=add(s.start,-7);week();};content.querySelector('#next').onclick=function(){s.start=add(s.start,7);week();};content.querySelector('#now').onclick=function(){s.start=mon(cfg.today);week();};}

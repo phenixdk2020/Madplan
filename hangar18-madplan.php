@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/phenixdk2020/Madplan
  * Update URI: https://github.com/phenixdk2020/Madplan
  * Description: Mobilvenlig familieportal med fælles TV-ugeplan, watchlist, madplan og opskrifter.
- * Version: 0.1.1
+ * Version: 0.1.2
  * Requires at least: 6.4
  * Requires PHP: 8.0
  * Text Domain: hangar18-madplan
@@ -12,7 +12,7 @@
 declare(strict_types=1);
 
 if (!defined('ABSPATH')) { exit; }
-define('MP_VERSION', '0.1.1');
+define('MP_VERSION', '0.1.2');
 define('MP_FILE', __FILE__);
 define('MP_DIR', plugin_dir_path(__FILE__));
 define('MP_URL', plugin_dir_url(__FILE__));
@@ -21,6 +21,7 @@ require_once MP_DIR . 'includes/class-mp-storage.php';
 require_once MP_DIR . 'includes/class-mp-tvmaze.php';
 require_once MP_DIR . 'includes/class-mp-rest.php';
 require_once MP_DIR . 'includes/class-mp-portal.php';
+require_once MP_DIR . 'includes/class-mp-home.php';
 require_once MP_DIR . 'includes/class-mp-checkpoints.php';
 require_once MP_DIR . 'includes/class-mp-updater.php';
 
@@ -28,6 +29,7 @@ final class MP_Plugin {
     public static function boot(): void {
         MP_Checkpoints::register();
         MP_Updater::register();
+        MP_Home::register();
         add_action('init', [self::class, 'recipes']);
         add_action('init', [self::class, 'shortcodes']);
         add_action('rest_api_init', [MP_REST::class, 'register']);
@@ -62,6 +64,7 @@ final class MP_Plugin {
             }
         }
         self::ensure_cron();
+        MP_Home::configure();
     }
     public static function deactivate(): void {
         wp_clear_scheduled_hook('mp_sync_tv');
@@ -90,6 +93,21 @@ final class MP_Plugin {
     }
     public static function admin_menu(): void {
         add_menu_page('Hangar18', 'Hangar18', 'manage_options', 'mp-hangar18', [self::class, 'settings_page'], 'dashicons-calendar-alt', 28);
+        add_submenu_page('mp-hangar18','Oversigt','Oversigt','manage_options','mp-hangar18',[self::class,'settings_page']);
+        add_submenu_page('mp-hangar18','TV-guide','TV-guide','manage_options','mp-hangar18-tv',[self::class,'admin_tv']);
+        add_submenu_page('mp-hangar18','Madplan','Madplan','manage_options','mp-hangar18-food',[self::class,'admin_food']);
+    }
+    public static function admin_tv(): void {
+        if (!current_user_can('manage_options')) { return; }
+        echo '<div class="wrap"><h1>TV-guide</h1><p>Her kan du se TV-ugeplanen og tilføje serier til jeres fælles watchlist.</p>';
+        echo '<p><a class="button button-primary" href="' . esc_url(MP_Home::url('tv')) . '">Åbn TV-ugeplan</a> ';
+        echo '<a class="button" href="' . esc_url(MP_Home::url('tv-watch')) . '">Administrer watchlist</a></p>';
+        echo '<p>Bemærk: TV-ugen indeholder først afsnit, når der er tilføjet serier til watchlisten.</p></div>';
+    }
+    public static function admin_food(): void {
+        if (!current_user_can('manage_options')) { return; }
+        echo '<div class="wrap"><h1>Madplan</h1><p>Fælles aftensmad til fire personer.</p><a class="button button-primary" href="' .
+            esc_url(MP_Home::url('food')) . '">Åbn madplan</a></div>';
     }
     public static function settings_page(): void {
         if (!current_user_can('manage_options')) { return; }
@@ -107,6 +125,27 @@ final class MP_Plugin {
         $page_id = (int)get_option('mp_portal_page');
         echo '<div class="wrap"><h1>Hangar18 Madplan & TV-plan</h1>';
         echo '<p>Fælles portal for alle loggede WordPress-brugere. Kun administratorer kan redigere.</p>';
+        $front = (int)get_option('page_on_front') === $page_id && get_option('show_on_front') === 'page';
+        $homeResult = sanitize_key((string)($_GET['mp_home_result'] ?? ''));
+        if ($homeResult === 'set') { echo '<div class="notice notice-success"><p>Familieplan er nu forsiden.</p></div>'; }
+        if ($homeResult === 'restored') { echo '<div class="notice notice-success"><p>Den tidligere WordPress-forside er gendannet.</p></div>'; }
+        if ($homeResult === 'error') { echo '<div class="notice notice-error"><p>Familieplan kunne ikke oprettes. Kontroller WordPress Sider.</p></div>'; }
+        echo '<h2>Forside og direkte adgang</h2>';
+        echo '<p>Forsidestatus: <strong>' . esc_html($front ? 'Familieplan er forsiden' : 'WordPress viser en anden forside') . '</strong></p>';
+        echo '<p><a class="button button-primary" href="' . esc_url(MP_Home::url()) . '" target="_blank" rel="noopener">Åbn forsiden</a> ';
+        echo '<a class="button" href="' . esc_url(MP_Home::url('tv')) . '" target="_blank" rel="noopener">TV-guide</a> ';
+        echo '<a class="button" href="' . esc_url(MP_Home::url('tv-watch')) . '" target="_blank" rel="noopener">Watchlist</a> ';
+        echo '<a class="button" href="' . esc_url(MP_Home::url('food')) . '" target="_blank" rel="noopener">Madplan</a></p>';
+        if (!$front) {
+            echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '"><input type="hidden" name="action" value="mp_set_home">';
+            wp_nonce_field('mp_set_home');
+            echo '<button class="button button-primary" type="submit">Sæt Familieplan som forside</button></form>';
+        } else {
+            echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '"><input type="hidden" name="action" value="mp_restore_home">';
+            wp_nonce_field('mp_restore_home');
+            echo '<button class="button" type="submit">Gendan tidligere WordPress-forside</button></form>';
+        }
+        echo '<hr>';
         echo '<p>Portal: <a href="' . esc_url($page_id ? get_permalink($page_id) : home_url('/familieplan/')) . '" target="_blank" rel="noopener">Åbn Familieplan</a>. Indsæt <code>[hangar18_portal]</code> på en anden side efter behov.</p>';
         echo '<p>Opskrifter oprettes i menupunktet <strong>Hangar18 → Opskrifter</strong> på PC. Portalens madplan og TV-watchlist redigeres af administrator i portalen.</p>';
         echo '<form method="post">';

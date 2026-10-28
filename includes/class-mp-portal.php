@@ -8,7 +8,7 @@ final class MP_Portal {
         $post = get_post();
         if ($post && has_shortcode((string)$post->post_content, 'hangar18_portal')) { self::assets(); }
     }
-    private static function assets(): void {
+    public static function assets(): void {
         if (!wp_style_is('mp-portal','enqueued')) {
             wp_enqueue_style('mp-portal', MP_URL . 'assets/portal.css', [], MP_VERSION);
         }

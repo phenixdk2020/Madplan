@@ -15,10 +15,13 @@ final class MP_Updater {
 
     public static function register(): void {
         add_filter('pre_set_site_transient_update_plugins',[self::class,'updates']);
+        // Native WordPress 5.8+ Update URI support for custom GitHub-hosted plugins.
+        add_filter('update_plugins_github.com',[self::class,'github_update_uri'],10,4);
         add_filter('plugins_api',[self::class,'plugin_info'],20,3);
         add_filter('upgrader_pre_download',[self::class,'verify_download'],20,4);
         add_action('upgrader_process_complete',[self::class,'clear_cache'],10,2);
         add_action('admin_post_mp_update_check',[self::class,'manual_check']);
+        add_action('admin_post_mp_test_backup',[self::class,'test_backup']);
         add_action('admin_post_mp_update_now',[self::class,'install_now']);
         add_action('admin_post_mp_rollback',[self::class,'rollback']);
         add_action('admin_menu',[self::class,'add_page']);
@@ -71,6 +74,17 @@ final class MP_Updater {
         $obj->requires = '6.4';
         $obj->requires_php = '8.0';
         return $obj;
+    }
+    public static function github_update_uri($result, array $plugin_data, string $plugin_file, array $locales) {
+        if ($plugin_file !== self::PLUGIN || (string)($plugin_data['UpdateURI'] ?? '') !== self::REPO) { return $result; }
+        $manifest = self::manifest();
+        if (!$manifest) { return $result; }
+        $item = (array)self::update_obj($manifest);
+        $item['version'] = $item['new_version'];
+        return $item;
+    }
+    private static function record_error(string $message): void {
+        set_transient('mp_update_error_' . get_current_user_id(), sanitize_text_field($message), 10 * MINUTE_IN_SECONDS);
     }
     public static function updates($transient) {
         if (!is_object($transient) || !isset($transient->checked) || !is_array($transient->checked)) {
@@ -186,9 +200,23 @@ final class MP_Updater {
         wp_update_plugins();
         $upgrader = new Plugin_Upgrader(new Automatic_Upgrader_Skin());
         $result = $upgrader->upgrade(self::PLUGIN);
-        if ($result === false || is_wp_error($result)) { self::redirect('install-error'); }
+        if ($result === false || is_wp_error($result)) {
+            $reason = is_wp_error($result) ? $result->get_error_message() : 'WordPress-opdateringen returnerede false. Kontroller filrettigheder og backupmappen.';
+            self::record_error($reason);
+            self::redirect('install-error');
+        }
         self::clear_cache();
         self::redirect('installed');
+    }
+    public static function test_backup(): void {
+        if (!current_user_can('update_plugins')) { wp_die('Ingen adgang.'); }
+        check_admin_referer('mp_test_backup');
+        $result = MP_Checkpoints::snapshot('Manuel testbackup');
+        if (is_wp_error($result)) {
+            self::record_error($result->get_error_message());
+            self::redirect('backup-error');
+        }
+        self::redirect('backup-ok');
     }
     public static function rollback(): void {
         if (!current_user_can('update_plugins')) { wp_die('Ingen adgang.'); }
@@ -229,9 +257,14 @@ final class MP_Updater {
             'network-error'=>'Kunne ikke hente et gyldigt manifest fra GitHub.',
             'no-update'=>'Ingen nyere version er klar.','install-error'=>'WordPress kunne ikke installere opdateringen.',
             'rollback-error'=>'Programgendannelsen fejlede eller backupfilen kunne ikke valideres.',
-            'backup-error'=>'Backup før gendannelse mislykkedes. Ingen gendannelse forsøgt.',
+            'backup-error'=>'Backup kunne ikke oprettes. Ingen opdatering/gendannelse blev gennemført.',
+            'backup-ok'=>'Testbackup er oprettet og kontrolleret. Opdateringsforudsætningen er på plads.',
         ];
         echo '<div class="wrap"><h1>Hangar18 – Opdateringer</h1>';
+        $lastError = (string)get_transient('mp_update_error_' . get_current_user_id());
+        if ($lastError !== '') {
+            echo '<div class="notice notice-error"><p><strong>Teknisk fejl:</strong> ' . esc_html($lastError) . '</p></div>';
+        }
         if (isset($notices[$result])) {
             $cls = in_array($result,['installed','rolled-back','current'],true)?'notice-success':'notice-warning';
             echo '<div class="notice '.esc_attr($cls).'"><p>'.esc_html($notices[$result]).'</p></div>';
@@ -247,7 +280,12 @@ final class MP_Updater {
             $install = wp_nonce_url(admin_url('admin-post.php?action=mp_update_now'),'mp_install_update');
             echo '<a class="button button-primary" href="'.esc_url($install).'">Opdater nu</a> ';
         }
-        echo '<a class="button" href="'.esc_url(self::REPO.'/actions').'">GitHub-builds</a></p></div>';
+        echo '<a class="button" href="'.esc_url(self::REPO.'/actions').'" target="_blank" rel="noopener">GitHub-builds</a></p>';
+        echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'">';
+        echo '<input type="hidden" name="action" value="mp_test_backup">';
+        wp_nonce_field('mp_test_backup');
+        echo '<p><button type="submit" class="button">Test backup og rettigheder</button> <span class="description">Opretter et program- og datacheckpoint, så fejl bliver vist før næste opdatering.</span></p></form>';
+        echo '<p class="description">Ved fejl: Serveren skal kunne hente HTTPS fra raw.githubusercontent.com og gemme backups privat uden for webroden. Opdateringer installeres fra <code>update.json</code>.</p></div>';
         echo '<div class="card" style="max-width:none"><h2>Backup og rollback</h2>';
         echo '<p>Op til 12 checkpoints gemmes. <strong>Gendan program</strong> skifter kun plugin-kode tilbage, aldrig madplaner eller opskrifter. Data-checkpointet kan downloades til manuel gendannelse. Billedfiler i WordPress Mediebibliotek er ikke inkluderet.</p>';
         $rows = MP_Checkpoints::rows();
