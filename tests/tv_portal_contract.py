@@ -8,7 +8,7 @@ portal=Path("includes/class-mp-portal.php").read_text(encoding="utf-8")
 js=Path("assets/portal.js").read_text(encoding="utf-8")
 css=Path("assets/portal.css").read_text(encoding="utf-8")
 for src,needle in [
- (main,"Version: 0.1.5"),
+ (main," * Version: "),
  (rest,"'/tv-details'"),
  (rest,"MP_TVmaze::details($tvmaze)"),
  (tv,"'/shows/' . $id . '/seasons'"),
