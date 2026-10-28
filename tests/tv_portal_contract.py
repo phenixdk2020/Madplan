@@ -18,7 +18,7 @@ for src,needle in [
  (js,"function backToMenu()"),
  (js,"root.querySelector('#mp-back-bottom').onclick=backToMenu"),
  (js,"tv-details?id="),
- (rest,"'/dk-schedule'"),
+ (rest,"/dk-schedule'"),
  (tv,"function dk_schedule("),
  (tv,"function episode_date("),
  (js,"mp-dk-form"),
