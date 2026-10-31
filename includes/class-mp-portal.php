@@ -3,6 +3,22 @@ declare(strict_types=1);
 if (!defined('ABSPATH')) { exit; }
 
 final class MP_Portal {
+    /**
+     * The WordPress profile first name is authoritative. If it has not been
+     * filled in, use only the first word of the public display name.
+     */
+    public static function greeting_name($user): string {
+        $first = sanitize_text_field(trim((string)($user->first_name ?? '')));
+        if ($first !== '') { return $first; }
+        $display = sanitize_text_field(trim((string)($user->display_name ?? '')));
+        if ($display === '' || is_email($display)) { return ''; }
+        $parts = preg_split('/\\s+/u', $display, 2);
+        return sanitize_text_field((string)($parts[0] ?? ''));
+    }
+    public static function greeting($user): string {
+        $name = self::greeting_name($user);
+        return $name !== '' ? 'Velkommen ' . $name : 'Velkommen tilbage';
+    }
     public static function enqueue_if_needed(): void {
         if (!is_singular()) { return; }
         $post = get_post();
@@ -59,7 +75,7 @@ final class MP_Portal {
         ?>
         <section class="mp-portal" id="mp-app" data-mp-theme="<?php echo esc_attr($theme); ?>" aria-label="Hangar18 Familieplan">
           <header class="mp-topbar">
-            <div class="mp-brand"><span aria-hidden="true">⌂</span><div><strong>Hangar18</strong><small>Familieplan</small></div></div>
+            <div class="mp-brand"><span aria-hidden="true">⌂</span><div><strong><?php echo esc_html(self::greeting(wp_get_current_user())); ?></strong><small>Familieplan</small></div></div>
             <div class="mp-header-right">
               <label class="mp-theme-control" for="mp-theme-select">
                 <span>Farvetema</span>
@@ -69,7 +85,6 @@ final class MP_Portal {
                   <?php endforeach; ?>
                 </select>
               </label>
-              <span class="mp-welcome"><?php echo esc_html(wp_get_current_user()->display_name); ?></span>
               <a class="mp-logout" href="<?php echo esc_url(wp_logout_url(get_permalink())); ?>">Log ud</a>
             </div>
           </header>

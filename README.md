@@ -250,3 +250,10 @@ Hangar18 TV-guide understøtter nu både **TV-serier** og **film**. Serier overv
 - Ingen nye betalte API-abonnementer.
 
 Datakilder: https://developer.themoviedb.org/docs/search-and-query-for-details og https://developer.themoviedb.org/reference/movie-release-dates.
+
+
+## v0.1.14 – personlig velkomstoverskrift
+
+Efter login viser familieportalens topbar **Velkommen Maria** i stedet for Hangar18, hvis den aktuelle bruger hedder Maria. **Familieplan** står uændret nedenunder. Fornavnet hentes fra WordPress-brugerens **Fornavn**; hvis dette felt er tomt, bruges første ord af **Vis navn offentligt som**. Hvis intet brugbart navn findes, står der **Velkommen tilbage**. Andre brugeres navne blandes ikke sammen, og login-skærmen hedder fortsat Hangar18.
+
+Da fornavnet allerede vises i topbaren, fjernes det dobbelte visningsnavn til højre; farvetema og Log ud er uændret. Lange fornavne kan ombrydes på mobil uden at ødelægge menuen. Tests: tests/portal_greeting.php.

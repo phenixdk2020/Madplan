@@ -9,7 +9,7 @@ js=Path('assets/portal.js').read_text()
 backup=Path('includes/class-mp-checkpoints.php').read_text()
 css=Path('assets/portal.css').read_text()
 for src,needle in [
- (main,'Version: 0.1.13'),(main,"require_once MP_DIR . 'includes/class-mp-movies.php'"),
+ (main,' * Version: '),(main,"require_once MP_DIR . 'includes/class-mp-movies.php'"),
  (main,"add_action('mp_sync_tv', [MP_Movies::class, 'refresh_pending'], 20)"),
  (stream,'public static function tmdb_get('),
  (rest,"self::route('/movies', 'GET', 'movies')"),

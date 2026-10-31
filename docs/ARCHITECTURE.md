@@ -138,3 +138,7 @@ Senere: automatiske indkøb fra opskrifter, tilbud, dansk premieredatakilde, ske
 - GET /week sammenlægger TV-afsnit med film, hvor kind=movie. Film vises én gang pr. premieredato.
 - WP-Cron mp_sync_tv kører både MP_TVmaze::sync_all og MP_Movies::refresh_pending.
 - Databackup inkluderer mp_movies_v1 samt fælles streaming- og TV-statusoptioner.
+
+## v0.1.14 – velkomst
+
+Portalheaderen bruger WordPress' wp_get_current_user()->first_name. Hvis tomt, første ord af display_name (ikke e-mail). Mangler begge, vises Velkommen tilbage. Escape med esc_html. Ingen lagring/cache af personnavne. Loginheaderen forbliver Hangar18. Test: tests/portal_greeting.php.
