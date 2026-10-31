@@ -3,8 +3,8 @@
  * Plugin Name: Hangar18 Madplan & TV-plan
  * Plugin URI: https://github.com/phenixdk2020/Madplan
  * Update URI: https://github.com/phenixdk2020/Madplan
- * Description: Mobilvenlig familieportal med fælles TV-ugeplan, watchlist, madplan og opskrifter.
- * Version: 0.1.12
+ * Description: Mobilvenlig familieportal med fælles TV-/film-premierer, watchlist, madplan og opskrifter.
+ * Version: 0.1.13
  * Requires at least: 6.4
  * Requires PHP: 8.0
  * Text Domain: hangar18-madplan
@@ -12,7 +12,7 @@
 declare(strict_types=1);
 
 if (!defined('ABSPATH')) { exit; }
-define('MP_VERSION', '0.1.12');
+define('MP_VERSION', '0.1.13');
 define('MP_FILE', __FILE__);
 define('MP_DIR', plugin_dir_path(__FILE__));
 define('MP_URL', plugin_dir_url(__FILE__));
@@ -21,6 +21,7 @@ require_once MP_DIR . 'includes/class-mp-storage.php';
 require_once MP_DIR . 'includes/class-mp-tvmaze.php';
 require_once MP_DIR . 'includes/class-mp-rest.php';
 require_once MP_DIR . 'includes/class-mp-streaming.php';
+require_once MP_DIR . 'includes/class-mp-movies.php';
 require_once MP_DIR . 'includes/class-mp-portal.php';
 require_once MP_DIR . 'includes/class-mp-home.php';
 require_once MP_DIR . 'includes/class-mp-checkpoints.php';
@@ -39,6 +40,7 @@ final class MP_Plugin {
         add_action('save_post_mp_recipe', [self::class, 'save_recipe'], 10, 2);
         add_action('admin_enqueue_scripts', [self::class, 'admin_assets']);
         add_action('mp_sync_tv', [MP_TVmaze::class, 'sync_all']);
+        add_action('mp_sync_tv', [MP_Movies::class, 'refresh_pending'], 20);
         add_action('init', [self::class, 'ensure_cron']);
         add_filter('plugin_action_links_' . plugin_basename(MP_FILE), [self::class, 'links']);
     }
