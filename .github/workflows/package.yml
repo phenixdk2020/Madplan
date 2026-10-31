@@ -40,6 +40,8 @@ jobs:
           php tests/updater_reactivation.php
           php tests/tv_auto.php
           php tests/streaming_check.php
+          php tests/movies_check.php
+          python3 tests/movies_contract.py
           python3 tests/streaming_contract.py
           php tests/dk_schedule.php
           python3 tests/tv_portal_contract.py

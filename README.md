@@ -233,3 +233,20 @@ Automatisk DK streamingkatalogopslag via valgfri gratis TMDB API-nøgle bruger d
 Ingen ekstra abonnementer introduceres. Eksterne streamingopslag virker kun, hvis administrator selv konfigurerer en gratis TMDB API-nøgle.
 
 Regressionstest i `tests/streaming_check.php` efterligner to WordPress-brugere og kontrollerer delte valg, overgang fra gammel indstilling, tom liste, flatrate-vs-leje og TMDB-fallback.
+
+## v0.1.13 – film og filmpremierer
+
+Hangar18 TV-guide understøtter nu både **TV-serier** og **film**. Serier overvåges som før for nye sæsoner og afsnit. Film har en separat fælles watchlist og vises **præcis én gang** på sin premieredato. Begge vises i samme syvdageskalender.
+
+- **TV-guide → Film** viser kommende premierer og film uden dato. Tidligere premieredatoer ligger i et sammenklappeligt historikafsnit indtil fjernelse.
+- Filmsøgning benytter TMDB: plakat, titel og international dato. Kræver den eksisterende gratis TMDB API-nøgle, men **manuel oprettelse** virker uden nøgle.
+- Vælg **Streaming/digital DK** (standard) eller **Biograf DK**. TMDB-udgivelsestype 4 er digital; type 3 er biograf. Biografdato bruges **aldrig** som streamingdato. Streamingdato kendes ikke: film bliver stående som *Afventer premieredato*.
+- Dansk digitaldato bekræfter **ikke** udgivelsestidspunkt på en specifik abonnementstjeneste. En manuelt angivet dato er tydeligt mærket som familieangivet.
+- Filmtjeneste kan vælges eller foreslås automatisk, hvis **præcis én** af familiens tjenester matches i TMDB's danske abonnements-/gratis-katalog; ellers Ukendt.
+- Filmen vises én gang i ugeplanen på den valgte dato. Efter premieren bliver den på watchlisten som historik, ikke som ugentlig tilbagevendende serie.
+- **Tjek premieredato** opdaterer filmdata. Den eksisterende daglige WP-Cron-kørsel undersøger desuden op til otte kommende/udaterede film ad gangen. Familieangivne premieredatoer bevares.
+- Film ligger i husstandens delte WordPress-option mp_movies_v1, maks. 150 film, og indgår i Hangar18s databackup.
+- Kun administrator kan fjerne en film; alle loggede kan tilføje eller korrigere.
+- Ingen nye betalte API-abonnementer.
+
+Datakilder: https://developer.themoviedb.org/docs/search-and-query-for-details og https://developer.themoviedb.org/reference/movie-release-dates.

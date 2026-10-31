@@ -102,6 +102,13 @@ final class MP_Streaming {
         }
         return array_values($found);
     }
+    /** Reuse the same server-only TMDB credentials/cache for movies. */
+    public static function tmdb_get(string $path,array $query=[]): array|WP_Error {
+        if (!preg_match('~^(?:search/movie|movie/[1-9][0-9]{0,7}(?:/(?:release_dates|watch/providers))?)$~',$path)) {
+            return new WP_Error('mp_tmdb_path','Ikke-tilladt TMDB-ressource.',['status'=>400]);
+        }
+        return self::get_tmdb($path,$query);
+    }
     private static function get_tmdb(string $path,array $query=[]): array|WP_Error {
         $token=self::api_token();
         if ($token==='') { return new WP_Error('mp_tmdb_no_key','TMDB er ikke konfigureret.'); }

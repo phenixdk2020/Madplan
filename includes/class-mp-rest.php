@@ -67,6 +67,12 @@ final class MP_REST {
         self::route('/streaming-services', 'POST', 'save_streaming_services', true);
         self::route('/streaming-lookup', 'GET', 'streaming_lookup');
         self::route('/shows/(?P<id>\d+)/streaming-check', 'POST', 'check_streaming_show', true);
+        self::route('/movies', 'GET', 'movies');
+        self::route('/movies/search', 'GET', 'movie_search');
+        self::route('/movies', 'POST', 'add_movie', true);
+        self::route('/movies/(?P<id>\\d+)', 'POST', 'save_movie', true);
+        self::route('/movies/(?P<id>\\d+)/refresh', 'POST', 'refresh_movie', true);
+        self::route('/movies/(?P<id>\\d+)', 'DELETE', 'delete_movie', true, true);
         self::route('/week', 'GET', 'week');
         self::route('/recipes', 'GET', 'recipes');
         self::route('/recipe/(?P<id>\d+)', 'GET', 'recipe');
@@ -95,11 +101,39 @@ final class MP_REST {
         $start = $dt->modify('monday this week')->format('Y-m-d');
         $end = $dt->modify('sunday this week')->format('Y-m-d');
         return ['start'=>$start, 'end'=>$end, 'people'=>MP_Storage::people(),
-            'meals'=>MP_Storage::meals($start, $end), 'episodes'=>MP_TVmaze::schedule($start, $end),
+            'meals'=>MP_Storage::meals($start, $end), 'episodes'=>array_merge(MP_TVmaze::schedule($start, $end), MP_Movies::schedule($start,$end)),
             'can_edit'=>self::can_write()];
     }
     public static function recipes() { return MP_Storage::recipe_list(); }
     public static function recipe(WP_REST_Request $r) { return MP_Storage::recipe(absint($r['id'])); }
+    public static function movies() { return MP_Movies::all(); }
+    public static function movie_search(WP_REST_Request $r) {
+        return MP_Movies::search(sanitize_text_field((string)$r->get_param('q')));
+    }
+    public static function add_movie(WP_REST_Request $r) {
+        return MP_Movies::add([
+            'tmdb_id'=>absint($r->get_param('tmdb_id')),
+            'title'=>sanitize_text_field((string)$r->get_param('title')),
+            'mode'=>sanitize_key((string)$r->get_param('mode')),
+            'service'=>sanitize_text_field((string)$r->get_param('service')),
+            'manual_date'=>sanitize_text_field((string)$r->get_param('manual_date')),
+        ]);
+    }
+    public static function save_movie(WP_REST_Request $r) {
+        $data=[];
+        foreach (['mode','service','manual_date'] as $key) {
+            if ($r->has_param($key)) {
+                $data[$key]=sanitize_text_field((string)$r->get_param($key));
+            }
+        }
+        return MP_Movies::update(absint($r['id']),$data);
+    }
+    public static function refresh_movie(WP_REST_Request $r) {
+        return MP_Movies::refresh(absint($r['id']));
+    }
+    public static function delete_movie(WP_REST_Request $r) {
+        return MP_Movies::remove(absint($r['id']));
+    }
     public static function shows() { return MP_TVmaze::shows(); }
     public static function tv_search(WP_REST_Request $r) {
         return MP_TVmaze::search(sanitize_text_field((string)$r->get_param('q')));

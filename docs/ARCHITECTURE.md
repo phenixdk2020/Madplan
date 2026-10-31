@@ -130,3 +130,11 @@ Senere: automatiske indkøb fra opskrifter, tilbud, dansk premieredatakilde, ske
 - REST /streaming-services GET/POST kræver WordPress-login og nonce for POST; ingen bruger-specifik præferencelagring.
 - Auto-opslag, manuelt Tjek familiens tjenester og nye serier bruger samme globale liste.
 - Farvetema forbliver WordPress user_meta og påvirkes ikke.
+
+## v0.1.13 – film
+- MP_Movies: delt WordPress-option mp_movies_v1 med TMDB metadata, mode streaming/cinema, manual_date, last_checked og service.
+- API GET /movies, GET /movies/search, POST /movies, POST /movies/{id}, POST /movies/{id}/refresh og DELETE /movies/{id} (admin).
+- TMDB release type 3 theatrical vs 4 digital DK; ingen fallback fra biograf til streaming.
+- GET /week sammenlægger TV-afsnit med film, hvor kind=movie. Film vises én gang pr. premieredato.
+- WP-Cron mp_sync_tv kører både MP_TVmaze::sync_all og MP_Movies::refresh_pending.
+- Databackup inkluderer mp_movies_v1 samt fælles streaming- og TV-statusoptioner.

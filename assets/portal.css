@@ -241,3 +241,36 @@ body.mp-full-page.mp-theme-burgundy{background:#f9f0f3;color:#41212c}
 .mp-portal .mp-source-credits p{font-size:12px;line-height:1.5;color:var(--mp-muted)}
 .mp-portal .mp-tmdb-logo{height:38px;width:auto;vertical-align:middle;margin-right:10px}
 @media(max-width:450px){.mp-portal .mp-service-choices{grid-template-columns:repeat(2,minmax(0,1fr))}.mp-portal .mp-service-choice{font-size:13px;padding:8px}}
+
+/* 0.1.13: movie premiere cards with exactly one calendar occurrence. */
+.mp-portal .mp-film-header .mp-film-search{display:grid;gap:12px}
+.mp-portal #mp-film-search-form{display:flex;flex-wrap:wrap;align-items:end;gap:10px}
+.mp-portal #mp-film-search-form .mp-field{flex:1;min-width:170px}
+.mp-portal .mp-film-edit{display:grid;gap:12px;border-top:1px solid var(--mp-line);padding-top:15px}
+.mp-portal .mp-film-edit button{min-height:46px}
+.mp-portal .mp-film-row{display:flex;gap:13px;padding:14px 0;border-bottom:1px solid var(--mp-line)}
+.mp-portal .mp-film-poster{width:80px;height:116px;flex:0 0 80px;border-radius:9px;object-fit:cover}
+.mp-portal .mp-film-body{display:flex;flex:1;min-width:0;flex-direction:column;align-items:start;gap:5px}
+.mp-portal .mp-film-body strong{font-size:17px}
+.mp-portal .mp-film-body small{font-size:12px;color:var(--mp-muted)}
+.mp-portal .mp-film-actions{display:flex;flex-wrap:wrap;gap:8px;padding-top:6px}
+.mp-portal .mp-film-correct{width:100%;border:1px solid var(--mp-line);border-radius:9px;padding:8px}
+.mp-portal .mp-film-correct>summary{cursor:pointer;font-weight:650}
+.mp-portal .mp-film-update{padding-top:10px;display:grid;gap:10px}
+.mp-portal .mp-film-update label{display:grid;gap:4px;font-size:13px}
+.mp-portal .mp-film-update input,.mp-portal .mp-film-update select,
+.mp-portal .mp-film-edit input,.mp-portal .mp-film-edit select,
+.mp-portal #mp-film-search-form input{background:var(--mp-card);border:1px solid var(--mp-line);
+ color:var(--mp-ink);border-radius:9px;min-height:44px;padding:8px;font-size:16px}
+.mp-portal .mp-film-history{border-top:1px solid var(--mp-line);margin-top:14px;padding-top:14px}
+.mp-portal .mp-film-history>summary{cursor:pointer;font-weight:700;min-height:44px}
+.mp-portal .mp-film-premiere{display:flex;gap:10px}
+.mp-portal .mp-calendar-poster{width:44px;height:66px;object-fit:cover;border-radius:6px}
+.mp-portal .mp-mobile-actions button{flex:1}
+@media(max-width:480px){
+ .mp-portal #mp-film-search-form{display:grid}
+ .mp-portal .mp-film-poster{width:68px;height:98px;flex-basis:68px}
+ .mp-portal .mp-film-row{gap:10px}
+ .mp-portal .mp-mobile-actions{flex-wrap:wrap}
+ .mp-portal .mp-mobile-actions button{min-width:140px}
+}

@@ -76,7 +76,7 @@ final class MP_Portal {
           <div class="mp-home" id="mp-home">
             <p class="mp-intro">Hvad vil du se?</p>
             <div class="mp-home-cards">
-              <button type="button" class="mp-home-card" data-module="tv"><span class="mp-emoji" aria-hidden="true">📺</span><strong>TV-guide</strong><span>Se ugeplan og tilføj programmer</span></button>
+              <button type="button" class="mp-home-card" data-module="tv"><span class="mp-emoji" aria-hidden="true">📺</span><strong>TV-guide</strong><span>Serier, film og kommende premierer</span></button>
               <button type="button" class="mp-home-card" data-module="food"><span class="mp-emoji" aria-hidden="true">🍽️</span><strong>Madplan</strong><span>Tilføj aftensmad til de fire personer</span></button>
             </div>
           </div>

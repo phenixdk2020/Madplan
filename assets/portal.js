@@ -43,12 +43,13 @@ function weekNo(t){var d=dt(t);d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7))
 function msg(m,error){status.textContent=m||'';status.classList.toggle('mp-error',!!error);}
 function fail(e){msg(e&&e.message?e.message:'Ukendt fejl',true);}
 async function api(path,method,body){var opt={method:method||'GET',credentials:'same-origin',headers:{'X-WP-Nonce':cfg.nonce}};if(body!==undefined){opt.headers['Content-Type']='application/json';opt.body=JSON.stringify(body);}var r=await fetch(cfg.api+path,opt),j=await r.json().catch(function(){return {};});if(!r.ok)throw new Error(j.message||'Serverfejl');return j;}
-function setTab(t){s.tab=t;tabs.innerHTML=(s.module==='tv'?[['week','Ugeplan'],['watch','Watchlist']]:[['week','Madplan'],['recipes','Opskrifter'],['shopping','Indkøbsliste']]).map(function(x){return '<button type="button" class="mp-tab" data-tab="'+x[0]+'" '+(t===x[0]?'aria-current="page"':'')+'>'+x[1]+'</button>';}).join('');tabs.querySelectorAll('button').forEach(function(b){b.onclick=function(){setTab(b.dataset.tab);render();};});render();}
+function setTab(t){s.tab=t;tabs.innerHTML=(s.module==='tv'?[['week','Ugeplan'],['watch','Serier'],['movies','Film']]:[['week','Madplan'],['recipes','Opskrifter'],['shopping','Indkøbsliste']]).map(function(x){return '<button type="button" class="mp-tab" data-tab="'+x[0]+'" '+(t===x[0]?'aria-current="page"':'')+'>'+x[1]+'</button>';}).join('');tabs.querySelectorAll('button').forEach(function(b){b.onclick=function(){setTab(b.dataset.tab);render();};});render();}
 function module(name,tab){s.module=name;home.hidden=true;main.hidden=false;root.querySelector('#mp-module-title').textContent=name==='tv'?'TV-ugeplan':'Madplan';setTab(tab||'week');}
 root.querySelectorAll('[data-module]').forEach(function(b){b.onclick=function(){module(b.dataset.module);};});
 function openHash(){
  var hash=(window.location.hash||'').replace(/^#/,'').toLowerCase();
  if(hash==='tv'||hash==='tv-guide')module('tv','week');
+ else if(hash==='movies'||hash==='film')module('tv','movies');
  else if(hash==='tv-watch'||hash==='watchlist')module('tv','watch');
  else if(hash==='food'||hash==='madplan')module('food','week');
  else if(hash==='shopping'||hash==='indkoeb')module('food','shopping');
@@ -63,7 +64,7 @@ function backToMenu(){
 }
 root.querySelector('#mp-back').onclick=backToMenu;
 root.querySelector('#mp-back-bottom').onclick=backToMenu;
-function render(){msg('');if(s.tab==='week')return week();if(s.tab==='watch')return watch();if(s.tab==='recipes')return recipes();if(s.tab==='shopping')return shopping();}
+function render(){msg('');if(s.tab==='week')return week();if(s.tab==='watch')return watch();if(s.tab==='movies')return movies();if(s.tab==='recipes')return recipes();if(s.tab==='shopping')return shopping();}
 function toolbar(){return '<div class="mp-toolbar"><h3>Uge '+weekNo(s.start)+'</h3><div class="mp-toolbar-actions"><button type="button" class="mp-btn" id="prev">‹</button><button type="button" class="mp-btn" id="now">I dag</button><button type="button" class="mp-btn" id="next">›</button></div></div>';}
 function bindToolbar(){content.querySelector('#prev').onclick=function(){s.start=add(s.start,-7);week();};content.querySelector('#next').onclick=function(){s.start=add(s.start,7);week();};content.querySelector('#now').onclick=function(){s.start=mon(cfg.today);week();};}
 function rows(){return (s.week.meals||[]).concat(s.next?s.next.meals:[]);}
@@ -76,15 +77,28 @@ content.innerHTML=toolbar()+'<p>Henter planen…</p>';bindToolbar();
 try{await load();}catch(e){return fail(e);}
 var current=s.start===mon(cfg.today),limit=7;
 var addText=s.module==='tv'?'+ Tilføj TV-program':'+ Tilføj aftensmad';
-var html=toolbar()+'<div class="mp-mobile-actions"><button type="button" id="mp-quick-add" class="mp-btn mp-btn-primary mp-add-primary">'+addText+'</button></div>'+
-'<p class="mp-help">'+(s.module==='tv'?'Danske streamingdatoer prioriteres, når de er kendt. Andre datoer er originale TVmaze-datoer eller beregnede forventninger.':'Hver dag har fire personrækker. Alle tidligere uger gemmes.')+'</p><div class="mp-days">';
+var html=toolbar()+'<div class="mp-mobile-actions"><button type="button" id="mp-quick-add" class="mp-btn mp-btn-primary mp-add-primary">'+addText+'</button>'+(s.module==='tv'?'<button type="button" id="mp-movie-add" class="mp-btn mp-add-primary">+ Tilføj film</button>':'')+'</div>'+
+'<p class="mp-help">'+(s.module==='tv'?'Serier følger afsnit/sæsoner; film vises kun én gang på premieredatoen. Danske streamingdatoer og biografdatoer mærkes særskilt.':'Hver dag har fire personrækker. Alle tidligere uger gemmes.')+'</p><div class="mp-days">';
 for(var i=0;i<limit;i++){
  var date=add(s.start,i);
  html+='<section class="mp-day '+(date===cfg.today?'mp-today':'')+'" data-day="'+date+'"><h4>'+esc(label(date))+(date===cfg.today?'<small>I dag</small>':'')+'</h4>';
  if(s.module==='tv'){
   var dayEpisodes=episodes().filter(function(e){return e.date===date;});
-  if(!dayEpisodes.length)html+='<p class="mp-help">Ingen afsnit</p>';
+  if(!dayEpisodes.length)html+='<p class="mp-help">Ingen afsnit eller filmpremierer</p>';
   dayEpisodes.forEach(function(e){
+    if(e.kind==='movie'){
+      var movieLabel={movie_digital:'Digital DK · tjeneste ikke bekræftet',
+        movie_cinema:'Biografpremiere DK',movie_manual:'Dato angivet af familien'}[e.status]||'Filmpremiere';
+      html+='<div class="mp-episode mp-film-premiere">'+
+        (e.poster?'<img class="mp-calendar-poster" src="'+url(e.poster)+'" alt="" loading="lazy">':'')+
+        '<div class="mp-episode-body"><strong>🎬 '+esc(e.title)+'</strong>'+
+        '<small>'+esc(e.release_type||'Film')+' · '+esc(e.service||'Ukendt')+'</small>'+
+        '<span class="mp-tag '+(e.status==='movie_manual'?'mp-estimate':'')+'">'+esc(movieLabel)+'</span>'+
+        '<small>'+esc(e.note||'')+'</small>'+
+        (e.source_url?'<small><a href="'+url(e.source_url)+'" target="_blank" rel="noopener noreferrer">Kilde: TMDB</a></small>':'')+
+        '</div></div>';
+      return;
+    }
     var label={
      dk_confirmed:'Bekræftet DK',dk_estimated:'Forventet DK',
      dk_manual:'Angivet af familien',estimated:'Forventet originaldato',original:'TVmaze-dato'
@@ -110,6 +124,7 @@ content.querySelector('#mp-quick-add').onclick=function(){
  if(s.module==='tv') { setTab('watch'); }
  else { editDay(current?cfg.today:s.start); }
 };
+var movieAdd=content.querySelector('#mp-movie-add');if(movieAdd)movieAdd.onclick=function(){setTab('movies');};
 content.querySelectorAll('.edit-day').forEach(function(b){b.onclick=function(){editDay(b.dataset.date);};});
 }
 async function getRecipes(){if(s.recipes===null)s.recipes=await api('recipes');return s.recipes;}
@@ -134,6 +149,148 @@ content.querySelector('#save-meals').onclick=async function(){
  data.sort(function(a,b){return Number(a.mode==='same')-Number(b.mode==='same');});
  try{for(var i=0;i<data.length;i++)await api('meal','POST',data[i]);await week();msg('Madplan gemt.');}catch(e){fail(e);}
 };
+}
+
+function movieBadge(movie){
+ var labels={movie_digital:'Digital DK (tjeneste ikke bekræftet)',
+ movie_cinema:'Biografpremiere DK',movie_manual:'Dato angivet af familien',
+ movie_pending:'Afventer premieredato'};
+ return labels[movie.status]||'Ubekræftet';
+}
+async function movies(){
+ content.innerHTML='<p class="mp-help">Henter film-watchlist…</p>';
+ var rows,prefs;
+ try {
+  var response=await Promise.all([api('movies'),api('streaming-services')]);
+  rows=response[0];prefs=response[1];
+ }catch(e){return fail(e);}
+ var html='<section class="mp-card mp-film-header"><h3>🎬 Film og kommende premierer</h3>'+
+ '<p class="mp-help">Film kommer kun én gang i ugeplanen på deres danske biografdato eller digitale udgivelsesdato. Ingen gentagne uger. Ukendte datoer overvåges fortsat.</p>';
+ if(cfg.canEdit){
+  html+='<div class="mp-film-search">'+
+  '<form id="mp-film-search-form"><label class="mp-field">Søg efter filmens navn (TMDB)'+
+  '<input id="mp-film-query" required minlength="2" placeholder="Filmnavn"></label>'+
+  '<button class="mp-btn mp-btn-primary" type="submit">Find film</button></form>'+
+  '<p class="mp-help">'+(prefs.configured?'Danske filmdata fra TMDB.':'Filmsøgning kræver gratis TMDB API-nøgle. Du kan stadig tilføje filmen manuelt nedenfor.')+'</p>'+
+  '<div id="mp-film-results" aria-live="polite"></div>'+
+  '<form id="mp-add-movie" class="mp-film-edit">'+
+  '<div id="mp-film-chosen" class="mp-help">Vælg en film fra søgeresultaterne eller skriv selv en titel.</div>'+
+  '<label class="mp-field">Filmens titel <input id="mp-film-title" maxlength="255" required placeholder="Filmtitel"></label>'+
+  '<div class="mp-form-row"><label class="mp-field">Følg premieredato for<select id="mp-film-mode">'+
+  '<option value="streaming">Streaming / digital DK</option><option value="cinema">Biograf DK</option></select></label>'+
+  '<label class="mp-field">Streamingtjeneste (valgfri)<select id="mp-film-service">'+
+  '<option value="">Automatisk / ukendt</option>'+
+  prefs.options.map(function(name){return '<option value="'+esc(name)+'">'+esc(name)+'</option>';}).join('')+
+  '</select></label></div>'+
+  '<label class="mp-field">Dansk premieredato (valgfri, kun når den er kendt)'+
+  '<input id="mp-film-manual-date" type="date"></label>'+
+  '<p class="mp-help">Hvis datoen ikke er kendt, gemmes filmen og overvåges. En TMDB-digitaldato bekræfter ikke datoen på en bestemt tjeneste.</p>'+
+  '<button class="mp-btn mp-btn-primary" id="mp-film-save" type="submit">Tilføj film til watchlist</button>'+
+  '</form></div>';
+ }
+ html+='</section><section class="mp-card"><h3>Film på watchlisten</h3>';
+ if(!rows.length)html+='<p>Ingen film endnu. Tilføj den første ovenfor.</p>';
+ var upcoming=rows.filter(function(m){return !m.released;});
+ var past=rows.filter(function(m){return m.released;});
+ function movieRow(m){
+  return '<article class="mp-film-row" data-id="'+m.id+'">'+
+  (m.poster?'<img class="mp-film-poster" alt="" loading="lazy" src="'+url(m.poster)+'">':'<span class="mp-tv-no-poster" aria-hidden="true">🎬</span>')+
+  '<div class="mp-film-body"><strong>'+esc(m.title)+'</strong>'+
+  '<small>'+esc(m.release_type)+' · '+esc(m.service||'Ukendt')+'</small>'+
+  '<span class="mp-watch-status">'+esc(movieBadge(m))+'</span>'+
+  '<small>'+esc(m.date||'Dansk premieredato ikke offentliggjort')+'</small>'+
+  '<small>'+esc(m.date_note||'')+'</small>'+
+  (m.original_date?'<small>International premieredato: '+esc(m.original_date)+'</small>':'')+
+  (cfg.canEdit?'<details class="mp-film-correct"><summary>Ret premiere eller tjeneste</summary>'+
+    '<form class="mp-film-update" data-id="'+m.id+'">'+
+    '<label>Type<select class="mp-film-update-mode">'+
+     '<option value="streaming" '+(m.mode==='streaming'?'selected':'')+'>Streaming/digital</option>'+
+     '<option value="cinema" '+(m.mode==='cinema'?'selected':'')+'>Biograf</option></select></label>'+
+    '<label>Tjeneste<select class="mp-film-update-service"><option value="Ukendt">Ukendt</option>'+
+      prefs.options.map(function(name){return '<option value="'+esc(name)+'" '+(name===m.service?'selected':'')+'>'+esc(name)+'</option>';}).join('')+
+      '</select></label>'+
+    '<label>Manuel premieredato<input class="mp-film-update-date" type="date" value="'+esc(m.manual_date||'')+'"></label>'+
+    '<button type="submit" class="mp-btn mp-btn-primary">Gem ændring</button>'+
+    '<small>Tøm datofeltet for at genoptage TMDB-datoen.</small></form></details>'+
+    '<div class="mp-film-actions">'+
+      (m.tmdb_id?'<button type="button" class="mp-btn mp-film-refresh" data-id="'+m.id+'">Tjek premieredato</button>':'')+
+      (cfg.admin?'<button type="button" class="mp-btn mp-film-delete" data-id="'+m.id+'">Fjern</button>':'')+
+    '</div>':'')+
+  '</div></article>';
+ }
+ upcoming.forEach(function(m){html+=movieRow(m);});
+ if(past.length){
+  html+='<details class="mp-film-history"><summary>Tidligere premierer ('+past.length+')</summary>';
+  past.forEach(function(m){html+=movieRow(m);});
+  html+='</details>';
+ }
+ html+='</section><p class="mp-help">Filmdata: TMDB. Dansk streamingtilgængelighed er katalogdata – ikke en garanti for at en bestemt film eller premiere ligger i jeres abonnement. <a href="https://www.themoviedb.org" target="_blank" rel="noopener">TMDB</a>. This product uses the TMDB API but is not endorsed or certified by TMDB.</p>';
+ content.innerHTML=html;
+ content.querySelectorAll('.mp-film-refresh').forEach(function(b){
+  b.onclick=async function(){
+   b.disabled=true;
+   try{await api('movies/'+b.dataset.id+'/refresh','POST',{});await movies();msg('Filmens premieredato er kontrolleret.');}
+   catch(e){fail(e);b.disabled=false;}
+  };
+ });
+ content.querySelectorAll('.mp-film-delete').forEach(function(b){
+  b.onclick=async function(){
+   if(!window.confirm('Fjern filmen fra familiens watchlist?'))return;
+   try{await api('movies/'+b.dataset.id,'DELETE');await movies();msg('Filmen er fjernet.');}catch(e){fail(e);}
+  };
+ });
+ content.querySelectorAll('.mp-film-update').forEach(function(form){
+  form.onsubmit=async function(ev){
+   ev.preventDefault();
+   var b=form.querySelector('button[type=submit]');b.disabled=true;
+   try{
+    await api('movies/'+form.dataset.id,'POST',{
+     mode:form.querySelector('.mp-film-update-mode').value,
+     service:form.querySelector('.mp-film-update-service').value,
+     manual_date:form.querySelector('.mp-film-update-date').value
+    });
+    await movies();msg('Premiere og tjeneste er gemt for hele familien.');
+   }catch(e){fail(e);b.disabled=false;}
+  };
+ });
+ if(!cfg.canEdit)return;
+ var chosen=null;
+ var results=content.querySelector('#mp-film-results'),title=content.querySelector('#mp-film-title');
+ content.querySelector('#mp-film-search-form').onsubmit=async function(ev){
+  ev.preventDefault();results.textContent='Søger efter film…';
+  try{
+   var found=await api('movies/search?q='+encodeURIComponent(content.querySelector('#mp-film-query').value.trim()));
+   results.innerHTML='';
+   if(!found.length)results.textContent='Ingen film fundet. Du kan oprette den manuelt.';
+   found.forEach(function(m){
+    var b=document.createElement('button');b.type='button';b.className='mp-result mp-tv-result';
+    b.innerHTML=(m.poster?'<img class="mp-tv-poster" alt="" src="'+url(m.poster)+'" loading="lazy">':
+      '<span class="mp-tv-no-poster">🎬</span>')+
+      '<span class="mp-tv-result-info"><strong>'+esc(m.title)+'</strong>'+
+      '<small>International dato: '+esc(m.original_date||'Ikke kendt')+'</small>'+
+      '<span class="mp-result-choose">Vælg film</span></span>';
+    b.onclick=function(){
+      chosen=m;title.value=m.title;results.innerHTML='';
+      content.querySelector('#mp-film-chosen').textContent='Valgt: '+m.title+' – dansk premieredato hentes ved gem.';
+    };
+    results.appendChild(b);
+   });
+  }catch(e){results.textContent='Filmsøgning ikke mulig. Brug manuel filmoprettelse nedenfor.';fail(e);}
+ };
+ title.oninput=function(){if(chosen&&title.value!==chosen.title){chosen=null;content.querySelector('#mp-film-chosen').textContent='Manuel film: angiv premieredato hvis den er kendt.';}};
+ content.querySelector('#mp-add-movie').onsubmit=async function(ev){
+  ev.preventDefault();
+  var b=content.querySelector('#mp-film-save');b.disabled=true;
+  try{
+   var added=await api('movies','POST',{
+    tmdb_id:chosen?chosen.tmdb_id:0,title:title.value.trim(),
+    mode:content.querySelector('#mp-film-mode').value,
+    service:content.querySelector('#mp-film-service').value,
+    manual_date:content.querySelector('#mp-film-manual-date').value
+   });
+   await movies();msg('Filmen "'+added.title+'" er på watchlisten. Premieren vises kun én gang.');
+  }catch(e){fail(e);b.disabled=false;}
+ };
 }
 async function watch(){
 content.innerHTML='<p class="mp-help">Henter fælles watchlist…</p>';

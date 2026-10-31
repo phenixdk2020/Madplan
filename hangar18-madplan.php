@@ -103,7 +103,7 @@ final class MP_Plugin {
     }
     public static function admin_tv(): void {
         if (!current_user_can('manage_options')) { return; }
-        echo '<div class="wrap"><h1>TV-guide</h1><p>Her kan du se TV-ugeplanen og tilføje serier til jeres fælles watchlist.</p>';
+        echo '<div class="wrap"><h1>TV-guide</h1><p>Her kan du se TV-ugeplanen og tilføje serier og film til familiens fælles watchlists.</p>';
         echo '<p><a class="button button-primary" href="' . esc_url(MP_Home::url('tv')) . '">Åbn TV-ugeplan</a> ';
         echo '<a class="button" href="' . esc_url(MP_Home::url('tv-watch')) . '">Administrer watchlist</a></p>';
         echo '<p>Bemærk: TV-ugen indeholder først afsnit, når der er tilføjet serier til watchlisten.</p></div>';
