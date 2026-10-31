@@ -7,7 +7,7 @@ rest=Path('includes/class-mp-rest.php').read_text()
 tv=Path('includes/class-mp-tvmaze.php').read_text()
 js=Path('assets/portal.js').read_text()
 for source,needle in [
- (main,'Version: 0.1.12'),
+ (main,' * Version: '),
  (main,"require_once MP_DIR . 'includes/class-mp-streaming.php'"),
  (main,'MP_Streaming::save_token($key)'),
  (stream,"'mp_household_streaming_services_v1'"),
