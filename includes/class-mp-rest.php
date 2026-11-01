@@ -85,6 +85,8 @@ final class MP_REST {
         self::route('/shows/(?P<id>\d+)', 'DELETE', 'delete_show', true, true);
         self::route('/shows/(?P<id>\d+)/sync', 'POST', 'sync_show', true);
         self::route('/shows/(?P<id>\d+)/dk-schedule', 'POST', 'save_danish_schedule', true);
+        self::route('/shopping/stores', 'GET', 'shopping_stores');
+        self::route('/shopping/(?P<id>\\d+)/store', 'POST', 'save_shopping_store', true);
         self::route('/shopping', 'GET', 'shopping');
         self::route('/shopping/offers', 'POST', 'shopping_offers', true);
         self::route('/shopping', 'POST', 'add_shopping');
@@ -286,10 +288,25 @@ final class MP_REST {
         }
         return MP_Offers::scan($ids);
     }
+    public static function shopping_stores() {
+        return ['options'=>MP_ShoppingStores::stores(),'configured'=>MP_Offers::configured()];
+    }
+    public static function save_shopping_store(WP_REST_Request $r) {
+        global $wpdb;
+        $id=absint($r['id']);
+        $table=MP_Storage::table('shopping');
+        $row=$wpdb->get_row($wpdb->prepare("SELECT title FROM $table WHERE id=%d",$id),ARRAY_A);
+        if (!$row) { return new WP_Error('mp_shopping_missing','Varen findes ikke.',['status'=>404]); }
+        return MP_ShoppingStores::save((string)$row['title'],
+            sanitize_text_field((string)$r->get_param('store')));
+    }
     public static function shopping() {
         global $wpdb;
         $table = MP_Storage::table('shopping');
-        return $wpdb->get_results("SELECT id,title,amount,checked FROM $table ORDER BY checked ASC,id DESC LIMIT 500", ARRAY_A) ?: [];
+        $rows=$wpdb->get_results("SELECT id,title,amount,checked FROM $table ORDER BY checked ASC,id DESC LIMIT 500", ARRAY_A) ?: [];
+        foreach ($rows as &$row) { $row['store']=MP_ShoppingStores::preferred((string)$row['title']); }
+        unset($row);
+        return $rows;
     }
     public static function add_shopping(WP_REST_Request $r) {
         global $wpdb;

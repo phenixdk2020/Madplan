@@ -145,3 +145,12 @@ Portalheaderen bruger WordPress' wp_get_current_user()->first_name. Hvis tomt, f
 
 ## v0.1.15 – Prej-tilbud
 MP_Offers: wp_option mp_prej_api_key_v1, valgfri wp-config-konstant MP_PREJ_API_TOKEN; server-side kvote 20 kald per UTC-dag (mp_prej_usage_v1), max 10 ukøbte eksisterende indkøbsvarer per REST POST /shopping/offers, 6 timers delt transient-cache pr. søgeord. API GET /v1/products?q=...&on_offer=1&exclude_border_trade=1. Filtrér kun prices[].is_offer og gældende datoer. Ingen baggrundsscraping, køb eller billeder. API-nøgle server-side, intet bruger-specifikt (familieliste).
+
+
+## v0.1.16 – butikshukommelse
+- MP_ShoppingStores::preferred($title) bruger fælles wp_option mp_shopping_favourite_stores_v1 og sanitize_title($title) som stabil nøgle.
+- POST /shopping/{id}/store gemmer butik for alle familiens brugere. Alle kan skrive, da rettigheden er is_user_logged_in().
+- GET /shopping udvides med store, men beholder id, title, amount og checked.
+- UI grupperer Købt nederst, Tilbud øverst og øvrige efter butik. Hver ukøbt vare kan søges via eksisterende Prej REST POST /shopping/offers med præcis ét vare-id.
+- Ingen automatisk tilbudssøgning ved åbning/tilføjelse, og ingen automatisk flytning af varer efter tilbud. Prej API-kvote deles uændret.
+- Backup gemmer præference-optionen. Ingen database-migrering.

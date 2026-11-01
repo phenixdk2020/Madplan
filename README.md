@@ -268,3 +268,16 @@ Under **Madplan → Indkøbsliste** findes **Find tilbud** på ukøbte varer og 
 Prej Gratis er 25 opslag per døgn, og integrationen stopper ved 20 udgående opslag per UTC-døgn og cacher forespørgsler i 6 timer på tværs af familien. Ingen scraping, ingen automatisk cron/opslag, ingen vareliste til offentliggørelse. Prej kilder krediteres, se [Prej API-vilkår](https://prej.dk/vilkaar-api). Gratisplanen er kun til **ikke-kommercielle projekter**, uden reklamer og affiliate-indtægter. Tilbudsbilleder/avisfotos kopieres ikke.
 
 REST: `POST /wp-json/hangar18/v1/shopping/offers` med indkøbs-ID'er og login/nonce. Kun eksisterende ukøbte varer kan udløse forespørgsler. Tests: `tests/offers_check.php` og `tests/offers_contract.py`.
+
+
+## v0.1.16 – foretrukken butik og tilbud på hver vare
+
+Familien kan gemme **en foretrukken butik for hver vare**. For eksempel grupperes *Hakket oksekød* automatisk under Føtex, når dette først er valgt. En ny vare med samme navn får også Føtex. Butiksvalg gemmes i fælles WordPress-option `mp_shopping_favourite_stores_v1`; alle WordPress-abonnenter ser samme gruppering.
+
+Under hver vare findes en butiksvælger og knappen **Se tilbud**. Knappen henter *mulige* aktuelle tilbud hos flere kæder via den eksisterende Prej-integration. Resultatet åbnes lige under varen, grupperet efter butik og med produktnavn, pakning, pris samt udløbsdato. **Valget af foretrukken butik ændres ikke, når man undersøger andre butikkers tilbud.**
+
+Butikken `Tilbud` er en manuel kategori for varer, man ønsker at finde på tilbud; dette udløser ikke automatisk API-kald. `Alle` bruges, før der er valgt butik. Købte varer ligger fortsat i `Købt`, og historik/indkøbslisteindhold slettes ikke ved opgradering.
+
+Eksisterende Prej gratisplan, kvotebegrænsning (20 API-kald per UTC-døgn), cache, kildevisning og validering genbruges. Der tilføjes ikke betalte funktioner. Kataloget kan være ufuldstændigt, og pakkestørrelser skal sammenlignes manuelt. Der er ikke lavet automatisk skift til billigste butik.
+
+Nye API-kald: `GET /shopping/stores`, `POST /shopping/{id}/store`. Eksisterende `POST /shopping/offers` bevares. Den fælles butikspræference inkluderes i WordPress-databackupen. Regressionstest i `tests/shopping_stores.php` og `tests/shopping_store_contract.py`.

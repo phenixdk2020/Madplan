@@ -607,93 +607,142 @@ if(r.images.length)html+='<h3>Flere billeder</h3><div class="mp-recipe-gallery">
 content.innerHTML=html+'</div>';content.querySelector('#back-recipes').onclick=recipes;
 }
 async function shopping(){
- content.innerHTML='<p>Henter indkøbslisten…</p>';
- var list;
- try{list=await api('shopping');}catch(e){return fail(e);}
+ content.innerHTML='<p class="mp-help">Henter indkøbslisten…</p>';
+ var list,settings;
+ try{
+  var data=await Promise.all([api('shopping'),api('shopping/stores')]);
+  list=data[0];settings=data[1];
+ }catch(e){return fail(e);}
+ var options=settings.options||['Alle'];
+ function storeSelect(selected){
+  return options.map(function(store){
+   return '<option value="'+esc(store)+'" '+(store===selected?'selected':'')+'>'+esc(store)+'</option>';
+  }).join('');
+ }
  var pending=list.filter(function(item){return !Number(item.checked);});
- var html='<section class="mp-card"><h3>Fælles indkøbsliste</h3>'+
- '<p class="mp-help">Alle i familien deler listen. Tilføj varer og markér dem som købt.</p>'+
+ var html='<section class="mp-card mp-shopping-main"><h3>Fælles indkøbsliste</h3>'+
+ '<p class="mp-help">Varerne placeres automatisk i familiens foretrukne butik. Vælg “Tilbud” for varer, du vil finde et godt tilbud på.</p>'+
  '<form class="mp-shopping-form" id="add-item">'+
- '<input id="item-title" maxlength="255" required placeholder="Vare">'+
- '<input id="item-amount" maxlength="80" placeholder="Mængde">'+
+ '<input id="item-title" maxlength="255" required aria-label="Vare" placeholder="Vare, fx hakket oksekød">'+
+ '<input id="item-amount" maxlength="80" aria-label="Mængde" placeholder="Mængde">'+
  '<button type="submit" class="mp-btn mp-btn-primary">Tilføj</button></form>'+
- '<div class="mp-offers-panel"><h4>Tilbud fra danske tilbudsaviser og butikker</h4>'+
- '<p class="mp-help">Undersøg mulige tilbud på varerne – inkl. pris, butik og slutdato. '
- +'Vælg selv det rigtige mærke og pakningsstørrelse; der købes aldrig noget automatisk.</p>'+
- '<button type="button" id="mp-check-offers-all" class="mp-btn mp-btn-primary" '+
- (!pending.length?'disabled':'')+'>Find tilbud på indkøbslisten (højst 10 varer)</button>'+
- '<p id="mp-offer-note" class="mp-help" aria-live="polite"></p></div>';
+ '<button type="button" id="mp-check-offers-all" class="mp-btn mp-shopping-bulk" '+(!pending.length?'disabled':'')+
+ '>Søg tilbud på op til 10 varer</button><p id="mp-offer-note" class="mp-help" aria-live="polite"></p></section>';
+ var groups={};
  list.forEach(function(x){
-  var checked=Number(x.checked)!==0;
-  html+='<div class="mp-shopping-item '+(checked?'mp-checked':'')+'">'+
-  '<label><input class="item-check" type="checkbox" data-id="'+x.id+'" '+(checked?'checked':'')+'>'+
-  '<span class="mp-shopping-name">'+esc(x.title)+'</span><small>'+esc(x.amount)+'</small></label>'+
-  (!checked?'<button type="button" class="mp-btn mp-offer-check" data-id="'+x.id+'">Find tilbud</button>':'')+
-  (cfg.admin?'<button class="mp-btn item-delete" type="button" data-id="'+x.id+'">×</button>':'')+
-  '</div><div class="mp-item-offers" id="mp-item-offers-'+x.id+'" hidden></div>';
+  var group=Number(x.checked)?'Købt':(x.store||'Alle');
+  if(!groups[group])groups[group]=[];
+  groups[group].push(x);
  });
- html+='</section><p class="mp-help">Tilbudsdatasæt: <a href="https://prej.dk" target="_blank" rel="noopener noreferrer">Data fra Prej</a>. '
- +'Tilbud kan være udløbet eller variere lokalt; tjek prisen i butikken.</p>';
+ var names=Object.keys(groups).sort(function(a,b){
+  if(a==='Købt')return 1;if(b==='Købt')return -1;
+  if(a==='Tilbud')return -1;if(b==='Tilbud')return 1;
+  if(a==='Alle')return 1;if(b==='Alle')return -1;
+  return a.localeCompare(b,'da');
+ });
+ if(!names.length)html+='<section class="mp-card"><p>Indkøbslisten er tom. Tilføj en vare ovenfor.</p></section>';
+ names.forEach(function(group){
+  html+='<section class="mp-shopping-group"><h3 class="mp-shopping-group-name">'+
+   (group==='Tilbud'?'🐷 ':group==='Købt'?'✓ ':'⌂ ')+esc(group)+'</h3>';
+  groups[group].forEach(function(item){
+   var checked=!!Number(item.checked);
+   html+='<article class="mp-shopping-item mp-shopping-entry '+(checked?'mp-checked':'')+'" data-id="'+item.id+'">'+
+    '<label class="mp-shopping-label"><input type="checkbox" class="item-check" data-id="'+item.id+'" '+
+    (checked?'checked':'')+'><span class="mp-shopping-name">'+esc(item.title)+'</span>'+
+    (item.amount?'<small class="mp-shopping-amount">'+esc(item.amount)+'</small>':'')+'</label>'+
+    (!checked?'<div class="mp-shopping-tools"><label class="mp-shopping-store-wrap"><span>Butik</span>'+
+      '<select class="mp-shopping-store" data-id="'+item.id+'" aria-label="Butik for '+esc(item.title)+'">'+
+      storeSelect(item.store||'Alle')+'</select></label>'+
+      '<button class="mp-btn mp-offer-check" type="button" data-id="'+item.id+'">Se tilbud</button></div>':'')+
+    (cfg.admin?'<button type="button" class="mp-btn item-delete" data-id="'+item.id+'" aria-label="Slet '+esc(item.title)+'">×</button>':'')+
+    '<div class="mp-item-offers" id="mp-item-offers-'+item.id+'" hidden></div></article>';
+  });
+  html+='</section>';
+ });
+ html+='<p class="mp-help mp-shopping-source">Tilbudsdata fra <a href="https://prej.dk/api" target="_blank" rel="noopener noreferrer">Prej</a>. Varevarianter og pakningsstørrelser kan være forskellige. Tilbudskvoten er begrænset på gratisplanen. '+
+ (settings.configured?'Tryk på Se tilbud for at tjekke en vare.':
+ 'Administrator kan aktivere tilbudssøgning med gratis Prej API-nøgle under Hangar18 → Oversigt.')+
+ '</p>';
  content.innerHTML=html;
  content.querySelector('#add-item').onsubmit=async function(ev){
   ev.preventDefault();
-  try{await api('shopping','POST',{
-   title:content.querySelector('#item-title').value,
-   amount:content.querySelector('#item-amount').value
-  });await shopping();}catch(e){fail(e);}
+  try{
+   await api('shopping','POST',{title:content.querySelector('#item-title').value,
+    amount:content.querySelector('#item-amount').value});
+   await shopping();msg('Varen er tilføjet under familiens foretrukne butik.');
+  }catch(e){fail(e);}
  };
- content.querySelectorAll('.item-check').forEach(function(b){
-  b.onchange=async function(){
-   try{await api('shopping/'+b.dataset.id,'POST',{checked:b.checked});await shopping();}
-   catch(e){fail(e);}
+ content.querySelectorAll('.item-check').forEach(function(b){b.onchange=async function(){
+  try{await api('shopping/'+b.dataset.id,'POST',{checked:b.checked});await shopping();}
+  catch(e){fail(e);}
+ };});
+ content.querySelectorAll('.item-delete').forEach(function(b){b.onclick=async function(){
+  try{await api('shopping/'+b.dataset.id,'DELETE');await shopping();}
+  catch(e){fail(e);}
+ };});
+ content.querySelectorAll('.mp-shopping-store').forEach(function(sel){
+  sel.onchange=async function(){
+   sel.disabled=true;
+   try{
+    await api('shopping/'+sel.dataset.id+'/store','POST',{store:sel.value});
+    await shopping();msg('Familiens foretrukne butik er gemt til næste gang.');
+   }catch(e){fail(e);sel.disabled=false;}
   };
  });
- content.querySelectorAll('.item-delete').forEach(function(b){
-  b.onclick=async function(){
-   try{await api('shopping/'+b.dataset.id,'DELETE');await shopping();}catch(e){fail(e);}
-  };
- });
- function displayOffers(item){
-  var el=content.querySelector('#mp-item-offers-'+item.id);
-  if(!el)return;
+ function displayOfferResult(item){
+  var panel=content.querySelector('#mp-item-offers-'+item.id);
+  if(!panel)return;
   var offers=item.offers||[];
-  var html='<strong>Mulige tilbud på '+esc(item.title)+'</strong>';
+  var markup='<strong>Mulige tilbud på '+esc(item.title)+'</strong>'+
+   '<p class="mp-help">Sammenlign varenavn, mærke og pakningsstørrelse. En tilbudspris gælder ikke nødvendigvis alle lokale butikker.</p>';
   if(!offers.length){
-   html+='<p class="mp-help">'+esc(item.message||'Ingen aktive tilbud fundet.')+'</p>';
+   markup+='<p class="mp-help">'+esc(item.message||'Ingen aktuelle tilbud fundet i datakilden.')+'</p>';
   }else{
+   var byStore={};
    offers.forEach(function(o){
-    html+='<div class="mp-offer-row"><div><strong>'+esc(o.name)+'</strong>'+
-     '<small>'+esc(o.store)+' · '+esc(o.source)+'</small>'+
-     '<small>'+(o.quantity?esc(o.quantity)+' · ':'')+
-       (o.unit_price?esc(o.unit_price):'Kontrollér pakningsstørrelsen')+'</small></div>'+
-     '<div class="mp-offer-price"><strong>'+esc(o.price_label)+'</strong>'+
-     '<small>'+(o.ends?'Gælder til '+esc(o.ends):'Slutdato ikke oplyst')+'</small></div></div>';
+    if(!byStore[o.store])byStore[o.store]=[];
+    byStore[o.store].push(o);
+   });
+   Object.keys(byStore).sort(function(a,b){return a.localeCompare(b,'da');}).forEach(function(store){
+    markup+='<h4 class="mp-offer-store">'+esc(store)+'</h4>';
+    byStore[store].forEach(function(o){
+     markup+='<div class="mp-offer-row"><div><strong>'+esc(o.name)+'</strong>'+
+      '<small>'+esc(o.source)+'</small>'+
+      '<small>'+esc([o.quantity,o.unit_price].filter(Boolean).join(' · ')||'Kontrollér pakningsstørrelse')+'</small></div>'+
+      '<div class="mp-offer-price"><strong>'+esc(o.price_label)+'</strong>'+
+      '<small>'+(o.ends?'Til '+esc(o.ends):'Slutdato ikke oplyst')+'</small></div></div>';
+    });
    });
   }
-  el.innerHTML=html;el.hidden=false;
+  panel.innerHTML=markup;panel.hidden=false;panel.dataset.loaded='1';
  }
- async function scan(ids,button){
-  if(button)button.disabled=true;
+ async function scan(ids,b){
+  if(b)b.disabled=true;
   var note=content.querySelector('#mp-offer-note');
-  note.textContent='Undersøger tilbud i danske butikker…';
+  note.textContent='Søger efter aktuelle tilbud…';
   try{
    var results=await api('shopping/offers','POST',{ids:ids});
-   (results.items||[]).forEach(displayOffers);
+   (results.items||[]).forEach(displayOfferResult);
    var usage=results.usage||{};
-   note.textContent='Søgt på '+(results.items||[]).length+' varer. '+
-    'Gratis API-kvote anvendt i dag: '+(usage.used||0)+' / '+(usage.limit||20)+
-    ' (cachen deles af familien).';
-  }catch(e){
-   note.textContent=e.message||'Tilbud kunne ikke hentes.';
-   fail(e);
-  }finally{if(button)button.disabled=false;}
+   note.textContent='Kontrolleret '+(results.items||[]).length+' vare(r). Gratis API-kvote: '+
+    (usage.used||0)+' / '+(usage.limit||20)+' opslag i dag.';
+  }catch(e){note.textContent=e.message||'Kunne ikke hente tilbud.';fail(e);}
+  finally{if(b)b.disabled=false;}
  }
  content.querySelector('#mp-check-offers-all').onclick=function(){
-  // Free plan is 25 calls per day. Never send the entire list without limits.
   scan(pending.slice(0,10).map(function(x){return Number(x.id);}),this);
  };
  content.querySelectorAll('.mp-offer-check').forEach(function(b){
-  b.onclick=function(){scan([Number(b.dataset.id)],b);};
+  b.onclick=function(){
+   var panel=content.querySelector('#mp-item-offers-'+b.dataset.id);
+   if(!panel)return;
+   if(!panel.hidden){panel.hidden=true;b.textContent='Se tilbud';return;}
+   b.textContent='Skjul tilbud';
+   if(panel.dataset.loaded==='1'){panel.hidden=false;return;}
+   panel.innerHTML='<p class="mp-help">Søger efter tilbud…</p>';panel.hidden=false;
+   scan([Number(b.dataset.id)],b);
+  };
  });
 }
+
 })();

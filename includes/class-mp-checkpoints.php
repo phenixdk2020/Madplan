@@ -122,6 +122,7 @@ final class MP_Checkpoints {
                 'mp_db_version'=>get_option('mp_db_version'),
                 'mp_movies_v1'=>get_option('mp_movies_v1',[]),
                 'mp_household_streaming_services_v1'=>get_option('mp_household_streaming_services_v1',[]),
+                'mp_shopping_favourite_stores_v1'=>get_option('mp_shopping_favourite_stores_v1',[]),
                 'mp_dk_schedules_v1'=>get_option('mp_dk_schedules_v1',[]),
                 'mp_watch_monitor_v1'=>get_option('mp_watch_monitor_v1',[]),
             ], 'tables'=>[], 'recipes'=>[], 'recipe_meta'=>[],

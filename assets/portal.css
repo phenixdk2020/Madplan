@@ -302,3 +302,38 @@ body.mp-full-page.mp-theme-burgundy{background:#f9f0f3;color:#41212c}
 .mp-portal .mp-offer-price{text-align:right;min-width:88px}
 .mp-portal .mp-offer-price strong{color:var(--mp-primary);white-space:nowrap}
 @media(max-width:460px){.mp-portal .mp-offer-row{gap:8px}.mp-portal .mp-offer-price{min-width:76px}.mp-portal .mp-offers-panel .mp-btn{width:100%}}
+
+/* 0.1.16: shared habitual-store shopping groups and expandable offers. */
+.mp-portal .mp-shopping-main{margin-bottom:12px}
+.mp-portal .mp-shopping-bulk{margin-top:12px;min-height:42px}
+.mp-portal .mp-shopping-group{margin:0 0 15px;border:1px solid var(--mp-line);
+ border-radius:12px;background:var(--mp-card);overflow:hidden}
+.mp-portal .mp-shopping-group-name{margin:0;padding:10px 14px;
+ background:var(--mp-primary);color:var(--mp-on-primary,#fff);font-size:17px;font-weight:750}
+.mp-portal .mp-shopping-entry{display:flex;align-items:center;flex-wrap:wrap;
+ gap:10px;padding:12px 14px;border-bottom:1px solid var(--mp-line);border-top:0}
+.mp-portal .mp-shopping-entry:last-child{border-bottom:0}
+.mp-portal .mp-shopping-entry .mp-shopping-label{display:flex;flex:1 1 195px;
+ align-items:center;gap:10px;min-width:0}
+.mp-portal .mp-shopping-entry .mp-shopping-name{font-size:16px;overflow-wrap:anywhere;flex:1}
+.mp-portal .mp-shopping-amount{color:var(--mp-muted);font-size:13px;white-space:nowrap}
+.mp-portal .mp-shopping-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mp-portal .mp-shopping-entry .mp-shopping-store-wrap{display:flex;align-items:center;
+ gap:6px;flex:0 1 auto;min-width:0;color:var(--mp-muted);font-size:12px}
+.mp-portal .mp-shopping-store{min-width:115px;max-width:170px;border:1px solid var(--mp-line);
+ border-radius:9px;background:var(--mp-card);color:var(--mp-ink);padding:9px;
+ min-height:42px;font-size:14px}
+.mp-portal .mp-shopping-entry .mp-offer-check{min-height:42px}
+.mp-portal .mp-shopping-entry .mp-item-offers{flex:1 0 100%;margin:5px 0 0;padding:10px 12px;
+ background:var(--mp-bg);border:1px solid var(--mp-line);border-radius:10px;min-width:0}
+.mp-portal .mp-shopping-entry .mp-item-offers[hidden]{display:none}
+.mp-portal .mp-offer-store{margin:14px 0 4px;font-size:14px;
+ color:var(--mp-ink);border-bottom:1px solid var(--mp-line);padding-bottom:6px}
+.mp-portal .mp-shopping-source{padding:5px 2px;line-height:1.5}
+@media(max-width:600px){
+ .mp-portal .mp-shopping-entry .mp-shopping-tools{flex:1 0 100%;justify-content:space-between}
+ .mp-portal .mp-shopping-entry .mp-shopping-store-wrap{flex:1 1 150px}
+ .mp-portal .mp-shopping-entry .mp-shopping-store{flex:1;max-width:none}
+ .mp-portal .mp-shopping-entry .mp-offer-check{flex:0 0 auto}
+ .mp-portal .mp-shopping-entry .item-delete{margin-left:auto}
+}
