@@ -68,6 +68,7 @@ $GLOBALS['wpdb']=new FakeDb();
 function expect_true(bool $v,string $m): void{if(!$v)throw new RuntimeException('FAIL: '.$m);}
 require dirname(__DIR__).'/includes/class-mp-shopping-stores.php';
 require dirname(__DIR__).'/includes/class-mp-shopping-details.php';
+require dirname(__DIR__).'/includes/class-mp-shopping-history.php';
 require dirname(__DIR__).'/includes/class-mp-rest.php';
 
 expect_true(MP_ShoppingDetails::for_item($GLOBALS['wpdb']->rows[2])['quantity']===2,
