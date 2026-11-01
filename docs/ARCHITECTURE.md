@@ -168,3 +168,11 @@ MP_Portal::render() udstiller data-module=shopping på tredje hjemmekort. Klient
 - POST /shopping/clear-purchased sletter udelukkende rækker med checked=1 med betinget WHERE og rydder kun disse varers option-detaljer; ingen slettede foretrukne butikker eller abonnementer. UI kræver window.confirm. Samme rettighed som skrivning af indkøbslisten (inklusive abonnent).
 - Dataoptions medtages i databackup. Varefotos i uploads bør inkluderes i den normale WordPress-mediebackup.
 - Regression: PHP mock-database med købte og ukøbte varer, validering, bruger-skifte, butiksfilter og gentagen rydning.
+
+
+## v0.1.19 – historik til indkøbsautofuldførelse
+- MP_ShoppingHistory WordPress option mp_shopping_purchased_history_v1: højst 250 titler, nøgle i små bogstaver, senest købt ISO-UTC, uden person-ID.
+- Første brug: importer kun checked=1-rækker fra wp_mp_shopping; tidligere ryddede køb kan ikke rekonstrueres.
+- MP_REST::toggle_shopping gemmer titlen efter succesfuld markering som købt; clear_purchased gemmer varenavnet efter vellykket sletning. Fælles WordPress-abonnenter kan skrive.
+- GET /shopping/history kun for indloggede; frontend downloader listen én gang ved åbning og udfører client-side filter uden API-kald per tastetryk.
+- Semantisk combobox/listbox, maks otte forslag, både touch og tastatur. Samme aktive indkøbsliste og butiksvalg. Option sikkerhedskopieres.

@@ -47,6 +47,8 @@ jobs:
           python3 tests/offers_contract.py
           php tests/shopping_stores.php
           php tests/shopping_details.php
+          php tests/shopping_history.php
+          python3 tests/shopping_history_contract.py
           python3 tests/shopping_details_contract.py
           python3 tests/shopping_store_contract.py
           python3 tests/streaming_contract.py

@@ -300,3 +300,14 @@ Over indkøbslisten findes **Butikker til tilbudssøgning** med afkrydsninger. F
 **Ryd købte varer (N)** fjerner, efter et bekræftelsesspørgsmål, **kun** de indkøbsposter, der er markeret som købt. Det kan udføres af alle indloggede familiemedlemmer. Ukøbte varer bevares, ligesom favorittens butiksindstilling for et varenavn og familiens valgte tilbudsbutikker. Tilknyttede vare-detaljer for de købte poster ryddes. Billeder i WordPress uploads slettes ikke automatisk.
 
 Teknisk: `MP_ShoppingDetails` benytter fælles WP-options `mp_shopping_item_details_v1` pr. vare-ID og `mp_shopping_offer_stores_v1`. Ingen ændringer i eksisterende databasetabeller og ingen datamigration. REST POST `/shopping/{id}/details`, `/shopping/{id}/photo`, `/shopping/offer-stores`, `/shopping/clear-purchased` kræver login og WordPress REST nonce. Options inkluderes i Hangar18s backup. Tester: `tests/shopping_details.php` og `tests/shopping_details_contract.py`.
+
+
+## v0.1.19 – købshistorik og autofuldførelse på indkøbslisten
+
+Når en vare markeres købt, gemmes varenavnet i familiens fælles `mp_shopping_purchased_history_v1` (maks. 250 unikke varer, uden persondata). Ved første besøg efter opdatering tages eksisterende købte rækker med som historik. Varer, der blev ryddet før opdateringen, kan ikke genskabes.
+
+På **Indkøbsliste → Tilføj vare** vises op til otte forslag fra historikken, når man har skrevet mindst to tegn. Eksempel: `hak` kan give `Hakket oksekød`, hvis dette tidligere blev købt. Forslagene søger både i begyndelsen og inde i varenavnet; præfiks-matches vises først. Vælg med mus, finger eller piletaster og Enter. Escape lukker listen. Intet Prej- eller andet API-kald foretages, når man skriver: forslagene filtreres lokalt, efter én gang at have hentet de fælles data.
+
+Ryd købte varer bevarer fremover varehistorikken og sletter kun de købte rækker fra selve indkøbslisten. Historikken indgår i Hangar18s sikkerhedskopi. Samme historik ses af alle familiemedlemmer uanset WordPress-rolle; indkøbslisten og butikkerne fungerer uændret.
+
+Prej's dækning er ikke komplet. Et tilbud i en butiksavis betyder ikke nødvendigvis, at det kan findes med `/v1/products?q=...`, da Prej ikke kan matche alle kæders avisvarer via stregkode. Vores aktuelle produktsøgning henter op til 75 varer (ikke 12) pr. forespørgsel; `/v1/offers` og `/v1/flyers` er alternative data-endpoints til senere forbedring. <https://prej.dk/api/daekning>.

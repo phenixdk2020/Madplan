@@ -608,10 +608,10 @@ content.innerHTML=html+'</div>';content.querySelector('#back-recipes').onclick=r
 }
 async function shopping(){
  content.innerHTML='<p class="mp-help">Henter indkøbslisten…</p>';
- var list,settings;
+ var list,settings,history;
  try{
-  var data=await Promise.all([api('shopping'),api('shopping/stores')]);
-  list=data[0];settings=data[1];
+  var data=await Promise.all([api('shopping'),api('shopping/stores'),api('shopping/history')]);
+  list=data[0];settings=data[1];history=data[2]||[];
  }catch(e){return fail(e);}
  var options=settings.options||['Alle'];
  function storeSelect(selected){
@@ -628,7 +628,10 @@ async function shopping(){
  var html='<section class="mp-card mp-shopping-main"><h3>Fælles indkøbsliste</h3>'+
  '<p class="mp-help">Varerne placeres automatisk i familiens foretrukne butik. Vælg “Tilbud” for varer, du vil finde et godt tilbud på.</p>'+
  '<form class="mp-shopping-form" id="add-item">'+
- '<input id="item-title" maxlength="255" required aria-label="Vare" placeholder="Vare, fx hakket oksekød">'+
+ '<div class="mp-history-wrap"><input id="item-title" maxlength="255" required autocomplete="off" aria-label="Vare" '+
+ 'role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="mp-history-matches" '+
+ 'placeholder="Vare, fx hakket oksekød">'+
+ '<div id="mp-history-matches" class="mp-history-matches" role="listbox" hidden></div></div>'+
  '<input id="item-amount" maxlength="80" aria-label="Mængde" placeholder="Mængde">'+
  '<button type="submit" class="mp-btn mp-btn-primary">Tilføj</button></form>'+
  '<details class="mp-shop-filter"><summary>Butikker til tilbudssøgning ('+offerSelected.length+' valgt)</summary>'+
@@ -764,6 +767,68 @@ async function shopping(){
   }catch(e){fail(e);}
   finally{submit.disabled=false;}
  };
+ // Suggestions are matched locally against the family's *purchased* history.
+ // No API call is made on each keystroke and no private profile info is used.
+ var titleInput=content.querySelector('#item-title');
+ var historyBox=content.querySelector('#mp-history-matches');
+ var choices=[],chosenIndex=-1;
+ function normalizedTitle(value){
+  var t=String(value||'').trim().toLocaleLowerCase('da-DK');
+  return t.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ }
+ function hideHistory(){
+  historyBox.hidden=true;
+  historyBox.innerHTML='';
+  titleInput.setAttribute('aria-expanded','false');
+  titleInput.removeAttribute('aria-activedescendant');
+  choices=[];chosenIndex=-1;
+ }
+ function chooseHistory(index){
+  if(!choices[index])return;
+  titleInput.value=choices[index].title;
+  hideHistory();titleInput.focus();
+ }
+ function renderHistory(){
+  var phrase=normalizedTitle(titleInput.value);
+  if(phrase.length<2){hideHistory();return;}
+  choices=(Array.isArray(history)?history:[]).filter(function(entry){
+   return entry&&typeof entry.title==='string'&&normalizedTitle(entry.title).includes(phrase);
+  }).sort(function(a,b){
+   var ap=normalizedTitle(a.title).startsWith(phrase),bp=normalizedTitle(b.title).startsWith(phrase);
+   if(ap!==bp)return ap?-1:1;
+   return String(b.last_purchased||'').localeCompare(String(a.last_purchased||''));
+  }).slice(0,8);
+  chosenIndex=-1;
+  if(!choices.length){hideHistory();return;}
+  historyBox.innerHTML=choices.map(function(entry,i){
+   return '<button type="button" id="mp-history-choice-'+i+'" role="option" aria-selected="false" class="mp-history-choice" data-index="'+i+'">'+
+    esc(entry.title)+'</button>';
+  }).join('');
+  historyBox.hidden=false;titleInput.setAttribute('aria-expanded','true');
+  historyBox.querySelectorAll('.mp-history-choice').forEach(function(btn){
+   btn.onpointerdown=function(ev){ev.preventDefault();chooseHistory(Number(btn.dataset.index));};
+   btn.onclick=function(){chooseHistory(Number(btn.dataset.index));};
+  });
+ }
+ titleInput.addEventListener('input',renderHistory);
+ titleInput.addEventListener('keydown',function(ev){
+  if(historyBox.hidden)return;
+  if(ev.key==='Escape'){ev.preventDefault();hideHistory();return;}
+  if(ev.key==='ArrowDown'||ev.key==='ArrowUp'){
+   ev.preventDefault();
+   chosenIndex=(chosenIndex+(ev.key==='ArrowDown'?1:-1)+choices.length)%choices.length;
+   historyBox.querySelectorAll('.mp-history-choice').forEach(function(btn,i){
+    btn.classList.toggle('mp-history-active',i===chosenIndex);
+    btn.setAttribute('aria-selected',i===chosenIndex?'true':'false');
+   });
+   titleInput.setAttribute('aria-activedescendant','mp-history-choice-'+chosenIndex);
+  }
+  if(ev.key==='Enter'&&chosenIndex>=0){ev.preventDefault();chooseHistory(chosenIndex);}
+ });
+ titleInput.addEventListener('blur',function(){
+  // Pointer selection is handled before blur; avoid stale suggestions.
+  hideHistory();
+ });
  content.querySelector('#add-item').onsubmit=async function(ev){
   ev.preventDefault();
   try{

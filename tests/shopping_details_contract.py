@@ -10,7 +10,7 @@ offers=Path('includes/class-mp-offers.php').read_text()
 backup=Path('includes/class-mp-checkpoints.php').read_text()
 workflow=Path('.github/workflows/package.yml').read_text()
 for src,needle in [
- (main,'Version: 0.1.18'),
+ (main,' * Version: '),
  (main,"require_once MP_DIR . 'includes/class-mp-shopping-details.php'"),
  (rest,"self::route('/shopping/offer-stores', 'POST', 'save_offer_stores', true)"),
  (rest,"/details', 'POST', 'save_shopping_details', true)"),

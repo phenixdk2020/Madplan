@@ -381,3 +381,16 @@ body.mp-full-page.mp-theme-burgundy{background:#f9f0f3;color:#41212c}
  .mp-portal .mp-shopping-bulk-actions button{flex:1 1 165px}
  .mp-portal .mp-shopping-details-open{min-width:55px}
 }
+
+/* v0.1.19: responsive autocomplete from shared purchased grocery history. */
+.mp-portal .mp-shopping-form .mp-history-wrap{position:relative;min-width:0;align-self:stretch}
+.mp-portal .mp-shopping-form .mp-history-wrap input{box-sizing:border-box;width:100%;height:100%;min-height:45px}
+.mp-portal .mp-history-matches{position:absolute;top:calc(100% + 3px);left:0;right:0;z-index:30;
+ border:1px solid var(--mp-line);border-radius:10px;background:var(--mp-card);
+ box-shadow:0 10px 28px rgba(0,0,0,.18);max-height:275px;overflow:auto;padding:3px}
+.mp-portal .mp-history-matches[hidden]{display:none}
+.mp-portal .mp-history-choice{display:block;width:100%;padding:12px 11px;border:0;border-radius:7px;
+ text-align:left;font:inherit;font-size:15px;color:var(--mp-ink);background:transparent;cursor:pointer;
+ overflow-wrap:anywhere;min-height:44px}
+.mp-portal .mp-history-choice:hover,.mp-portal .mp-history-choice.mp-history-active,
+.mp-portal .mp-history-choice:focus-visible{background:var(--mp-selected);color:var(--mp-on-primary)}
