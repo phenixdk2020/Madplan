@@ -93,6 +93,7 @@ final class MP_Portal {
             <div class="mp-home-cards">
               <button type="button" class="mp-home-card" data-module="tv"><span class="mp-emoji" aria-hidden="true">📺</span><strong>TV-guide</strong><span>Serier, film og kommende premierer</span></button>
               <button type="button" class="mp-home-card" data-module="food"><span class="mp-emoji" aria-hidden="true">🍽️</span><strong>Madplan</strong><span>Tilføj aftensmad til de fire personer</span></button>
+              <button type="button" class="mp-home-card" data-module="shopping"><span class="mp-emoji" aria-hidden="true">🛒</span><strong>Indkøbsliste</strong><span>Fælles indkøb, butikker og aktuelle tilbud</span></button>
             </div>
           </div>
           <div class="mp-main" id="mp-main" hidden>

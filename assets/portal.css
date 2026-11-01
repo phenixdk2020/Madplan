@@ -337,3 +337,14 @@ body.mp-full-page.mp-theme-burgundy{background:#f9f0f3;color:#41212c}
  .mp-portal .mp-shopping-entry .mp-offer-check{flex:0 0 auto}
  .mp-portal .mp-shopping-entry .item-delete{margin-left:auto}
 }
+
+/* v0.1.17: three first-page destinations, shopping opens shared list directly. */
+@media(min-width:740px){
+  .mp-portal .mp-home-cards{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:739px){
+  .mp-portal .mp-home-cards{grid-template-columns:minmax(0,1fr);gap:11px}
+  .mp-portal .mp-home-card{min-height:108px;padding:13px 17px;gap:5px}
+  .mp-portal .mp-home-card .mp-emoji{font-size:27px;line-height:1}
+}
+.mp-portal .mp-home-card:focus-visible{outline:3px solid var(--mp-primary);outline-offset:3px}

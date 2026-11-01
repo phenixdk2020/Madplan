@@ -154,3 +154,8 @@ MP_Offers: wp_option mp_prej_api_key_v1, valgfri wp-config-konstant MP_PREJ_API_
 - UI grupperer Købt nederst, Tilbud øverst og øvrige efter butik. Hver ukøbt vare kan søges via eksisterende Prej REST POST /shopping/offers med præcis ét vare-id.
 - Ingen automatisk tilbudssøgning ved åbning/tilføjelse, og ingen automatisk flytning af varer efter tilbud. Prej API-kvote deles uændret.
 - Backup gemmer præference-optionen. Ingen database-migrering.
+
+
+## v0.1.17 – forsidegenvej til indkøb
+
+MP_Portal::render() udstiller data-module=shopping på tredje hjemmekort. Klientens eksisterende module()-router oversætter shopping → food/shopping og bruger samme shopping()-renderer og eksisterende REST/endpoints, data og brugerrettigheder; ingen datamigration. setTab() sætter dynamisk overskrift efter aktiv fane. CSS grid er tre kolonner desktop (>=740px) og én kolonne mobil (<740px). Dybdelink #shopping genbruges.

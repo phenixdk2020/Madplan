@@ -281,3 +281,8 @@ Butikken `Tilbud` er en manuel kategori for varer, man ønsker at finde på tilb
 Eksisterende Prej gratisplan, kvotebegrænsning (20 API-kald per UTC-døgn), cache, kildevisning og validering genbruges. Der tilføjes ikke betalte funktioner. Kataloget kan være ufuldstændigt, og pakkestørrelser skal sammenlignes manuelt. Der er ikke lavet automatisk skift til billigste butik.
 
 Nye API-kald: `GET /shopping/stores`, `POST /shopping/{id}/store`. Eksisterende `POST /shopping/offers` bevares. Den fælles butikspræference inkluderes i WordPress-databackupen. Regressionstest i `tests/shopping_stores.php` og `tests/shopping_store_contract.py`.
+
+
+## v0.1.17 – Indkøbsliste på forsiden
+
+Familiens forside har nu tre store genveje: **TV-guide**, **Madplan** og **Indkøbsliste**. Det nye indkøbskort (🛒) åbner direkte den allerede eksisterende fælles indkøbsliste, herunder favoritbutikker og Prej-tilbud (hvis API-nøglen er konfigureret). Der oprettes hverken ekstra lister eller nye databasetabeller. Alle loggede brugere, også Abonnenter, har samme funktioner som før. En `#shopping`-dybdelink virkede i forvejen og er bevaret. Overskriften viser `Indkøbsliste` når fanen er aktiv. På desktop vises tre lige store kort side om side, og på mobil ligger de i én kolonne med store klikflader. Integrationstest: `tests/home_shopping_contract.py`.
