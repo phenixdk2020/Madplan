@@ -48,7 +48,7 @@ final class MP_ShoppingHistory {
         uasort($items,static function($a,$b) {
             return strcmp((string)($b['last_purchased']??''),(string)($a['last_purchased']??''));
         });
-        update_option(self::OPTION,array_slice($items,0,self::LIMIT,null,true),false);
+        update_option(self::OPTION,array_slice($items,0,self::LIMIT,true),false);
     }
 
     /** Sorted server-side; filtering is local on each keystroke. */
