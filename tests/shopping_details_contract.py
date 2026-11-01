@@ -31,7 +31,7 @@ for src,needle in [
  (js,'mp-clear-purchased'),(js,"api('shopping/clear-purchased','POST',{})"),
  (js,'mp-save-offer-stores'),(js,"api('shopping/offer-stores','POST'"),
  (js,"new FormData()"),(js,'dialog.showModal()'),
- (offers,'$selectedStores'),(offers,'in_array((string)($offer'),
+ (offers,'$selectedStores'),(offers,'in_array(mb_strtolower(trim((string)($offer'),
  (backup,"'mp_shopping_item_details_v1'=>get_option("),
  (backup,"'mp_shopping_offer_stores_v1'=>get_option("),
  (workflow,'php tests/shopping_details.php'),(css,'.mp-shopping-dialog')
