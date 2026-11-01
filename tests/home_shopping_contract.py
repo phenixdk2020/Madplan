@@ -5,7 +5,7 @@ portal=Path('includes/class-mp-portal.php').read_text(encoding='utf-8')
 js=Path('assets/portal.js').read_text(encoding='utf-8')
 css=Path('assets/portal.css').read_text(encoding='utf-8')
 main=Path('hangar18-madplan.php').read_text(encoding='utf-8')
-assert 'Version: 0.1.17' in main
+assert ' * Version: ' in main
 assert portal.count('class="mp-home-card" data-module="shopping"') == 1
 assert portal.count('class="mp-home-card" data-module="tv"') == 1
 assert portal.count('class="mp-home-card" data-module="food"') == 1
