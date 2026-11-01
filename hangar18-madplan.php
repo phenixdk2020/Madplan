@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/phenixdk2020/Madplan
  * Update URI: https://github.com/phenixdk2020/Madplan
  * Description: Mobilvenlig familieportal med fælles TV-/film-premierer, watchlist, madplan og opskrifter.
- * Version: 0.1.14
+ * Version: 0.1.15
  * Requires at least: 6.4
  * Requires PHP: 8.0
  * Text Domain: hangar18-madplan
@@ -12,7 +12,7 @@
 declare(strict_types=1);
 
 if (!defined('ABSPATH')) { exit; }
-define('MP_VERSION', '0.1.14');
+define('MP_VERSION', '0.1.15');
 define('MP_FILE', __FILE__);
 define('MP_DIR', plugin_dir_path(__FILE__));
 define('MP_URL', plugin_dir_url(__FILE__));
@@ -21,6 +21,7 @@ require_once MP_DIR . 'includes/class-mp-storage.php';
 require_once MP_DIR . 'includes/class-mp-tvmaze.php';
 require_once MP_DIR . 'includes/class-mp-rest.php';
 require_once MP_DIR . 'includes/class-mp-streaming.php';
+require_once MP_DIR . 'includes/class-mp-offers.php';
 require_once MP_DIR . 'includes/class-mp-movies.php';
 require_once MP_DIR . 'includes/class-mp-portal.php';
 require_once MP_DIR . 'includes/class-mp-home.php';
@@ -141,6 +142,20 @@ final class MP_Plugin {
                 }
             }
         }
+        if (isset($_POST['mp_save_prej'])) {
+            check_admin_referer('mp_save_prej');
+            if (isset($_POST['mp_clear_prej']) && $_POST['mp_clear_prej']==='1') {
+                MP_Offers::clear_key();
+                echo '<div class="notice notice-success"><p>Prej-nøglen er fjernet.</p></div>';
+            } else {
+                $key=trim((string)wp_unslash($_POST['mp_prej_token'] ?? ''));
+                if (MP_Offers::save_key($key)) {
+                    echo '<div class="notice notice-success"><p>Prej API-nøglen er gemt.</p></div>';
+                } else {
+                    echo '<div class="notice notice-error"><p>Ugyldig Prej API-nøgle. Brug din gratis Bearer-nøgle fra prej.dk/api.</p></div>';
+                }
+            }
+        }
         $people = MP_Storage::people();
         $page_id = (int)get_option('mp_portal_page');
         echo '<div class="wrap"><h1>Hangar18 Madplan & TV-plan</h1>';
@@ -177,6 +192,19 @@ final class MP_Plugin {
         echo '<p><button class="button button-primary" type="submit" name="mp_save_tmdb" value="1">Gem TMDB-nøgle</button> ';
         echo '<label><input type="checkbox" name="mp_clear_tmdb" value="1"> Fjern gemt nøgle</label></p></form>';
         echo '<p class="description">Nøglen gemmes kun på serveren. Alternativt kan MP_TMDB_API_TOKEN sættes i wp-config.php.</p>';
+        echo '<hr><h2>Indkøbsliste og tilbudsaviser (Prej)</h2>';
+        echo '<p>Indkøbslisten kan søge efter aktuelle danske tilbud og reklameaviser fra Prej. '
+            . 'Gratis plan for privat, ikke-kommerciel brug: 25 API-kald pr. dag. Hangar18 stopper ved 20 og cacher svar. '
+            . '<a href="https://prej.dk/api" target="_blank" rel="noopener">Hent gratis Prej-nøgle</a>. '
+            . '<a href="https://prej.dk/vilkaar-api" target="_blank" rel="noopener">Se vilkår</a>.</p>';
+        echo '<p>Status: <strong>' . (MP_Offers::configured()?'Prej er konfigureret':'Prej mangler API-nøgle')
+             . '</strong>. Brugte opslag i dag: ' . (int)MP_Offers::usage()['used'] . ' / 20.</p>';
+        echo '<form method="post">'; wp_nonce_field('mp_save_prej');
+        echo '<p><label>Prej API-nøgle (vises ikke igen) <input type="password" name="mp_prej_token" value="" class="regular-text" autocomplete="new-password"></label></p>';
+        echo '<p><button class="button button-primary" type="submit" name="mp_save_prej" value="1">Gem Prej-nøgle</button> ';
+        echo '<label><input type="checkbox" name="mp_clear_prej" value="1"> Fjern gemt nøgle</label></p></form>';
+        echo '<p class="description">Nøglen gemmes kun på serveren; alternativt MP_PREJ_API_TOKEN i wp-config.php. '
+            . 'Ingen automatisk køb, indkøb eller betalt opgradering.</p>';
         echo '<hr>';
         echo '<p>Portal: <a href="' . esc_url($page_id ? get_permalink($page_id) : home_url('/familieplan/')) . '" target="_blank" rel="noopener">Åbn Familieplan</a>. Indsæt <code>[hangar18_portal]</code> på en anden side efter behov.</p>';
         echo '<p>Opskrifter oprettes i menupunktet <strong>Hangar18 → Opskrifter</strong> på PC. Madplan og TV-watchlist kan redigeres af alle loggede brugere direkte på mobilen.</p>';

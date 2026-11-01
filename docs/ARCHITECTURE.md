@@ -142,3 +142,6 @@ Senere: automatiske indkøb fra opskrifter, tilbud, dansk premieredatakilde, ske
 ## v0.1.14 – velkomst
 
 Portalheaderen bruger WordPress' wp_get_current_user()->first_name. Hvis tomt, første ord af display_name (ikke e-mail). Mangler begge, vises Velkommen tilbage. Escape med esc_html. Ingen lagring/cache af personnavne. Loginheaderen forbliver Hangar18. Test: tests/portal_greeting.php.
+
+## v0.1.15 – Prej-tilbud
+MP_Offers: wp_option mp_prej_api_key_v1, valgfri wp-config-konstant MP_PREJ_API_TOKEN; server-side kvote 20 kald per UTC-dag (mp_prej_usage_v1), max 10 ukøbte eksisterende indkøbsvarer per REST POST /shopping/offers, 6 timers delt transient-cache pr. søgeord. API GET /v1/products?q=...&on_offer=1&exclude_border_trade=1. Filtrér kun prices[].is_offer og gældende datoer. Ingen baggrundsscraping, køb eller billeder. API-nøgle server-side, intet bruger-specifikt (familieliste).

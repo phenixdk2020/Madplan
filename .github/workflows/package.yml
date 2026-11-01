@@ -43,6 +43,8 @@ jobs:
           php tests/movies_check.php
           python3 tests/movies_contract.py
           php tests/portal_greeting.php
+          php tests/offers_check.php
+          python3 tests/offers_contract.py
           python3 tests/streaming_contract.py
           php tests/dk_schedule.php
           python3 tests/tv_portal_contract.py

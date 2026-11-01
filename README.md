@@ -257,3 +257,14 @@ Datakilder: https://developer.themoviedb.org/docs/search-and-query-for-details o
 Efter login viser familieportalens topbar **Velkommen Maria** i stedet for Hangar18, hvis den aktuelle bruger hedder Maria. **Familieplan** står uændret nedenunder. Fornavnet hentes fra WordPress-brugerens **Fornavn**; hvis dette felt er tomt, bruges første ord af **Vis navn offentligt som**. Hvis intet brugbart navn findes, står der **Velkommen tilbage**. Andre brugeres navne blandes ikke sammen, og login-skærmen hedder fortsat Hangar18.
 
 Da fornavnet allerede vises i topbaren, fjernes det dobbelte visningsnavn til højre; farvetema og Log ud er uændret. Lange fornavne kan ombrydes på mobil uden at ødelægge menuen. Tests: tests/portal_greeting.php.
+
+
+## v0.1.15 – Tilbud på familiens indkøbsliste
+
+Frivillig gratis, privat ikke-kommerciel integration med [Prej API](https://prej.dk/api). Admin opsætter en Prej Bearer-nøgle under **Hangar18 → Oversigt → Indkøbsliste og tilbudsaviser** eller i `wp-config.php` som `MP_PREJ_API_TOKEN`. WordPress gemmer nøglen server-side (option `mp_prej_api_key_v1`). Ingen ekstra abonnementer eller automatisk køb.
+
+Under **Madplan → Indkøbsliste** findes **Find tilbud** på ukøbte varer og **Find tilbud på indkøbslisten** (maks 10 varer per klik). Resultater viser mulige produktmatches: varenavn, butik, pris i kroner, størrelse/enhedspris hvis registreret, kilde som Tilbudsavis eller Butikskatalog og udløbsdato. Købte varer, udløbne og fremtidige tilbud udelades. Resultater er **forslag**, ikke garanti for præcis vare eller pakkestørrelse. Butikspriser kan variere lokalt.
+
+Prej Gratis er 25 opslag per døgn, og integrationen stopper ved 20 udgående opslag per UTC-døgn og cacher forespørgsler i 6 timer på tværs af familien. Ingen scraping, ingen automatisk cron/opslag, ingen vareliste til offentliggørelse. Prej kilder krediteres, se [Prej API-vilkår](https://prej.dk/vilkaar-api). Gratisplanen er kun til **ikke-kommercielle projekter**, uden reklamer og affiliate-indtægter. Tilbudsbilleder/avisfotos kopieres ikke.
+
+REST: `POST /wp-json/hangar18/v1/shopping/offers` med indkøbs-ID'er og login/nonce. Kun eksisterende ukøbte varer kan udløse forespørgsler. Tests: `tests/offers_check.php` og `tests/offers_contract.py`.

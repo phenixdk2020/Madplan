@@ -86,6 +86,7 @@ final class MP_REST {
         self::route('/shows/(?P<id>\d+)/sync', 'POST', 'sync_show', true);
         self::route('/shows/(?P<id>\d+)/dk-schedule', 'POST', 'save_danish_schedule', true);
         self::route('/shopping', 'GET', 'shopping');
+        self::route('/shopping/offers', 'POST', 'shopping_offers', true);
         self::route('/shopping', 'POST', 'add_shopping');
         self::route('/shopping/(?P<id>\d+)', 'POST', 'toggle_shopping');
         self::route('/shopping/(?P<id>\d+)', 'DELETE', 'delete_shopping', true, true);
@@ -272,6 +273,18 @@ final class MP_REST {
         $date=sanitize_text_field((string)$r->get_param('first_date'));
         $weekly=rest_sanitize_boolean($r->get_param('weekly'));
         return MP_TVmaze::set_dk_schedule($id,$date,$weekly);
+    }
+    public static function shopping_offers(WP_REST_Request $r) {
+        $ids=$r->get_param('ids');
+        if (!is_array($ids)) {
+            return new WP_Error('mp_prej_ids','Angiv en liste af varer.', ['status'=>400]);
+        }
+        foreach ($ids as $id) {
+            if (!is_scalar($id) || (string)$id!== (string)absint($id)) {
+                return new WP_Error('mp_prej_id','Ugyldigt vare-ID.', ['status'=>400]);
+            }
+        }
+        return MP_Offers::scan($ids);
     }
     public static function shopping() {
         global $wpdb;
