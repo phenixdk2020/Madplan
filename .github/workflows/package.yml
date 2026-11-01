@@ -45,6 +45,8 @@ jobs:
           php tests/portal_greeting.php
           php tests/offers_check.php
           php tests/flyer_search.php
+          php tests/flyer_library.php
+          python3 tests/flyer_library_contract.py
           python3 tests/flyer_search_contract.py
           python3 tests/offers_contract.py
           php tests/shopping_stores.php

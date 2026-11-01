@@ -329,3 +329,14 @@ Dokumentation:
 - https://prej.dk/api/daekning
 
 Tests `php tests/flyer_search.php` og `python3 tests/flyer_search_contract.py` med simuleret SuperBrugsen-avis og tre paginerede 100-resultatsider. Integration på webhotel kræver korrekt gemt Prej-nøgle.
+
+
+## v0.1.21 – familiens aktuelle tilbudsaviser
+
+Under **Indkøbsliste → Aktuelle tilbudsaviser → Hent aktuelle tilbudsaviser** kan alle loggede husstandsmedlemmer nu åbne Prejs aktuelle tilbudsaviser for de **fælles afkrydsede butikker**. Klik **Åbn forside** eller **Se alle sider** for at åbne originalbilleder i en ny browserfane. Der downloades, hostes, kopieres eller OCR-behandles **ikke** reklameavisbilleder på Hangar18s server. Det bruger kun originale billedlinks fra Prej med eksakt tilladt HTTPS-vært. Kildekreditering og gyldighedsdatoer vises.
+
+Serveren henter Prejs `GET /v1/flyers?page=N&limit=100` ved brugerklik, maksimalt to sider (200 aviser), og gemmer de strukturerede svar i WordPress' 6-timers transient-cache. Ved større datamængder står der eksplicit **ufuldstændig liste**. Resultater filtreres server-side efter familiens valgte butikker og datoens gyldighed. En ændring af butiksvalg gælder straks også for cachede data. Det bruger samme maksimum 20 API-kald/UTC-dag som de øvrige tilbudsfunktioner.
+
+**Hvorfor ikke OCR på alle sider?** Prej leverer avisers billedlinks, ikke søgbar fuldtekst. Gratis API-planen understøtter privat, ikke-kommerciel brug, men giver ikke selv billedlicens fra butikkerne; automatisk kopiering af avisbilleder og systematisk billed-OCR er derfor ikke aktiveret uden rettighedsgrundlag. Fritekstsøgning fortsætter kun på tilbudsdata fra /v1/products og /v1/offers, og kan mangle varer på billedsiderne. Avisoversigten gør det muligt manuelt at åbne eksempelvis SuperBrugsens forside og tjekke Faxe Kondi, når det strukturerede opslag ikke finder produktet.
+
+Kilder: https://prej.dk/api/eksempler, https://prej.dk/api/dokumentation og https://prej.dk/vilkaar-api. Test: `tests/flyer_library.php` og `tests/flyer_library_contract.py`.

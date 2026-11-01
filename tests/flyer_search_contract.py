@@ -8,7 +8,7 @@ offers=Path('includes/class-mp-offers.php').read_text()
 js=Path('assets/portal.js').read_text()
 css=Path('assets/portal.css').read_text()
 for src,term in [
- (main,'Version: 0.1.20'),
+ (main,' * Version: '),
  (main,"require_once MP_DIR . 'includes/class-mp-offer-flyers.php'"),
  (rest,"self::route('/shopping/flyer-search', 'POST', 'shopping_flyer_search', true)"),
  (rest,'MP_OfferFlyers::scan('),

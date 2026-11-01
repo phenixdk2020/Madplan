@@ -638,6 +638,7 @@ async function shopping(){
  '<p class="mp-help">Kun tilbud fra de valgte butikker vises. Valget gælder hele familien.</p>'+
  '<div class="mp-shop-filter-grid">'+offerOptions.map(offerToggleMarkup).join('')+'</div>'+
  '<button type="button" class="mp-btn mp-btn-primary" id="mp-save-offer-stores">Gem valgte butikker</button></details>'+
+ '<details class="mp-shop-filter mp-flyer-library"><summary>Aktuelle tilbudsaviser</summary>'+ '<p class="mp-help">Se de originale avisforsider og sider for familiens valgte butikker. Avisbilleder er ikke tekstsøgbar data.</p>'+ '<button type="button" id="mp-load-flyers" class="mp-btn mp-btn-primary" '+(settings.configured?'':'disabled')+'>Hent aktuelle tilbudsaviser</button>'+ '<div id="mp-flyer-library-results" aria-live="polite"></div></details>'+
  '<div class="mp-shopping-bulk-actions"><button type="button" id="mp-clear-purchased" class="mp-btn" '+
  (!purchased.length?'disabled':'')+'>Ryd købte varer ('+purchased.length+')</button>'+
  '<button type="button" id="mp-check-offers-all" class="mp-btn mp-shopping-bulk" '+(!pending.length?'disabled':'')+
@@ -695,6 +696,43 @@ async function shopping(){
  'Administrator kan aktivere tilbudssøgning med gratis Prej API-nøgle under Hangar18 → Oversigt.')+
  '</p>';
  content.innerHTML=html;
+ var flyerBtn=content.querySelector('#mp-load-flyers');
+ var flyerArea=content.querySelector('#mp-flyer-library-results');
+ if(flyerBtn) flyerBtn.onclick=async function(){
+  flyerBtn.disabled=true;
+  flyerArea.textContent='Henter familiens aktuelle tilbudsaviser…';
+  try{
+   var result=await api('shopping/flyers');
+   var flyers=result.flyers||[];
+   if(!flyers.length) {
+    flyerArea.innerHTML='<p class="mp-help">Ingen aktuelle aviser fundet for de valgte butikker. Kontrollér butikkernes afkrydsninger.</p>';
+   } else {
+    var html='<p class="mp-help">'+flyers.length+' aktuelle aviser fundet.'+
+       (result.partial?' Oversigten er ufuldstændig: Prej har flere aviser end de hentede sider.':'')+'</p>';
+    flyers.forEach(function(flyer){
+     html+='<article class="mp-flyer-card"><div><strong>'+esc(flyer.chain)+'</strong>'+
+      '<small>Gælder fra '+esc(flyer.valid_from)+' til '+esc(flyer.valid_to)+
+      ' · '+esc(flyer.page_count)+' sider</small></div>';
+     if(flyer.page_urls&&flyer.page_urls.length) {
+      html+='<a href="'+url(flyer.page_urls[0])+'" target="_blank" rel="noopener noreferrer" class="mp-btn mp-flyer-first">Åbn forside</a>'+
+      '<details class="mp-flyer-pages"><summary>Se alle sider</summary><div class="mp-flyer-pages-grid">';
+      flyer.page_urls.forEach(function(page,i){
+       html+='<a href="'+url(page)+'" target="_blank" rel="noopener noreferrer">Side '+(i+1)+'</a>';
+      });
+      html+='</div></details>';
+     }
+     html+='</article>';
+    });
+    html+='<p class="mp-help">Kilde: <a href="https://prej.dk" target="_blank" rel="noopener noreferrer">Prej</a>. Avisens sider åbnes hos udbyderen. Der foretages ikke automatisk tekstgenkendelse (OCR).</p>';
+    flyerArea.innerHTML=html;
+   }
+   var usage=result.usage||{};
+   msg('Tilbudsaviser indlæst. Prej-kvote: '+(usage.used||0)+' / '+(usage.limit||20)+'.');
+  }catch(e){
+   flyerArea.textContent=e.message||'Tilbudsaviser kunne ikke indlæses.';
+   fail(e);
+  }finally{flyerBtn.disabled=false;}
+ };
  var offerSave=content.querySelector('#mp-save-offer-stores');
  offerSave.onclick=async function(){
   var stores=Array.from(content.querySelectorAll('.mp-filter-store:checked')).map(function(input){return input.value;});

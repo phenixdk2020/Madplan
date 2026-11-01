@@ -409,3 +409,24 @@ body.mp-full-page.mp-theme-burgundy{background:#f9f0f3;color:#41212c}
  .mp-portal .mp-flyer-search small{grid-column:1}
  .mp-portal .mp-flyer-search button{width:100%}
 }
+
+/* 0.1.21: Source-linked offer papers for the shared household. */
+.mp-portal .mp-flyer-library{margin:12px 0}
+.mp-portal .mp-flyer-library>summary{cursor:pointer;min-height:44px;font-weight:700}
+.mp-portal #mp-load-flyers{min-height:46px}
+.mp-portal #mp-flyer-library-results{margin-top:12px}
+.mp-portal .mp-flyer-card{display:grid;grid-template-columns:minmax(0,1fr) auto;
+ gap:9px 12px;border:1px solid var(--mp-line);border-radius:10px;
+ background:var(--mp-card);padding:12px;margin-bottom:10px;align-items:center}
+.mp-portal .mp-flyer-card strong,.mp-portal .mp-flyer-card small{display:block}
+.mp-portal .mp-flyer-card small{color:var(--mp-muted);font-size:12px;margin-top:4px}
+.mp-portal .mp-flyer-first{text-decoration:none;min-height:44px;display:flex;align-items:center}
+.mp-portal .mp-flyer-pages{grid-column:1/-1;border-top:1px solid var(--mp-line);padding-top:7px}
+.mp-portal .mp-flyer-pages>summary{cursor:pointer;min-height:36px;font-size:14px;font-weight:650}
+.mp-portal .mp-flyer-pages-grid{display:flex;flex-wrap:wrap;gap:8px;padding:9px 0}
+.mp-portal .mp-flyer-pages-grid a{display:inline-flex;align-items:center;min-height:44px;
+ padding:6px 11px;border:1px solid var(--mp-line);border-radius:9px}
+@media(max-width:570px){
+ .mp-portal .mp-flyer-card{grid-template-columns:1fr}
+ .mp-portal .mp-flyer-first{width:100%;justify-content:center}
+}

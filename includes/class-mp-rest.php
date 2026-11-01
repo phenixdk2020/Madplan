@@ -94,6 +94,7 @@ final class MP_REST {
         self::route('/shopping', 'GET', 'shopping');
         self::route('/shopping/offers', 'POST', 'shopping_offers', true);
         self::route('/shopping/flyer-search', 'POST', 'shopping_flyer_search', true);
+        self::route('/shopping/flyers', 'GET', 'shopping_flyers');
         self::route('/shopping/clear-purchased', 'POST', 'clear_purchased', true);
         self::route('/shopping', 'POST', 'add_shopping');
         self::route('/shopping/(?P<id>\d+)', 'POST', 'toggle_shopping');
@@ -282,6 +283,7 @@ final class MP_REST {
         $weekly=rest_sanitize_boolean($r->get_param('weekly'));
         return MP_TVmaze::set_dk_schedule($id,$date,$weekly);
     }
+    public static function shopping_flyers() { return MP_FlyerLibrary::listing(); }
     public static function shopping_flyer_search(WP_REST_Request $r) {
         $id=$r->get_param('id');
         $store=$r->get_param('store');

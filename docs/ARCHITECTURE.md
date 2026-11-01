@@ -183,3 +183,9 @@ MP_Portal::render() udstiller data-module=shopping på tredje hjemmekort. Klient
 - GET /v1/offers: maks. 4×100 resultater på brugerklik, hver side cached 6 timer per chain slug; REST POST /shopping/flyer-search kræver signed-in og nonce, eksisterende ukøbt vare og én af husstandens valgte kæder.
 - Genbrug MP_Offers::reserve_flyer_call() og 20-kaldsgrænse per UTC-døgn; ingen automatisk kø, ændring af foretrukne butik eller scraping.
 - Match hvert relevant søgeord (Unicode-case-insensitive) mod tilbuddets titel og returnér maks. 24 aktuelle matches. Skeln mellem komplet og delvist gennemgået, vis tilbudspriser i øre og eventuelle multikøb separat.
+
+
+## v0.1.21 – flyer library (metadata/links only)
+- MP_FlyerLibrary GET /v1/flyers, at most 2×100 offers per manual user action and 6hr global transient cache; quota shared with products/offers.
+- Only selected household chain slugs, active date range, img.prej.app HTTPS original page_urls under /flyers/... accepted and exposed. Never fetch, proxy, mirror, OCR or store third-party images.
+- GET /shopping/flyers is login-protected read endpoint. Client renders link to first page or all pages in new tabs. Partial listings reported.
