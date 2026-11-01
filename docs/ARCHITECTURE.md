@@ -159,3 +159,12 @@ MP_Offers: wp_option mp_prej_api_key_v1, valgfri wp-config-konstant MP_PREJ_API_
 ## v0.1.17 – forsidegenvej til indkøb
 
 MP_Portal::render() udstiller data-module=shopping på tredje hjemmekort. Klientens eksisterende module()-router oversætter shopping → food/shopping og bruger samme shopping()-renderer og eksisterende REST/endpoints, data og brugerrettigheder; ingen datamigration. setTab() sætter dynamisk overskrift efter aktiv fane. CSS grid er tre kolonner desktop (>=740px) og én kolonne mobil (<740px). Dybdelink #shopping genbruges.
+
+## v0.1.18 – indkøbsvare-detaljer og bulk oprydning
+- MP_ShoppingDetails gemmer validerede vare-detaljer pr. ID i option mp_shopping_item_details_v1; butik/kategori gemmes fortsat via MP_ShoppingStores på varenavn.
+- Shared valgt Prej-butiksfilter i mp_shopping_offer_stores_v1; listen gemmes én gang for husstanden; tilbud filtreres på butik efter produktsøgningen.
+- De eksisterende shopping-tabeller ændres ikke. REST /shopping returnerer details pr. vare.
+- POST /shopping/{id}/details opdaterer varenavn, butik, antal (1–999), mængde, pris, note, favorit og stregkode. Varefoto kan uploades særskilt gennem POST /shopping/{id}/photo (3 MB/JPEG, PNG, WebP, login, nonce).
+- POST /shopping/clear-purchased sletter udelukkende rækker med checked=1 med betinget WHERE og rydder kun disse varers option-detaljer; ingen slettede foretrukne butikker eller abonnementer. UI kræver window.confirm. Samme rettighed som skrivning af indkøbslisten (inklusive abonnent).
+- Dataoptions medtages i databackup. Varefotos i uploads bør inkluderes i den normale WordPress-mediebackup.
+- Regression: PHP mock-database med købte og ukøbte varer, validering, bruger-skifte, butiksfilter og gentagen rydning.

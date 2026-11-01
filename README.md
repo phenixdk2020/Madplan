@@ -286,3 +286,17 @@ Nye API-kald: `GET /shopping/stores`, `POST /shopping/{id}/store`. Eksisterende 
 ## v0.1.17 – Indkøbsliste på forsiden
 
 Familiens forside har nu tre store genveje: **TV-guide**, **Madplan** og **Indkøbsliste**. Det nye indkøbskort (🛒) åbner direkte den allerede eksisterende fælles indkøbsliste, herunder favoritbutikker og Prej-tilbud (hvis API-nøglen er konfigureret). Der oprettes hverken ekstra lister eller nye databasetabeller. Alle loggede brugere, også Abonnenter, har samme funktioner som før. En `#shopping`-dybdelink virkede i forvejen og er bevaret. Overskriften viser `Indkøbsliste` når fanen er aktiv. På desktop vises tre lige store kort side om side, og på mobil ligger de i én kolonne med store klikflader. Integrationstest: `tests/home_shopping_contract.py`.
+
+
+## v0.1.18 – detaljer pr. indkøbsvare, fælles butiksfiltre og ryd købte varer
+
+**Tryk på Ret ud for en vare** for at åbne et mobilvenligt redigeringsvindue med:
+- Varenavn, **butik/kategori** (den eksisterende fælles butiksgruppering), **antal** med minus/plus-knapper, **pakningsstørrelse**, frivillig **pris i kr.**, **noter**, **favorit** og valgfri **stregkode** (EAN/UPC/GTIN).
+- Valgfrit varefoto fra mobil/PC (JPG, PNG eller WebP, højst 3 MB). Billedet gemmes i WordPress' uploads-map, så bemærk at mediefiler ikke er indeholdt i Hangar18s særskilte databackup.
+- Alle detaljer er delte for alle indloggede brugere, inklusive Abonnenter. Ændringer af varenavn opdaterer eksisterende indkøbspost; købte/ukøbte markeringer bevares.
+
+Over indkøbslisten findes **Butikker til tilbudssøgning** med afkrydsninger. Familien vælger de dagligvarekæder, der skal vises i tilbudsfund; et fælles WordPress-option `mp_shopping_offer_stores_v1` bevarer valget. Standard er alle tilgængelige kæder. En tom valgt liste betyder ingen viste tilbud. Butiksfiltreringen sker efter et enkelt Prej-produktsøgning, så der bruges færre gratis API-kald. Der hentes højst 75 produktmatch pr. vare og vises op til 6 aktuelle resultater fra de valgte kæder; resultatet er derfor ikke et fuldstændigt katalog. Gratis Prej-nøgle er stadig valgfri, og eksisterende kvote og 6-timers cache respekteres.
+
+**Ryd købte varer (N)** fjerner, efter et bekræftelsesspørgsmål, **kun** de indkøbsposter, der er markeret som købt. Det kan udføres af alle indloggede familiemedlemmer. Ukøbte varer bevares, ligesom favorittens butiksindstilling for et varenavn og familiens valgte tilbudsbutikker. Tilknyttede vare-detaljer for de købte poster ryddes. Billeder i WordPress uploads slettes ikke automatisk.
+
+Teknisk: `MP_ShoppingDetails` benytter fælles WP-options `mp_shopping_item_details_v1` pr. vare-ID og `mp_shopping_offer_stores_v1`. Ingen ændringer i eksisterende databasetabeller og ingen datamigration. REST POST `/shopping/{id}/details`, `/shopping/{id}/photo`, `/shopping/offer-stores`, `/shopping/clear-purchased` kræver login og WordPress REST nonce. Options inkluderes i Hangar18s backup. Tester: `tests/shopping_details.php` og `tests/shopping_details_contract.py`.

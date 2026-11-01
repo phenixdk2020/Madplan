@@ -82,7 +82,7 @@ final class MP_Offers {
             return new WP_Error('mp_prej_quota','Den daglige gratis tilbudskvote er opbrugt. Prøv igen efter midnat UTC.');
         }
         $url='https://api.prej.app/v1/products?'.http_build_query([
-            'q'=>$term,'on_offer'=>1,'exclude_border_trade'=>1,'limit'=>12,
+            'q'=>$term,'on_offer'=>1,'exclude_border_trade'=>1,'limit'=>75,
         ],'','&',PHP_QUERY_RFC3986);
         $response=wp_safe_remote_get($url,[
             'timeout'=>12,'redirection'=>0,
@@ -115,7 +115,7 @@ final class MP_Offers {
             $key=md5($offer['name'].'|'.$offer['store'].'|'.$offer['price_ore']);
             if (!isset($unique[$key])) { $unique[$key]=$offer; }
         }
-        $data=['offers'=>array_slice(array_values($unique),0,6),
+        $data=['offers'=>array_slice(array_values($unique),0,75),
                'as_of'=>(string)($body['as_of']??$today)];
         set_transient($cache,$data,self::CACHE_SECONDS);
         return $data;
@@ -135,6 +135,8 @@ final class MP_Offers {
             return new WP_Error('mp_prej_max','Undersøg højst ti varer ad gangen.',['status'=>400]);
         }
         $ids=array_values(array_unique(array_filter(array_map('absint',$ids))));
+        $selectedStores=class_exists('MP_ShoppingDetails') ?
+            MP_ShoppingDetails::selected_stores() : null;
         if (!$ids) { return ['items'=>[],'usage'=>self::usage()]; }
         global $wpdb;
         $table=MP_Storage::table('shopping');
@@ -157,9 +159,19 @@ final class MP_Offers {
                 if ($data->get_error_code()==='mp_prej_quota') { break; }
                 continue;
             }
+            $visible=$data['offers'];
+            if (is_array($selectedStores)) {
+                $visible=array_values(array_filter($visible,static function($offer) use($selectedStores) {
+                    return in_array(mb_strtolower(trim((string)($offer['store']??'')),'UTF-8'),
+                        array_map(static fn($s)=>mb_strtolower(trim((string)$s),'UTF-8'),$selectedStores),true);
+                }));
+            }
+            $visible=array_slice($visible,0,6);
             $out[]=['id'=>$id,'title'=>(string)$row['title'],
-                    'offers'=>$data['offers'],'as_of'=>$data['as_of'],
-                    'message'=>$data['offers']?'':'Ingen aktuelle tilbud fundet.'];
+                    'offers'=>$visible,'as_of'=>$data['as_of'],
+                    'message'=>$visible?'':($selectedStores===[] ?
+                        'Der er ikke valgt butikker til tilbudssøgningen.':
+                        'Ingen aktuelle tilbud fundet i de valgte butikker.')];
         }
         return ['items'=>$out,'usage'=>self::usage(),'source'=>'Prej',
                 'note'=>'Mulige varematch. Kontroller mærke, mængde, butik og tilbudsdato før køb.'];

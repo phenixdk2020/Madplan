@@ -86,9 +86,13 @@ final class MP_REST {
         self::route('/shows/(?P<id>\d+)/sync', 'POST', 'sync_show', true);
         self::route('/shows/(?P<id>\d+)/dk-schedule', 'POST', 'save_danish_schedule', true);
         self::route('/shopping/stores', 'GET', 'shopping_stores');
+        self::route('/shopping/offer-stores', 'POST', 'save_offer_stores', true);
+        self::route('/shopping/(?P<id>\d+)/details', 'POST', 'save_shopping_details', true);
+        self::route('/shopping/(?P<id>\d+)/photo', 'POST', 'upload_shopping_photo', true);
         self::route('/shopping/(?P<id>\\d+)/store', 'POST', 'save_shopping_store', true);
         self::route('/shopping', 'GET', 'shopping');
         self::route('/shopping/offers', 'POST', 'shopping_offers', true);
+        self::route('/shopping/clear-purchased', 'POST', 'clear_purchased', true);
         self::route('/shopping', 'POST', 'add_shopping');
         self::route('/shopping/(?P<id>\d+)', 'POST', 'toggle_shopping');
         self::route('/shopping/(?P<id>\d+)', 'DELETE', 'delete_shopping', true, true);
@@ -288,8 +292,36 @@ final class MP_REST {
         }
         return MP_Offers::scan($ids);
     }
+    public static function save_offer_stores(WP_REST_Request $r) {
+        $stores=$r->get_param('stores');
+        if (!is_array($stores)) {
+            return new WP_Error('mp_offer_stores','Angiv en liste over butikker.',['status'=>400]);
+        }
+        return MP_ShoppingDetails::save_stores($stores);
+    }
+    public static function save_shopping_details(WP_REST_Request $r) {
+        return MP_ShoppingDetails::save_item(absint($r['id']),[
+            'title'=>$r->get_param('title'),
+            'store'=>$r->get_param('store'),
+            'quantity'=>$r->get_param('quantity'),
+            'package_size'=>$r->get_param('package_size'),
+            'price'=>$r->get_param('price'),
+            'notes'=>$r->get_param('notes'),
+            'favorite'=>$r->get_param('favorite'),
+            'barcode'=>$r->get_param('barcode'),
+        ]);
+    }
+    public static function upload_shopping_photo(WP_REST_Request $r) {
+        $files=$r->get_file_params();
+        if (!isset($files['photo']) || !is_array($files['photo'])) {
+            return new WP_Error('mp_photo_missing','Vælg et billede.',['status'=>400]);
+        }
+        return MP_ShoppingDetails::attach_photo(absint($r['id']),$files['photo']);
+    }
     public static function shopping_stores() {
-        return ['options'=>MP_ShoppingStores::stores(),'configured'=>MP_Offers::configured()];
+        return ['options'=>MP_ShoppingStores::stores(),'configured'=>MP_Offers::configured(),
+            'offer_options'=>MP_ShoppingDetails::available_offer_stores(),
+            'offer_selected'=>MP_ShoppingDetails::selected_stores()];
     }
     public static function save_shopping_store(WP_REST_Request $r) {
         global $wpdb;
@@ -304,7 +336,10 @@ final class MP_REST {
         global $wpdb;
         $table = MP_Storage::table('shopping');
         $rows=$wpdb->get_results("SELECT id,title,amount,checked FROM $table ORDER BY checked ASC,id DESC LIMIT 500", ARRAY_A) ?: [];
-        foreach ($rows as &$row) { $row['store']=MP_ShoppingStores::preferred((string)$row['title']); }
+        foreach ($rows as &$row) {
+            $row['store']=MP_ShoppingStores::preferred((string)$row['title']);
+            $row['details']=MP_ShoppingDetails::for_item($row);
+        }
         unset($row);
         return $rows;
     }
@@ -316,6 +351,32 @@ final class MP_REST {
         $wpdb->insert(MP_Storage::table('shopping'), ['title'=>$title,'amount'=>substr($amount,0,80),'checked'=>0,'created_at'=>current_time('mysql')], ['%s','%s','%d','%s']);
         return ['id'=>(int)$wpdb->insert_id];
     }
+    /**
+     * Clear checked items only; preserve all unchecked rows, family store mapping,
+     * and offer-filter preferences. Accessible to logged-in subscribers too.
+     */
+    public static function clear_purchased() {
+        global $wpdb;
+        $table=MP_Storage::table('shopping');
+        $ids=$wpdb->get_col("SELECT id FROM $table WHERE checked=1");
+        if (!is_array($ids)) {
+            return new WP_Error('mp_clear_list','Kunne ikke hente købte varer.',['status'=>500]);
+        }
+        $deleted=0;
+        foreach ($ids as $value) {
+            $id=absint($value);
+            if (!$id) { continue; }
+            $result=$wpdb->delete($table,['id'=>$id,'checked'=>1],['%d','%d']);
+            if ($result===false) {
+                return new WP_Error('mp_clear_list','Sletningen blev afbrudt efter '.$deleted.' varer. Prøv igen.',['status'=>500]);
+            }
+            if ($result>0) {
+                MP_ShoppingDetails::delete_item($id);
+                $deleted++;
+            }
+        }
+        return ['deleted'=>$deleted,'saved'=>true];
+    }
     public static function toggle_shopping(WP_REST_Request $r) {
         global $wpdb; $id = absint($r['id']);
         $checked = $r->get_param('checked') ? 1 : 0;
@@ -323,7 +384,9 @@ final class MP_REST {
         return ['saved'=>true];
     }
     public static function delete_shopping(WP_REST_Request $r) {
-        global $wpdb; $wpdb->delete(MP_Storage::table('shopping'), ['id'=>absint($r['id'])], ['%d']);
+        global $wpdb; $id=absint($r['id']);
+        $wpdb->delete(MP_Storage::table('shopping'), ['id'=>$id], ['%d']);
+        MP_ShoppingDetails::delete_item($id);
         return ['deleted'=>true];
     }
 }

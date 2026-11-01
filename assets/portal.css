@@ -348,3 +348,36 @@ body.mp-full-page.mp-theme-burgundy{background:#f9f0f3;color:#41212c}
   .mp-portal .mp-home-card .mp-emoji{font-size:27px;line-height:1}
 }
 .mp-portal .mp-home-card:focus-visible{outline:3px solid var(--mp-primary);outline-offset:3px}
+
+/* v0.1.18: shared item detail editor, selected offer stores and bought-item cleanup. */
+.mp-portal .mp-shopping-bulk-actions{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-top:12px}
+.mp-portal .mp-shopping-bulk-actions button{min-height:44px}
+.mp-portal .mp-shop-filter{border:1px solid var(--mp-line);border-radius:12px;padding:12px;margin-top:14px;background:var(--mp-bg)}
+.mp-portal .mp-shop-filter>summary{font-weight:700;cursor:pointer;min-height:30px}
+.mp-portal .mp-shop-filter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:9px;margin:12px 0}
+.mp-portal .mp-offer-store-checkbox{display:flex;align-items:center;gap:8px;min-height:37px;font-size:13px}
+.mp-portal .mp-offer-store-checkbox input{width:19px;height:19px;accent-color:var(--mp-primary)}
+.mp-portal .mp-shopping-details-open{min-height:42px}
+.mp-portal .mp-item-favourite{color:#d08b00;font-size:20px}
+.mp-portal .mp-shopping-dialog{box-sizing:border-box;width:min(94vw,490px);max-height:90dvh;overflow-y:auto;border:1px solid var(--mp-line);border-radius:17px;
+ padding:18px;background:var(--mp-card);color:var(--mp-ink);box-shadow:0 14px 65px #0005}
+.mp-portal .mp-shopping-dialog::backdrop{background:rgba(8,24,37,.68)}
+.mp-portal .mp-shop-details-form{display:grid;gap:12px}
+.mp-portal .mp-shop-dialog-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.mp-portal .mp-shop-dialog-heading h3{margin:0}
+.mp-portal .mp-shop-details-form>label{display:grid;gap:6px;font-size:14px;font-weight:600}
+.mp-portal .mp-shop-details-form input:not([type=checkbox]),.mp-portal .mp-shop-details-form select,.mp-portal .mp-shop-details-form textarea{
+ box-sizing:border-box;width:100%;min-height:44px;border:1px solid var(--mp-line);border-radius:9px;
+ background:var(--mp-card);color:var(--mp-ink);padding:8px;font-size:16px}
+.mp-portal .mp-shop-stepper{display:flex;align-items:stretch;border-radius:9px;overflow:hidden;border:1px solid var(--mp-line)}
+.mp-portal .mp-shop-stepper button{background:var(--mp-bg);color:var(--mp-ink);border:0;width:57px;font-size:26px;cursor:pointer}
+.mp-portal .mp-shop-stepper input{min-width:60px;flex:1;text-align:center;border-radius:0!important;border-top:0!important;border-bottom:0!important}
+.mp-portal .mp-shop-fav-label{display:flex!important;align-items:center;gap:9px}
+.mp-portal .mp-shop-fav-label input{height:21px;width:21px;accent-color:var(--mp-primary)}
+.mp-portal .mp-shop-photo-preview img{display:block;max-height:115px;max-width:120px;object-fit:contain;border-radius:9px}
+.mp-portal .mp-shop-details-form>button[type=submit]{min-height:48px}
+@media(max-width:600px){
+ .mp-portal .mp-shopping-dialog{padding:14px}
+ .mp-portal .mp-shopping-bulk-actions button{flex:1 1 165px}
+ .mp-portal .mp-shopping-details-open{min-width:55px}
+}
