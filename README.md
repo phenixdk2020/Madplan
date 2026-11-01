@@ -311,3 +311,21 @@ På **Indkøbsliste → Tilføj vare** vises op til otte forslag fra historikken
 Ryd købte varer bevarer fremover varehistorikken og sletter kun de købte rækker fra selve indkøbslisten. Historikken indgår i Hangar18s sikkerhedskopi. Samme historik ses af alle familiemedlemmer uanset WordPress-rolle; indkøbslisten og butikkerne fungerer uændret.
 
 Prej's dækning er ikke komplet. Et tilbud i en butiksavis betyder ikke nødvendigvis, at det kan findes med `/v1/products?q=...`, da Prej ikke kan matche alle kæders avisvarer via stregkode. Vores aktuelle produktsøgning henter op til 75 varer (ikke 12) pr. forespørgsel; `/v1/offers` og `/v1/flyers` er alternative data-endpoints til senere forbedring. <https://prej.dk/api/daekning>.
+
+
+## v0.1.20 – Udvidet søgning direkte i strukturerede tilbudsaviser
+
+Efter almindelig **Se tilbud** på en indkøbsvare kan familien vælge **Udvid søgning i en tilbudsavis** og en af familiens valgte butikker (f.eks. SuperBrugsen) og trykke **Søg i butikkens tilbudsavis**. Et konkret eksempel er Faxe Kondi, der står på forsiden af SuperBrugsens tilbudsavis 30. oktober–5. november 2026, men ikke altid fanges af produktsøgningen.
+
+Teknik: Den nye WordPress REST-rute `POST /shopping/flyer-search` (login/nonce, samme skriveadgang som indkøbslisten) validerer én aktiv/ukøbt vare og én butik fra den fælles husstandsliste. `MP_OfferFlyers` bruger Prejs dokumenterede `GET /v1/offers?chain=superbrugsen&source=flyer&page=N&limit=100`, fordi `/v1/offers` **ikke** har en fritekst-parameter. Derefter matches varenavnet lokalt mod de tilbud, Prej har struktureret.
+
+Der hentes maks. fire sider á 100 tilbud per brugerhandling og maks. 24 match returneres. Sidesvar caches seks timer per butik og sidetal på tværs af alle familiemedlemmer. **Hvert** API-kald bruger den eksisterende konservative grænse på 20 Prej-kald per UTC-døgn (gratisleverandørgrænsen er 25); ved delvist resultatsæt/kvote vises tydeligt antal gennemgåede tilbud og forbehold. Knappen er manuel og ændrer **ikke** varens foretrukne butik. Ingen baggrundshøst, scraping eller betalt API.
+
+Både `/v1/products` og `/v1/offers` viser de strukturerede produkt- og tilbudsdata, der er tilgængelige. En fysisk avis kan have et opslag som billede, som ikke findes med matchbart varenavn eller slet ikke er struktureret i API'et. Derfor betyder "ingen resultater" ikke "ingen tilbud hos SuperBrugsen". Genkendelsen er tekstbaseret, så mere generiske avisoverskrifter kan mangle. Vi udgiver ikke kopi af hele tilbudsaviser eller avisbilleder.
+
+Dokumentation:
+- https://prej.dk/api/dokumentation
+- https://prej.dk/api/eksempler
+- https://prej.dk/api/daekning
+
+Tests `php tests/flyer_search.php` og `python3 tests/flyer_search_contract.py` med simuleret SuperBrugsen-avis og tre paginerede 100-resultatsider. Integration på webhotel kræver korrekt gemt Prej-nøgle.

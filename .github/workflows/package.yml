@@ -44,6 +44,8 @@ jobs:
           python3 tests/movies_contract.py
           php tests/portal_greeting.php
           php tests/offers_check.php
+          php tests/flyer_search.php
+          python3 tests/flyer_search_contract.py
           python3 tests/offers_contract.py
           php tests/shopping_stores.php
           php tests/shopping_details.php

@@ -176,3 +176,10 @@ MP_Portal::render() udstiller data-module=shopping på tredje hjemmekort. Klient
 - MP_REST::toggle_shopping gemmer titlen efter succesfuld markering som købt; clear_purchased gemmer varenavnet efter vellykket sletning. Fælles WordPress-abonnenter kan skrive.
 - GET /shopping/history kun for indloggede; frontend downloader listen én gang ved åbning og udfører client-side filter uden API-kald per tastetryk.
 - Semantisk combobox/listbox, maks otte forslag, både touch og tastatur. Samme aktive indkøbsliste og butiksvalg. Option sikkerhedskopieres.
+
+
+## v0.1.20 – Prej udvidet tilbudsavis
+- Skel mellem almindelig produktliste `/v1/products?q=...` og tilbudsavisens strukturerede tilbud `/v1/offers?chain=...&source=flyer`. Sidstnævnte har ikke q-filter.
+- GET /v1/offers: maks. 4×100 resultater på brugerklik, hver side cached 6 timer per chain slug; REST POST /shopping/flyer-search kræver signed-in og nonce, eksisterende ukøbt vare og én af husstandens valgte kæder.
+- Genbrug MP_Offers::reserve_flyer_call() og 20-kaldsgrænse per UTC-døgn; ingen automatisk kø, ændring af foretrukne butik eller scraping.
+- Match hvert relevant søgeord (Unicode-case-insensitive) mod tilbuddets titel og returnér maks. 24 aktuelle matches. Skeln mellem komplet og delvist gennemgået, vis tilbudspriser i øre og eventuelle multikøb separat.

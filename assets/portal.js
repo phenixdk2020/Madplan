@@ -858,8 +858,12 @@ async function shopping(){
   var panel=content.querySelector('#mp-item-offers-'+item.id);
   if(!panel)return;
   var offers=item.offers||[];
-  var markup='<strong>Mulige tilbud på '+esc(item.title)+'</strong>'+
-   '<p class="mp-help">Sammenlign varenavn, mærke og pakningsstørrelse. En tilbudspris gælder ikke nødvendigvis alle lokale butikker.</p>';
+  var heading=item.expanded?'Tilbudsavis: '+(item.store||''):'Mulige tilbud på '+item.title;
+  var markup='<strong>'+esc(heading)+'</strong>'+
+   '<p class="mp-help">Sammenlign varenavn, mærke og pakningsstørrelse. Tilbudspriser kan variere lokalt.</p>';
+  if(item.expanded&&item.message) {
+   markup+='<p class="mp-help mp-flyer-summary">'+esc(item.message)+'</p>';
+  }
   if(!offers.length){
    markup+='<p class="mp-help">'+esc(item.message||'Ingen aktuelle tilbud fundet i datakilden.')+'</p>';
   }else{
@@ -872,14 +876,40 @@ async function shopping(){
     markup+='<h4 class="mp-offer-store">'+esc(store)+'</h4>';
     byStore[store].forEach(function(o){
      markup+='<div class="mp-offer-row"><div><strong>'+esc(o.name)+'</strong>'+
-      '<small>'+esc(o.source)+'</small>'+
+      '<small>'+esc(o.source)+(o.multi_buy?' · '+esc(o.multi_buy):'')+'</small>'+
       '<small>'+esc([o.quantity,o.unit_price].filter(Boolean).join(' · ')||'Kontrollér pakningsstørrelse')+'</small></div>'+
       '<div class="mp-offer-price"><strong>'+esc(o.price_label)+'</strong>'+
       '<small>'+(o.ends?'Til '+esc(o.ends):'Slutdato ikke oplyst')+'</small></div></div>';
     });
    });
   }
+  // Explicit full-chain search; do not change a product's preferred store.
+  if(offerSelected.length){
+   var chosenStore=item.expanded&&item.store?item.store:
+    ((list.find(function(x){return Number(x.id)===Number(item.id);})||{}).store||'');
+   if(offerSelected.indexOf(chosenStore)===-1)chosenStore=offerSelected[0];
+   markup+='<div class="mp-flyer-search"><label>Udvid søgning i en tilbudsavis'+
+    '<select class="mp-flyer-store" aria-label="Vælg butik til udvidet tilbudssøgning">'+
+    offerSelected.map(function(store){return '<option value="'+esc(store)+'" '+
+      (store===chosenStore?'selected':'')+'>'+esc(store)+'</option>';}).join('')+
+    '</select></label>'+
+    '<button type="button" class="mp-btn mp-btn-primary mp-flyer-search-btn">Søg i butikkens tilbudsavis</button>'+
+    '<small>Gennemgår op til 400 registrerede tilbud fra den valgte kæde. Kan bruge op til fire Prej-kald, men samme kæde caches til familien i 6 timer.</small></div>';
+  }
   panel.innerHTML=markup;panel.hidden=false;panel.dataset.loaded='1';
+  var expand=panel.querySelector('.mp-flyer-search-btn');
+  if(expand)expand.onclick=async function(){
+   var store=panel.querySelector('.mp-flyer-store').value;
+   expand.disabled=true;
+   var note=content.querySelector('#mp-offer-note');
+   note.textContent='Søger i '+store+'s registrerede tilbudsavis…';
+   try{
+    var result=await api('shopping/flyer-search','POST',{id:Number(item.id),store:store});
+    (result.items||[]).forEach(displayOfferResult);
+    var usage=result.usage||{};
+    note.textContent='Avisopslag færdigt. Prej-kvote: '+(usage.used||0)+' / '+(usage.limit||20)+' i dag.';
+   }catch(e){note.textContent=e.message||'Avisopslaget fejlede.';fail(e);expand.disabled=false;}
+  };
  }
  async function scan(ids,b){
   if(b)b.disabled=true;

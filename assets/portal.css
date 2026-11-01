@@ -394,3 +394,18 @@ body.mp-full-page.mp-theme-burgundy{background:#f9f0f3;color:#41212c}
  overflow-wrap:anywhere;min-height:44px}
 .mp-portal .mp-history-choice:hover,.mp-portal .mp-history-choice.mp-history-active,
 .mp-portal .mp-history-choice:focus-visible{background:var(--mp-selected);color:var(--mp-on-primary)}
+
+/* v0.1.20: optional deep-search in structured flyer offers by one chain. */
+.mp-portal .mp-flyer-search{display:grid;grid-template-columns:minmax(0,1fr) auto;
+ align-items:end;gap:10px;border-top:1px solid var(--mp-line);padding-top:12px;margin-top:12px}
+.mp-portal .mp-flyer-search label{display:grid;gap:5px;font-size:13px;font-weight:650}
+.mp-portal .mp-flyer-search select{font-size:16px;min-height:44px;min-width:0;
+ padding:7px 9px;border:1px solid var(--mp-line);background:var(--mp-card);color:var(--mp-ink);border-radius:8px}
+.mp-portal .mp-flyer-search button{min-height:44px}
+.mp-portal .mp-flyer-search small{grid-column:1/-1;font-size:12px;color:var(--mp-muted)}
+.mp-portal .mp-flyer-summary{font-weight:600}
+@media(max-width:580px){
+ .mp-portal .mp-flyer-search{grid-template-columns:1fr}
+ .mp-portal .mp-flyer-search small{grid-column:1}
+ .mp-portal .mp-flyer-search button{width:100%}
+}

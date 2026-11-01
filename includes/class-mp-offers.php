@@ -35,6 +35,9 @@ final class MP_Offers {
         return ['used'=>$used,'remaining'=>max(0,self::DAILY_LIMIT-$used),
                 'limit'=>self::DAILY_LIMIT,'reset'=>'00:00 UTC'];
     }
+    /** Reserve a call to the documented /v1/offers endpoint from the same free quota. */
+    public static function reserve_flyer_call(): bool { return self::consume(); }
+
     private static function consume(): bool {
         $usage=self::usage();
         if ($usage['remaining']<=0) { return false; }

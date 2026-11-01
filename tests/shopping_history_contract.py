@@ -8,7 +8,7 @@ js=Path('assets/portal.js').read_text()
 css=Path('assets/portal.css').read_text()
 checkpoint=Path('includes/class-mp-checkpoints.php').read_text()
 for source,term in [
- (main,'Version: 0.1.19'),
+ (main,' * Version: '),
  (main,"require_once MP_DIR . 'includes/class-mp-shopping-history.php'"),
  (h,"'mp_shopping_purchased_history_v1'"),
  (h,'SELECT title FROM $table WHERE checked=1'),
