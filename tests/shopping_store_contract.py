@@ -9,7 +9,7 @@ c=Path('assets/portal.css').read_text()
 b=Path('includes/class-mp-checkpoints.php').read_text()
 w=Path('.github/workflows/package.yml').read_text()
 for source,needle in [
- (m,'Version: 0.1.16'),(m,"require_once MP_DIR . 'includes/class-mp-shopping-stores.php'"),
+ (m,' * Version: '),(m,"require_once MP_DIR . 'includes/class-mp-shopping-stores.php'"),
  (r,"'/shopping/stores'"),(r,"/store', 'POST'"),(r,"MP_ShoppingStores::save("),
  (r,"MP_ShoppingStores::preferred((string)$row['title'])"),
  (s,"'mp_shopping_favourite_stores_v1'"),(s,'function preferred('),(s,'function save('),
