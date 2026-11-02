@@ -430,3 +430,20 @@ body.mp-full-page.mp-theme-burgundy{background:#f9f0f3;color:#41212c}
  .mp-portal .mp-flyer-card{grid-template-columns:1fr}
  .mp-portal .mp-flyer-first{width:100%;justify-content:center}
 }
+
+/* 0.1.22: manual one-page OCR pilot (admin), locally searchable family candidates. */
+.mp-portal .mp-ocr-pilot{margin-top:12px;border:1px solid var(--mp-line);border-radius:12px;padding:12px}
+.mp-portal .mp-ocr-pilot>summary{font-size:15px;font-weight:700;cursor:pointer;min-height:44px}
+.mp-portal .mp-ocr-form{display:grid;gap:11px;margin:13px 0}
+.mp-portal .mp-ocr-form label{display:grid;gap:5px;font-size:13px;font-weight:650}
+.mp-portal .mp-ocr-form input,.mp-portal .mp-ocr-form select,.mp-portal .mp-ocr-text textarea{
+ box-sizing:border-box;width:100%;min-height:44px;border:1px solid var(--mp-line);border-radius:9px;
+ padding:9px;background:var(--mp-card);color:var(--mp-ink);font-size:16px}
+.mp-portal .mp-ocr-form input[type=file]{max-width:100%}
+.mp-portal .mp-ocr-text{margin:10px 0}
+.mp-portal .mp-ocr-text>summary{min-height:40px;cursor:pointer}
+.mp-portal .mp-ocr-text textarea{display:block;min-height:110px;margin-bottom:10px;resize:vertical}
+.mp-portal .mp-ocr-matches{border-top:1px solid var(--mp-line);margin-top:11px;padding-top:9px}
+.mp-portal .mp-ocr-matches:empty{display:none}
+.mp-portal #mp-ocr-import-result ul{padding-left:20px;line-height:1.5}
+@media(max-width:580px){.mp-portal .mp-ocr-form button,.mp-portal .mp-ocr-text button{width:100%;min-height:46px}}

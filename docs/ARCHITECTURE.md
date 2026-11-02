@@ -189,3 +189,9 @@ MP_Portal::render() udstiller data-module=shopping på tredje hjemmekort. Klient
 - MP_FlyerLibrary GET /v1/flyers, at most 2×100 offers per manual user action and 6hr global transient cache; quota shared with products/offers.
 - Only selected household chain slugs, active date range, img.prej.app HTTPS original page_urls under /flyers/... accepted and exposed. Never fetch, proxy, mirror, OCR or store third-party images.
 - GET /shopping/flyers is login-protected read endpoint. Client renders link to first page or all pages in new tabs. Partial listings reported.
+
+
+## v0.1.22 – OCR pilot
+- Local Tesseract via proc_open array args (no shell), detects binary, max image 6MB / 36MP, only uploaded image, MIME/image validation. Optional MP_TESSERACT_PATH, dan+eng fallback to eng. If server disallows proc_open, manual OCR text import. No automatic download of flyer page images or external OCR API.
+- Scope: manual one-page test, admin-only upload/import/clear and WordPress REST nonce; all logged-in household members can match against shared option mp_grocery_ocr_candidates_v1. File stays in PHP temporary upload only and text gets discarded after extraction; max 300 short candidate records; expiry and store filters.
+- OCR candidates are unverified; product-price pairing from visually laid out ads can be mistaken. A shopping item may have OCR suggestions in addition to Prej data, shown with clear provenance. No paid dependencies and no extra Prej calls while searching index.

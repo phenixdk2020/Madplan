@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/phenixdk2020/Madplan
  * Update URI: https://github.com/phenixdk2020/Madplan
  * Description: Mobilvenlig familieportal med fælles TV-/film-premierer, watchlist, madplan og opskrifter.
- * Version: 0.1.21
+ * Version: 0.1.22
  * Requires at least: 6.4
  * Requires PHP: 8.0
  * Text Domain: hangar18-madplan
@@ -12,7 +12,7 @@
 declare(strict_types=1);
 
 if (!defined('ABSPATH')) { exit; }
-define('MP_VERSION', '0.1.21');
+define('MP_VERSION', '0.1.22');
 define('MP_FILE', __FILE__);
 define('MP_DIR', plugin_dir_path(__FILE__));
 define('MP_URL', plugin_dir_url(__FILE__));
@@ -24,6 +24,7 @@ require_once MP_DIR . 'includes/class-mp-streaming.php';
 require_once MP_DIR . 'includes/class-mp-offers.php';
 require_once MP_DIR . 'includes/class-mp-offer-flyers.php';
 require_once MP_DIR . 'includes/class-mp-flyer-library.php';
+require_once MP_DIR . 'includes/class-mp-flyer-ocr.php';
 require_once MP_DIR . 'includes/class-mp-shopping-stores.php';
 require_once MP_DIR . 'includes/class-mp-shopping-history.php';
 require_once MP_DIR . 'includes/class-mp-shopping-details.php';

@@ -95,6 +95,11 @@ final class MP_REST {
         self::route('/shopping/offers', 'POST', 'shopping_offers', true);
         self::route('/shopping/flyer-search', 'POST', 'shopping_flyer_search', true);
         self::route('/shopping/flyers', 'GET', 'shopping_flyers');
+        self::route('/shopping/ocr/status', 'GET', 'shopping_ocr_status');
+        self::route('/shopping/ocr/matches', 'GET', 'shopping_ocr_matches');
+        self::route('/shopping/ocr/upload', 'POST', 'shopping_ocr_upload', true, true);
+        self::route('/shopping/ocr/import-text', 'POST', 'shopping_ocr_import_text', true, true);
+        self::route('/shopping/ocr/clear', 'DELETE', 'shopping_ocr_clear', true, true);
         self::route('/shopping/clear-purchased', 'POST', 'clear_purchased', true);
         self::route('/shopping', 'POST', 'add_shopping');
         self::route('/shopping/(?P<id>\d+)', 'POST', 'toggle_shopping');
@@ -284,6 +289,26 @@ final class MP_REST {
         return MP_TVmaze::set_dk_schedule($id,$date,$weekly);
     }
     public static function shopping_flyers() { return MP_FlyerLibrary::listing(); }
+    public static function shopping_ocr_status(): array { return MP_FlyerOCR::status(); }
+    public static function shopping_ocr_matches(WP_REST_Request $r) {
+        return MP_FlyerOCR::match_for_item(absint($r->get_param('id')));
+    }
+    public static function shopping_ocr_upload(WP_REST_Request $r) {
+        $files=$r->get_file_params();
+        return MP_FlyerOCR::scan_upload(
+            is_array($files['image']??null)?$files['image']:[],
+            sanitize_text_field((string)$r->get_param('store')),
+            sanitize_text_field((string)$r->get_param('valid_to'))
+        );
+    }
+    public static function shopping_ocr_import_text(WP_REST_Request $r) {
+        return MP_FlyerOCR::import_text(
+            (string)$r->get_param('text'),
+            sanitize_text_field((string)$r->get_param('store')),
+            sanitize_text_field((string)$r->get_param('valid_to'))
+        );
+    }
+    public static function shopping_ocr_clear(): array { return MP_FlyerOCR::clear(); }
     public static function shopping_flyer_search(WP_REST_Request $r) {
         $id=$r->get_param('id');
         $store=$r->get_param('store');

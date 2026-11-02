@@ -340,3 +340,22 @@ Serveren henter Prejs `GET /v1/flyers?page=N&limit=100` ved brugerklik, maksimal
 **Hvorfor ikke OCR på alle sider?** Prej leverer avisers billedlinks, ikke søgbar fuldtekst. Gratis API-planen understøtter privat, ikke-kommerciel brug, men giver ikke selv billedlicens fra butikkerne; automatisk kopiering af avisbilleder og systematisk billed-OCR er derfor ikke aktiveret uden rettighedsgrundlag. Fritekstsøgning fortsætter kun på tilbudsdata fra /v1/products og /v1/offers, og kan mangle varer på billedsiderne. Avisoversigten gør det muligt manuelt at åbne eksempelvis SuperBrugsens forside og tjekke Faxe Kondi, når det strukturerede opslag ikke finder produktet.
 
 Kilder: https://prej.dk/api/eksempler, https://prej.dk/api/dokumentation og https://prej.dk/vilkaar-api. Test: `tests/flyer_library.php` og `tests/flyer_library_contract.py`.
+
+
+## v0.1.22 – OCR-pilot på én avisside, uden ekstra abonnement
+
+**Indkøbsliste → OCR-test af én avisside (administrator):** Upload en JPG/PNG/WebP-side (maks. 6 MB/36 MP) fra en avis, som du har lovligt adgang til at behandle, vælg én af familiens afkrydsede kæder og angiv tilbudsavisens slutdato. Serveren prøver gratis Tesseract OCR med `dan+eng`, derefter `eng`. Det kræver Tesseract installeret og tilladelse til PHP `proc_open` på webhotellet. **Vi har ikke verificeret, om webhotellet understøtter dette.** Statusvisning i portalen siger om motoren findes. Administrator kan sætte `MP_TESSERACT_PATH` i wp-config.php.
+
+Hvis Tesseract ikke er tilgængelig på webhotellet, kan man indsætte OCR-tekst fra lokal PC i **Alternativ: indsæt OCR-tekst fra din PC**. Begge veje laver samme simple automatiske pris-/vareudtræk, hvor fx
+```
+Faxe Kondi
+24 x 33 cl
+65,-
+```
+bliver en **mulig**, ikke verificeret, prislinje **Faxe Kondi — 65,00 kr**. Da layout, størrelser og pris ikke altid hænger sammen i OCR, skal forslagene altid kontrolleres mod kilden.
+
+**Dataopbevaring:** Et billede behandles fra PHP's midlertidige uploadfil og bliver aldrig gemt i Mediebiblioteket eller WordPress' database. Den komplette OCR-tekst gemmes heller ikke. Der gemmes op til 300 unikke korte navne/prisforslag med butik og udløbsdato i fælles `mp_grocery_ocr_candidates_v1`; udløbne resultater vises ikke. Alle familiemedlemmer kan se **Mulige OCR-fund (ikke verificeret)** ved Se tilbud for en vare, uden ekstra Prej-kald. Kun WordPress-administratorer må uploade billeder eller importere tekst; GET-søgninger er kun for indloggede brugere. Index medtages i Hangar18s eksisterende backup.
+
+**Rettighedsgrænse:** Funktionen henter **ikke** automatisk Prej-billedsider, og behandler ikke uden tilladelse hele kæders tilbudsavisarkiver. Private, ikke-kommercielle projekter kan benytte Prejs gratis API-plan, men Prejs TDM-forbehold og tredjeparts billedrettigheder skal respekteres. Før en automatisk helavis-scanner aktiveres, skal brugsretten afklares med relevant kilde. Se https://prej.dk/vilkaar-api og https://prej.dk/vilkaar.
+
+Teknik: `MP_FlyerOCR`, REST `GET /shopping/ocr/status`, `GET /shopping/ocr/matches?id=`, admin-only `POST /shopping/ocr/upload`, admin-only `POST /shopping/ocr/import-text`, admin-only `DELETE /shopping/ocr/clear`. Status kræver ingen Prej-nøgle; OCR bruger kun lokale værktøjer. Tests `php tests/flyer_ocr.php`, `python3 tests/flyer_ocr_contract.py`.

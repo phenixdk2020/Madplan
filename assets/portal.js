@@ -639,6 +639,23 @@ async function shopping(){
  '<div class="mp-shop-filter-grid">'+offerOptions.map(offerToggleMarkup).join('')+'</div>'+
  '<button type="button" class="mp-btn mp-btn-primary" id="mp-save-offer-stores">Gem valgte butikker</button></details>'+
  '<details class="mp-shop-filter mp-flyer-library"><summary>Aktuelle tilbudsaviser</summary>'+ '<p class="mp-help">Se de originale avisforsider og sider for familiens valgte butikker. Avisbilleder er ikke tekstsøgbar data.</p>'+ '<button type="button" id="mp-load-flyers" class="mp-btn mp-btn-primary" '+(settings.configured?'':'disabled')+'>Hent aktuelle tilbudsaviser</button>'+ '<div id="mp-flyer-library-results" aria-live="polite"></div></details>'+
+ (cfg.admin?
+ '<details class="mp-shop-filter mp-ocr-pilot"><summary>OCR-test af én avisside (administrator)</summary>'+
+ '<p class="mp-help">Vælg et avisbillede, du har tilladelse til at behandle. Billedet bliver kun brugt midlertidigt. Vi gemmer alene mulige varer og priser til familiens søgning.</p>'+
+ '<div id="mp-ocr-status" class="mp-help">OCR-motoren kontrolleres, når du åbner testen.</div>'+
+ '<form id="mp-ocr-import" class="mp-ocr-form">'+
+ '<label>Butik<select name="store" required>'+offerSelected.map(function(n){
+   return '<option value="'+esc(n)+'">'+esc(n)+'</option>';
+ }).join('')+'</select></label>'+
+ '<label>Tilbudsavis gælder til<input name="valid_to" type="date" required></label>'+
+ '<label>Én avisside som JPG, PNG eller WebP (maks. 6 MB)<input name="image" type="file" accept="image/jpeg,image/png,image/webp"></label>'+
+ '<button type="submit" class="mp-btn mp-btn-primary">Læs billedet med lokal OCR</button>'+
+ '</form>'+
+ '<details class="mp-ocr-text"><summary>Alternativ: indsæt OCR-tekst fra din PC</summary>'+
+ '<textarea id="mp-ocr-pasted" rows="5" maxlength="200000" placeholder="Faxe Kondi&#10;24 x 33 cl&#10;65,-"></textarea>'+
+ '<button id="mp-ocr-import-text" type="button" class="mp-btn">Indlæs OCR-tekst</button></details>'+
+ '<div id="mp-ocr-import-result" class="mp-help" aria-live="polite"></div>'+
+ '</details>':'')+
  '<div class="mp-shopping-bulk-actions"><button type="button" id="mp-clear-purchased" class="mp-btn" '+
  (!purchased.length?'disabled':'')+'>Ryd købte varer ('+purchased.length+')</button>'+
  '<button type="button" id="mp-check-offers-all" class="mp-btn mp-shopping-bulk" '+(!pending.length?'disabled':'')+
@@ -733,6 +750,64 @@ async function shopping(){
    fail(e);
   }finally{flyerBtn.disabled=false;}
  };
+ var ocrForm=content.querySelector('#mp-ocr-import');
+ if(ocrForm){
+  var ocrResult=content.querySelector('#mp-ocr-import-result');
+  var ocrText=content.querySelector('#mp-ocr-pasted');
+  var ocrStatus=content.querySelector('#mp-ocr-status');
+  var ocrOpen=content.querySelector('.mp-ocr-pilot');
+  ocrOpen.addEventListener('toggle',async function(){
+   if(!ocrOpen.open||ocrStatus.dataset.checked)return;
+   ocrStatus.textContent='Kontrollerer lokal Tesseract…';
+   try{
+    var data=await api('shopping/ocr/status');
+    ocrStatus.textContent=data.message;
+    ocrStatus.dataset.checked='1';
+   }catch(e){ocrStatus.textContent=e.message||'Kunne ikke kontrollere OCR-motoren.';}
+  });
+  function printOcrResult(data){
+   var examples=data.examples||[];
+   ocrResult.innerHTML='<strong>'+esc(data.imported)+' OCR-kandidater indlæst.</strong>'+
+    '<p class="mp-help">Priserne er automatiske forslag og skal kontrolleres i avisen.</p>'+
+    (examples.length?'<ul>'+examples.map(function(v){
+     return '<li>'+esc(v.name)+' · '+esc(v.price_label)+' · '+esc(v.store)+'</li>';
+    }).join('')+'</ul>':'');
+  }
+  ocrForm.onsubmit=async function(ev){
+   ev.preventDefault();
+   var file=ocrForm.elements.image.files&&ocrForm.elements.image.files[0];
+   if(!file){ocrResult.textContent='Vælg et billede først.';return;}
+   if(file.size>6*1024*1024){ocrResult.textContent='Billedet må højst være 6 MB.';return;}
+   var btn=ocrForm.querySelector('button[type=submit]');btn.disabled=true;
+   ocrResult.textContent='OCR-behandler billedsiden…';
+   try{
+    var payload=new FormData();
+    payload.append('image',file);
+    payload.append('store',ocrForm.elements.store.value);
+    payload.append('valid_to',ocrForm.elements.valid_to.value);
+    var response=await fetch(cfg.api+'shopping/ocr/upload',{
+     method:'POST',headers:{'X-WP-Nonce':cfg.nonce},body:payload,credentials:'same-origin'
+    });
+    var data=await response.json().catch(function(){return {};});
+    if(!response.ok)throw new Error(data.message||'OCR-behandlingen mislykkedes.');
+    printOcrResult(data);
+    ocrForm.elements.image.value='';
+   }catch(e){ocrResult.textContent=e.message||'OCR-behandlingen mislykkedes.';fail(e);}
+   finally{btn.disabled=false;}
+  };
+  var importButton=content.querySelector('#mp-ocr-import-text');
+  importButton.onclick=async function(){
+   importButton.disabled=true;ocrResult.textContent='Indlæser OCR-tekst…';
+   try{
+    var data=await api('shopping/ocr/import-text','POST',{
+     text:ocrText.value,store:ocrForm.elements.store.value,
+     valid_to:ocrForm.elements.valid_to.value
+    });
+    printOcrResult(data);
+   }catch(e){ocrResult.textContent=e.message||'Kunne ikke indlæse teksten.';fail(e);}
+   finally{importButton.disabled=false;}
+  };
+ }
  var offerSave=content.querySelector('#mp-save-offer-stores');
  offerSave.onclick=async function(){
   var stores=Array.from(content.querySelectorAll('.mp-filter-store:checked')).map(function(input){return input.value;});
@@ -934,7 +1009,24 @@ async function shopping(){
     '<button type="button" class="mp-btn mp-btn-primary mp-flyer-search-btn">Søg i butikkens tilbudsavis</button>'+
     '<small>Gennemgår op til 400 registrerede tilbud fra den valgte kæde. Kan bruge op til fire Prej-kald, men samme kæde caches til familien i 6 timer.</small></div>';
   }
+  markup+='<div class="mp-ocr-matches" aria-live="polite"></div>';
   panel.innerHTML=markup;panel.hidden=false;panel.dataset.loaded='1';
+  var ocrArea=panel.querySelector('.mp-ocr-matches');
+  // Local stored results only; no Prej call and no image download.
+  api('shopping/ocr/matches?id='+encodeURIComponent(item.id)).then(function(found){
+   if(!ocrArea.isConnected)return;
+   var matches=found.matches||[];
+   if(!matches.length){return;}
+   ocrArea.innerHTML='<strong>Mulige OCR-fund (ikke verificeret)</strong>'+
+    '<p class="mp-help">Disse priser er læst fra et avisbillede og skal kontrolleres manuelt.</p>'+
+    matches.map(function(v){
+     return '<div class="mp-offer-row"><div><strong>'+esc(v.name)+'</strong>'+
+      '<small>'+esc(v.store)+' · '+esc(v.source)+'</small></div>'+
+      '<div class="mp-offer-price"><strong>'+esc(v.price_label)+'</strong>'+
+      '<small>Gælder til '+esc(v.valid_to)+'</small></div></div>';
+    }).join('');
+  }).catch(function(){ /* Shopping offers remain usable without OCR. */ });
+
   var expand=panel.querySelector('.mp-flyer-search-btn');
   if(expand)expand.onclick=async function(){
    var store=panel.querySelector('.mp-flyer-store').value;
