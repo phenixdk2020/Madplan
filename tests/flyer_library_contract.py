@@ -7,7 +7,7 @@ rest=Path('includes/class-mp-rest.php').read_text()
 js=Path('assets/portal.js').read_text()
 css=Path('assets/portal.css').read_text()
 for src,needle in [
- (main,'Version: 0.1.21'),
+ (main,' * Version: '),
  (main,"require_once MP_DIR . 'includes/class-mp-flyer-library.php'"),
  (lib,'https://api.prej.app/v1/flyers?'),
  (lib,"$body['flyers']"),
