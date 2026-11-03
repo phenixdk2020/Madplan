@@ -781,7 +781,6 @@ async function shopping(){
    barcodeFallbackLoader=new Promise(function(resolve,reject){
     var script=document.createElement('script');
     script.src='https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js';
-    script.integrity='sha512-r6rDA7W6ZeQhvl8S7yRVQUKVHdexq+GAlNkNNqVC7YyIV+NwqCTJe2hDWCiffTyRNOeGEzRRJ9ifvRm/HCzGYg==';
     script.crossOrigin='anonymous';
     script.referrerPolicy='no-referrer';
     script.onload=function(){
