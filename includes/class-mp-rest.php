@@ -87,6 +87,8 @@ final class MP_REST {
         self::route('/shows/(?P<id>\d+)/dk-schedule', 'POST', 'save_danish_schedule', true);
         self::route('/shopping/stores', 'GET', 'shopping_stores');
         self::route('/shopping/history', 'GET', 'shopping_history');
+        self::route('/shopping/barcode/lookup', 'POST', 'shopping_barcode_lookup', true);
+        self::route('/shopping/barcode/add', 'POST', 'shopping_barcode_add', true);
         self::route('/shopping/offer-stores', 'POST', 'save_offer_stores', true);
         self::route('/shopping/(?P<id>\d+)/details', 'POST', 'save_shopping_details', true);
         self::route('/shopping/(?P<id>\d+)/photo', 'POST', 'upload_shopping_photo', true);
@@ -405,6 +407,14 @@ final class MP_REST {
             sanitize_text_field((string)$r->get_param('store')));
     }
     public static function shopping_history(): array { return MP_ShoppingHistory::suggestions(); }
+    public static function shopping_barcode_lookup(WP_REST_Request $r) {
+        return MP_Barcode::lookup(trim((string)$r->get_param('barcode')));
+    }
+    public static function shopping_barcode_add(WP_REST_Request $r) {
+        return MP_Barcode::add(trim((string)$r->get_param('barcode')),
+            sanitize_text_field((string)$r->get_param('title')),
+            sanitize_text_field((string)$r->get_param('quantity')));
+    }
     public static function shopping() {
         global $wpdb;
         $table = MP_Storage::table('shopping');

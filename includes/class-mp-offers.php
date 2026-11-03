@@ -37,6 +37,7 @@ final class MP_Offers {
     }
     /** Reserve a call to the documented /v1/offers endpoint from the same free quota. */
     public static function reserve_flyer_call(): bool { return self::consume(); }
+    public static function reserve_barcode_call(): bool { return self::consume(); }
 
     private static function consume(): bool {
         $usage=self::usage();

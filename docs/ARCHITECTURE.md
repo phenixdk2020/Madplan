@@ -212,3 +212,11 @@ MP_Portal::render() udstiller data-module=shopping på tredje hjemmekort. Klient
 - WP safe remote fetches ONLY host img.prej.app and known /flyers/* paths with 0 redirects and 6 MB response cap; image MIME/pixel validation; tempnam in system temporary directory; try/finally unlinks file.
 - MP_FlyerOCR::text_from_local_image uses existing local Tesseract command; parser only emits short product/price candidates; daily index option mp_daily_ocr_state_v1 hides records on following day, keeps max 300 candidate records.
 - REST admin POST /shopping/daily-ocr/settings and /shopping/daily-ocr/run; authenticated GET /shopping/daily-ocr/status and /shopping/daily-ocr/matches. No unverified automatic rights assumption. Status explicitly partial and records failure.
+
+
+## v0.1.25 – family barcode catalog
+- MP_Barcode::valid validates GS1 check digits. MP_Barcode::lookup: family WP option mp_shopping_barcode_catalog_v1 -> Prej GET /v1/scan/{gtin} (reserve same daily 20 call max) -> Open Food Facts GET /api/v2/product/{code}. Cache successful names 30 days and unknown 12h; family own mappings supersede cached provider records.
+- WP REST signed-in POST /shopping/barcode/lookup and POST /shopping/barcode/add. The add endpoint creates a normal shopping row plus MP_ShoppingDetails barcode and pack size, skips duplicates among still-unchecked rows; unknown barcodes require a one-time user-supplied title. All users including Subscriber can write, as for shopping list.
+- MP_ShoppingDetails::save_item remembers edited mappings for future scans. Checkpoints include mp_shopping_barcode_catalog_v1.
+- Browser scanner uses native BarcodeDetector where available and getUserMedia on HTTPS only. Stops media tracks on close or success, no image upload, manual digits fallback (especially Firefox).
+- Existing daily OCR and scheduled offer features from v0.1.24 remain optional and unchanged.

@@ -72,7 +72,7 @@ final class MP_ShoppingDetails {
             return new WP_Error('mp_notes','Noten må højst være 1.000 tegn.',['status'=>400]);
         }
         $barcode=trim((string)($input['barcode']??''));
-        if ($barcode!=='' && !preg_match('/^(?:\d{8}|\d{12}|\d{13}|\d{14})$/',$barcode)) {
+        if ($barcode!=='' && !MP_Barcode::valid($barcode)) {
             return new WP_Error('mp_barcode','Stregkode skal være 8, 12, 13 eller 14 cifre.',['status'=>400]);
         }
         $raw=trim((string)($input['price']??''));
@@ -130,6 +130,9 @@ final class MP_ShoppingDetails {
         $validated['photo_url']=$old['photo_url'];
         $all[(string)$id]=$validated;
         update_option(self::DETAILS,$all,false);
+        if ($validated['barcode']!=='') {
+            MP_Barcode::remember((string)$validated['barcode'],$title,(string)$validated['package_size']);
+        }
         return ['saved'=>true,'details'=>self::for_item($row)];
     }
     public static function attach_photo(int $id,array $file): array|WP_Error {

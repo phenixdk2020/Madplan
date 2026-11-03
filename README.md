@@ -385,3 +385,18 @@ Når admin har aktiveret funktionen, henter den en begrænset **aktuel** avisove
 Det daglige OCR-indeks gemmer op til 300 **uvaliderede produkt-/prisforslag** med butik og gyldighedsperiode; disse vises under **Se tilbud** ved indkøbsvarerne. Hele indekset er datomærket og bliver usynligt næste dag, indtil dagens kørsel er i gang. Det er **ikke** en komplet kopi af alle reklameaviser og er ikke garanteret at finde alle tilbud; lange kataloger, kvotegrænser, hostingtidsgrænser og OCR-fejl giver eksplicit delvis dækning. Kørslen er trafikstyret af WP-Cron; et rigtigt server-cronjob er nødvendigt for stabil kørsel på et site med få besøg.
 
 **Kilde/ret:** API-vilkår https://prej.dk/vilkaar-api og Prej brugsregler https://prej.dk/vilkaar. Funktionen må kun aktiveres, når du har det nødvendige grundlag til billedbehandlingen. Ingen ekstra betalte API-kald eller AI-abonnementer, kun lokal Tesseract. Tests: `tests/daily_ocr.php` og `tests/daily_ocr_contract.py`.
+
+
+## v0.1.25 – scan stregkode fra mobilkameraet
+
+Under **Indkøbsliste → Scan stregkode** kan familien scanne EAN/UPC på emballagen. I understøttede mobilbrowsere (bl.a. Chrome på nyere Android-telefoner med HTTPS) åbnes bagkameraet via `getUserMedia`, og den indbyggede `BarcodeDetector` læser EAN-8, EAN-13 eller UPC. Ingen kamerabilleder sendes til WordPress eller en ekstern server. Browseren beder om tilladelse til kamera. Alle browsere får også **manuel stregkodeindtastning** (8, 12, 13 eller 14 cifre med GS1-kontrolciffer). Firefox understøtter typisk ikke `BarcodeDetector`; dér bruges manuelt nummer.
+
+Opslag sker server-side i denne rækkefølge: (1) familiens private `mp_shopping_barcode_catalog_v1` i WordPress, (2) Prejs dokumenterede `GET /v1/scan/{gtin}` med **den eksisterende nøgle og samme gratis fælles API-kvote**, (3) det gratis Open Food Facts-produktregister. Prej-resultater caches 30 dage ved fund, ukendte i 12 timer; alle oplysninger mærkes med kilde. Open Food Facts' data krediteres. Ingen betalt API eller ny nøgle.
+
+**Kendt vare tilføjes automatisk** som en almindelig ukøbt vare med varenavn, eventuel pakningsstørrelse og gemt stregkode. Hvis samme stregkode allerede står ukøbt på familiens liste, vises "allerede på listen" i stedet for en dublet. Hvis et produkt ikke findes, får brugeren formularen **Navngiv varen én gang**; herefter genkendes stregkoden af hele familien, også efter at købte varer ryddes. Varenavn og stregkode kan redigeres under **Ret**. Brugere med WordPress-rollen Abonnent kan scanne og tilføje på lige fod med øvrige familiemedlemmer.
+
+**Sikkerhed:** WordPress-login og REST-nonce kræves ved både opslag og tilføjelse. Serveren validerer GTIN-kontrolcifferet; kun den godkendte Prej- og Open Food Facts-adresse kontaktes. Kamera stoppes efter scanning, ved lukning og ved navigation; der gemmes ingen kamerabilleder. Den fælles stregkodeliste indgår i Hangar18s eksisterende checkpoints.
+
+**Eksisterende automatisk OCR** af aktuelle tilbudsaviser fra v0.1.24 er bevaret og har sin egen opt-in, daglige kvote, kontrol af Tesseract og rettighedsbekræftelse. Stregkoder bruger ikke OCR-køen.
+
+Kilder: https://prej.dk/api/dokumentation , https://openfoodfacts.github.io/documentation/docs/Product-Opener/v2/products/get-product-by-code/ , https://developer.mozilla.org/en-US/docs/Web/API/Barcode_Detection_API .

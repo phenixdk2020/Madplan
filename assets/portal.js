@@ -634,6 +634,7 @@ async function shopping(){
  '<div id="mp-history-matches" class="mp-history-matches" role="listbox" hidden></div></div>'+
  '<input id="item-amount" maxlength="80" aria-label="Mængde" placeholder="Mængde">'+
  '<button type="submit" class="mp-btn mp-btn-primary">Tilføj</button></form>'+
+ '<button type="button" id="mp-open-barcode" class="mp-btn mp-barcode-open">📷 Scan stregkode</button>'+
  '<details class="mp-shop-filter"><summary>Butikker til tilbudssøgning ('+offerSelected.length+' valgt)</summary>'+
  '<p class="mp-help">Kun tilbud fra de valgte butikker vises. Valget gælder hele familien.</p>'+
  '<div class="mp-shop-filter-grid">'+offerOptions.map(offerToggleMarkup).join('')+'</div>'+
@@ -744,6 +745,135 @@ async function shopping(){
  'Administrator kan aktivere tilbudssøgning med gratis Prej API-nøgle under Hangar18 → Oversigt.')+
  '</p>';
  content.innerHTML=html;
+ // Camera decoding happens in the browser; only the GTIN is sent to WordPress.
+ // No camera frames or pictures are uploaded or stored.
+ content.insertAdjacentHTML('beforeend',
+  '<dialog id="mp-barcode-dialog" class="mp-barcode-dialog" aria-labelledby="mp-barcode-heading">'+
+  '<h3 id="mp-barcode-heading">Scan stregkode</h3>'+
+  '<p class="mp-help">Hold kameraet over varens EAN-stregkode. Kendte varer tilføjes automatisk til familiens liste.</p>'+
+  '<video id="mp-barcode-video" autoplay muted playsinline hidden></video>'+
+  '<p id="mp-barcode-message" class="mp-help" role="status" aria-live="polite"></p>'+
+  '<div class="mp-barcode-actions"><button type="button" class="mp-btn mp-btn-primary" id="mp-barcode-camera">Start kamera</button>'+
+  '<button type="button" class="mp-btn" id="mp-barcode-close">Luk</button></div>'+
+  '<form id="mp-barcode-code-form"><label>Indtast EAN/UPC manuelt'+
+  '<input id="mp-barcode-code" type="text" inputmode="numeric" autocomplete="off" pattern="[0-9]*" maxlength="14" required placeholder="8, 12, 13 eller 14 cifre"></label>'+
+  '<button type="submit" class="mp-btn mp-btn-primary">Find og tilføj vare</button></form>'+
+  '<form id="mp-barcode-new-form" hidden><strong>Stregkoden blev ikke genkendt</strong>'+
+  '<p class="mp-help">Angiv varenavnet én gang. Herefter husker familien denne stregkode.</p>'+
+  '<label>Varenavn<input id="mp-barcode-new-title" maxlength="255" required placeholder="Fx Faxe Kondi"></label>'+
+  '<label>Pakningsstørrelse (valgfri)<input id="mp-barcode-new-quantity" maxlength="80" placeholder="Fx 1,5 liter"></label>'+
+  '<button type="submit" class="mp-btn mp-btn-primary">Gem og tilføj vare</button></form>'+
+  '<p class="mp-help">Produktnavne fra familiens data, Prej og Open Food Facts. Kamera kræver HTTPS og en understøttet browser.</p>'+
+  '</dialog>');
+ var barcodeDialog=content.querySelector('#mp-barcode-dialog');
+ var barcodeVideo=content.querySelector('#mp-barcode-video');
+ var barcodeMessage=content.querySelector('#mp-barcode-message');
+ var barcodeInput=content.querySelector('#mp-barcode-code');
+ var barcodeStart=content.querySelector('#mp-barcode-camera');
+ var barcodeUnknown=content.querySelector('#mp-barcode-new-form');
+ var barcodeStream=null,barcodeRun=0,barcodeWorking=false,barcodeUnknownCode='';
+ function barcodeStop(){
+  barcodeRun++;
+  if(barcodeStream){barcodeStream.getTracks().forEach(function(track){track.stop();});barcodeStream=null;}
+  barcodeVideo.hidden=true;barcodeVideo.srcObject=null;
+  barcodeStart.disabled=false;
+ }
+ function barcodeClose(){
+  barcodeStop();barcodeUnknown.hidden=true;barcodeUnknownCode='';
+  if(typeof barcodeDialog.close==='function')barcodeDialog.close();
+  else barcodeDialog.removeAttribute('open');
+ }
+ var barcodeCloseButton=content.querySelector('#mp-barcode-close');
+ barcodeCloseButton.onclick=barcodeClose;
+ barcodeDialog.addEventListener('close',barcodeStop);
+ content.querySelector('#mp-open-barcode').onclick=function(){
+  barcodeUnknown.hidden=true;barcodeUnknownCode='';barcodeInput.value='';
+  barcodeMessage.textContent='Tryk Start kamera eller indtast stregkoden.';
+  if(typeof barcodeDialog.showModal==='function')barcodeDialog.showModal();
+  else barcodeDialog.setAttribute('open','');
+ };
+ async function barcodeAdd(code,title,quantity){
+  barcodeStop();
+  var codeText=String(code||'').trim();
+  if(!/^(?:[0-9]{8}|[0-9]{12,14})$/.test(codeText)){
+   barcodeMessage.textContent='Skriv 8, 12, 13 eller 14 cifre fra stregkoden.';return;
+  }
+  if(barcodeWorking)return;
+  barcodeWorking=true;barcodeMessage.textContent='Finder varen via familien, Prej og Open Food Facts…';
+  try{
+   var payload={barcode:codeText};
+   if(title)payload.title=title;
+   if(quantity)payload.quantity=quantity;
+   var found=await api('shopping/barcode/add','POST',payload);
+   if(found.needs_name){
+    barcodeUnknownCode=codeText;barcodeUnknown.hidden=false;
+    barcodeInput.value=codeText;
+    barcodeMessage.textContent='Produktet er ikke registreret. Skriv varens navn nedenfor.';
+    content.querySelector('#mp-barcode-new-title').focus();return;
+   }
+   barcodeClose();
+   await shopping();
+   msg(found.existing?'Varen "'+found.title+'" er allerede på indkøbslisten.':
+    'Varen "'+found.title+'" er tilføjet til indkøbslisten.');
+  }catch(e){barcodeMessage.textContent=e.message||'Stregkoden kunne ikke behandles.';}
+  finally{barcodeWorking=false;}
+ }
+ content.querySelector('#mp-barcode-code-form').onsubmit=function(ev){
+  ev.preventDefault();barcodeAdd(barcodeInput.value);
+ };
+ barcodeUnknown.onsubmit=function(ev){
+  ev.preventDefault();
+  barcodeAdd(barcodeUnknownCode,content.querySelector('#mp-barcode-new-title').value.trim(),
+   content.querySelector('#mp-barcode-new-quantity').value.trim());
+ };
+ barcodeStart.onclick=async function(){
+  if(!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia ||
+     !('BarcodeDetector' in window)){
+   barcodeMessage.textContent='Kamerascanning understøttes ikke her. Brug Chrome på din Android-telefon, eller indtast EAN-koden.';
+   return;
+  }
+  barcodeStop();
+  var request=++barcodeRun;
+  barcodeStart.disabled=true;barcodeMessage.textContent='Åbner kameraet…';
+  try{
+   var supported=typeof BarcodeDetector.getSupportedFormats==='function'?
+     await BarcodeDetector.getSupportedFormats():['ean_13','ean_8','upc_a','upc_e'];
+   var formats=['ean_13','ean_8','upc_a','upc_e','itf'].filter(function(f){return supported.indexOf(f)>=0;});
+   if(!formats.length)throw new Error('Browseren understøtter ikke EAN/UPC-stregkoder.');
+   var detector=new BarcodeDetector({formats:formats});
+   var stream=await navigator.mediaDevices.getUserMedia({
+    audio:false,video:{facingMode:{ideal:'environment'}}
+   });
+   if(barcodeRun!==request || !barcodeDialog.open){stream.getTracks().forEach(function(t){t.stop();});return;}
+   barcodeStream=stream;barcodeVideo.srcObject=stream;barcodeVideo.hidden=false;
+   await barcodeVideo.play();
+   barcodeMessage.textContent='Hold stregkoden stille foran kameraet.';
+   var busy=false,lastScan=0;
+   async function frame(now){
+    if(barcodeRun!==request)return;
+    if(!barcodeVideo.isConnected || !barcodeDialog.open){barcodeStop();return;}
+    if(!busy && barcodeVideo.readyState>=2 && now-lastScan>220){
+     busy=true;lastScan=now;
+     try{
+      var detections=await detector.detect(barcodeVideo);
+      if(barcodeRun!==request)return;
+      var value=detections.map(function(d){return d.rawValue;}).find(function(v){
+       return /^(?:[0-9]{8}|[0-9]{12,14})$/.test(String(v||''));
+      });
+      if(value){barcodeAdd(value);return;}
+     }catch(ignore){}
+     finally{busy=false;}
+    }
+    if(barcodeRun===request)requestAnimationFrame(frame);
+   }
+   requestAnimationFrame(frame);
+  }catch(e){
+   barcodeStop();
+   barcodeMessage.textContent='Kameraet kunne ikke startes: '+(e.message||'tillad kameraadgang')+
+    '. Skriv stregkoden manuelt i stedet.';
+  }
+ };
+
  var flyerBtn=content.querySelector('#mp-load-flyers');
  var flyerArea=content.querySelector('#mp-flyer-library-results');
  if(flyerBtn) flyerBtn.onclick=async function(){

@@ -8,7 +8,7 @@ rest=Path('includes/class-mp-rest.php').read_text()
 js=Path('assets/portal.js').read_text()
 wf=Path('.github/workflows/package.yml').read_text()
 for src,needle in [
- (main,'Version: 0.1.24'),
+ (main,' * Version: '),
  (main,"require_once MP_DIR . 'includes/class-mp-daily-ocr.php'"),
  (main,"add_action('mp_daily_ocr_tick', [MP_DailyOCR::class, 'tick'])"),
  (ocr,"'mp_daily_ocr_settings_v1'"),

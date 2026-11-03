@@ -67,6 +67,7 @@ $GLOBALS['opts']=[];
 $GLOBALS['wpdb']=new FakeDb();
 function expect_true(bool $v,string $m): void{if(!$v)throw new RuntimeException('FAIL: '.$m);}
 require dirname(__DIR__).'/includes/class-mp-shopping-stores.php';
+require dirname(__DIR__).'/includes/class-mp-barcode.php';
 require dirname(__DIR__).'/includes/class-mp-shopping-details.php';
 require dirname(__DIR__).'/includes/class-mp-shopping-history.php';
 require dirname(__DIR__).'/includes/class-mp-rest.php';
@@ -86,14 +87,14 @@ expect_true(MP_ShoppingDetails::selected_stores()===['Føtex','Netto'],
 $r=new WP_REST_Request([
     'id'=>2,'title'=>'Pommes med krydderi','store'=>'Føtex','quantity'=>2,
     'package_size'=>'500 g','price'=>'24,95','notes'=>'Tjek frostvarer',
-    'barcode'=>'5701234567890','favorite'=>true
+    'barcode'=>'5701234567899','favorite'=>true
 ]);
 $saved=MP_REST::save_shopping_details($r);
 expect_true(!is_wp_error($saved) && $saved['saved'],'Subscriber can change shopping details');
 $item=MP_ShoppingDetails::for_item($GLOBALS['wpdb']->rows[2]);
 expect_true($item['quantity']===2 && $item['package_size']==='500 g','Quantity and size saved');
 expect_true($item['price_ore']===2495 && $item['favorite'],'Price and favorite saved');
-expect_true($item['notes']==='Tjek frostvarer' && $item['barcode']==='5701234567890','Note and barcode saved');
+expect_true($item['notes']==='Tjek frostvarer' && $item['barcode']==='5701234567899','Note and barcode saved');
 expect_true($GLOBALS['wpdb']->rows[2]['title']==='Pommes med krydderi','Title edited in original shopping row');
 expect_true(MP_ShoppingStores::preferred('Pommes med krydderi')==='Føtex','Store category grouped after save');
 expect_true(count(MP_REST::shopping())===4,'Existing items returned unchanged');
