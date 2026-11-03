@@ -387,9 +387,13 @@ Det daglige OCR-indeks gemmer op til 300 **uvaliderede produkt-/prisforslag** me
 **Kilde/ret:** API-vilkår https://prej.dk/vilkaar-api og Prej brugsregler https://prej.dk/vilkaar. Funktionen må kun aktiveres, når du har det nødvendige grundlag til billedbehandlingen. Ingen ekstra betalte API-kald eller AI-abonnementer, kun lokal Tesseract. Tests: `tests/daily_ocr.php` og `tests/daily_ocr_contract.py`.
 
 
+## v0.1.27 – rettelse til indlæsning af Safari-scanner
+
+Fjerner en ikke-verificeret Subresource Integrity-værdi, der kunne blokere indlæsningen af Safari-scannerens JavaScript. Biblioteket hentes fortsat over HTTPS fra en versionsfast adresse (`html5-qrcode@2.3.8`), kun når scanning startes. Når en officiel checksum er verificeret, kan SRI genindføres. Samsung/Android-koden er uændret.
+
 ## v0.1.26 – iPhone/Safari kamera-fallback
 
-Safari på iPhone har som standard ikke `BarcodeDetector` aktiveret. Den tidligere scanner standsede derfor, selv om iPhone havde et fungerende kamera. Nu bruges fortsat den oprindelige hurtige `BarcodeDetector` på understøttede telefoner (bl.a. Samsung), mens iPhone/Safari automatisk får en JavaScript-baseret EAN/UPC-scanner via `html5-qrcode` 2.3.8 (Apache-2.0), indlæst efter tryk på **Start kamera**. Biblioteket hentes fra jsDelivr med fast version og SRI-hash; forbindelsen kræver internet og må ikke blokeres af Content-Security-Policy.
+Safari på iPhone har som standard ikke `BarcodeDetector` aktiveret. Den tidligere scanner standsede derfor, selv om iPhone havde et fungerende kamera. Nu bruges fortsat den oprindelige hurtige `BarcodeDetector` på understøttede telefoner (bl.a. Samsung), mens iPhone/Safari automatisk får en JavaScript-baseret EAN/UPC-scanner via `html5-qrcode` 2.3.8 (Apache-2.0), indlæst efter tryk på **Start kamera**. Biblioteket hentes fra jsDelivr med fast version; forbindelsen kræver internet og må ikke blokeres af Content-Security-Policy.
 
 Brugeren bliver spurgt af browseren om kameraadgang; webstedet kan ikke selv tvinge Safari til at huske tilladelsen. Kamera-video behandles lokalt i browseren. Kun valideret GTIN sendes til WordPress, og scanneren stoppes, når dialogen lukkes eller en vare genkendes. Manuel indtastning er stadig mulig.
 
