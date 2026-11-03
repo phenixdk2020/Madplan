@@ -387,6 +387,12 @@ Det daglige OCR-indeks gemmer op til 300 **uvaliderede produkt-/prisforslag** me
 **Kilde/ret:** API-vilkår https://prej.dk/vilkaar-api og Prej brugsregler https://prej.dk/vilkaar. Funktionen må kun aktiveres, når du har det nødvendige grundlag til billedbehandlingen. Ingen ekstra betalte API-kald eller AI-abonnementer, kun lokal Tesseract. Tests: `tests/daily_ocr.php` og `tests/daily_ocr_contract.py`.
 
 
+## v0.1.26 – iPhone/Safari kamera-fallback
+
+Safari på iPhone har som standard ikke `BarcodeDetector` aktiveret. Den tidligere scanner standsede derfor, selv om iPhone havde et fungerende kamera. Nu bruges fortsat den oprindelige hurtige `BarcodeDetector` på understøttede telefoner (bl.a. Samsung), mens iPhone/Safari automatisk får en JavaScript-baseret EAN/UPC-scanner via `html5-qrcode` 2.3.8 (Apache-2.0), indlæst efter tryk på **Start kamera**. Biblioteket hentes fra jsDelivr med fast version og SRI-hash; forbindelsen kræver internet og må ikke blokeres af Content-Security-Policy.
+
+Brugeren bliver spurgt af browseren om kameraadgang; webstedet kan ikke selv tvinge Safari til at huske tilladelsen. Kamera-video behandles lokalt i browseren. Kun valideret GTIN sendes til WordPress, og scanneren stoppes, når dialogen lukkes eller en vare genkendes. Manuel indtastning er stadig mulig.
+
 ## v0.1.25 – scan stregkode fra mobilkameraet
 
 Under **Indkøbsliste → Scan stregkode** kan familien scanne EAN/UPC på emballagen. I understøttede mobilbrowsere (bl.a. Chrome på nyere Android-telefoner med HTTPS) åbnes bagkameraet via `getUserMedia`, og den indbyggede `BarcodeDetector` læser EAN-8, EAN-13 eller UPC. Ingen kamerabilleder sendes til WordPress eller en ekstern server. Browseren beder om tilladelse til kamera. Alle browsere får også **manuel stregkodeindtastning** (8, 12, 13 eller 14 cifre med GS1-kontrolciffer). Firefox understøtter typisk ikke `BarcodeDetector`; dér bruges manuelt nummer.
