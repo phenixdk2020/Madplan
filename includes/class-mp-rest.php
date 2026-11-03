@@ -104,6 +104,10 @@ final class MP_REST {
         self::route('/shopping/daily/matches', 'GET', 'shopping_daily_matches');
         self::route('/shopping/daily/settings', 'POST', 'shopping_daily_settings', true, true);
         self::route('/shopping/daily/run', 'POST', 'shopping_daily_run', true, true);
+        self::route('/shopping/daily-ocr/status', 'GET', 'shopping_daily_ocr_status');
+        self::route('/shopping/daily-ocr/matches', 'GET', 'shopping_daily_ocr_matches');
+        self::route('/shopping/daily-ocr/settings', 'POST', 'shopping_daily_ocr_settings', true, true);
+        self::route('/shopping/daily-ocr/run', 'POST', 'shopping_daily_ocr_run', true, true);
         self::route('/shopping/clear-purchased', 'POST', 'clear_purchased', true);
         self::route('/shopping', 'POST', 'add_shopping');
         self::route('/shopping/(?P<id>\d+)', 'POST', 'toggle_shopping');
@@ -324,6 +328,21 @@ final class MP_REST {
     }
     public static function shopping_daily_run(): array {
         return MP_DailyOffers::tick();
+    }
+    public static function shopping_daily_ocr_status(): array {
+        return MP_DailyOCR::status();
+    }
+    public static function shopping_daily_ocr_matches(WP_REST_Request $r) {
+        return MP_DailyOCR::matches(absint($r->get_param('id')));
+    }
+    public static function shopping_daily_ocr_settings(WP_REST_Request $r) {
+        return MP_DailyOCR::set_enabled(
+            rest_sanitize_boolean($r->get_param('enabled')),
+            rest_sanitize_boolean($r->get_param('rights_confirmed'))
+        );
+    }
+    public static function shopping_daily_ocr_run(): array {
+        return MP_DailyOCR::tick();
     }
     public static function shopping_flyer_search(WP_REST_Request $r) {
         $id=$r->get_param('id');

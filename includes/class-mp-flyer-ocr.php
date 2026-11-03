@@ -47,6 +47,34 @@ final class MP_FlyerOCR {
         }
         return ['code'=>$exit,'text'=>$stdout,'error'=>$stderr];
     }
+    /**
+     * Return text from a temporary local image produced by an authorized
+     * source adapter. This never stores the raw text or image in WordPress.
+     */
+    public static function text_from_local_image(string $path): string|WP_Error {
+        if (!is_file($path) || filesize($path)<1 ||
+            filesize($path)>self::MAX_IMAGE_BYTES) {
+            return new WP_Error('mp_ocr_local_file','Ugyldig midlertidig billedfil.');
+        }
+        $info=@getimagesize($path);
+        if (!$info || empty($info[0]) || empty($info[1]) ||
+            $info[0]*$info[1]>self::MAX_PIXELS ||
+            !in_array($info[2]??0,[IMAGETYPE_JPEG,IMAGETYPE_PNG,IMAGETYPE_WEBP],true)) {
+            return new WP_Error('mp_ocr_local_image','Midlertidigt billede er ikke understøttet.');
+        }
+        if (!self::status()['available']) {
+            return new WP_Error('mp_ocr_unavailable','Tesseract er ikke installeret på webhotellet.');
+        }
+        foreach (self::LANGUAGES as $lang) {
+            $result=self::run([self::binary(),$path,'stdout','-l',$lang,'--psm','11']);
+            if (is_wp_error($result)) { return $result; }
+            if ($result['code']===0 && trim($result['text'])!=='') {
+                return $result['text'];
+            }
+        }
+        return new WP_Error('mp_ocr_no_text','Ingen læsbar tekst på avissiden.');
+    }
+
     public static function status(): array {
         $cache=get_transient('mp_ocr_engine_status_v1');
         if (is_array($cache)) { return $cache; }

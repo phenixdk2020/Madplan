@@ -7,7 +7,7 @@ rest=Path('includes/class-mp-rest.php').read_text()
 js=Path('assets/portal.js').read_text()
 wf=Path('.github/workflows/package.yml').read_text()
 for source,term in [
-(main,'Version: 0.1.23'),
+(main,' * Version: '),
 (main,"require_once MP_DIR . 'includes/class-mp-daily-offers.php'"),
 (main,"add_action('mp_daily_offer_tick', [MP_DailyOffers::class, 'tick'])"),
 (p,"private const MAX_DAILY_CALLS=8"),

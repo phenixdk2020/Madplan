@@ -374,3 +374,14 @@ Der er samtidig rettet en konkret UI-fejl: beskeden **“Ingen tekstmatch i de g
 WP-Cron afhænger af besøg på webstedet og garanterer ikke et præcist klokkeslæt. For stabil daglig opdatering kræves server-cron, som regel mod WordPress' wp-cron.php. **Ingen automatisk opgradering til betalt Prej-plan.**
 
 Kilder: https://prej.dk/api , https://prej.dk/vilkaar-api . Tests: `tests/daily_offers.php`, `tests/daily_offers_contract.py`.
+
+
+## v0.1.24 – opt-in daglig OCR-kø for kilder med billedrettigheder
+
+Denne version tilføjer også **Indkøbsliste → Daglig OCR af tilbudsaviser**. Administratoren kan vælge **Aktiver daglig OCR** **kun**, efter afkrydsning af “Jeg har indhentet de nødvendige rettigheder til automatiseret OCR af de valgte avisbilleder”, og kun hvis webhotellet har en fungerende **Tesseract**-installation. Aktiveringen er **slået fra som standard**. En privat hjemmeside og en Prej API-nøgle er ikke i sig selv en billedlicens; tilladelsen skal dække systematisk automatiseret OCR af tredjeparts avisbilleder. Prejs udtrykkelige TDM-forbehold og billedrettigheder gælder fortsat. Vi har ikke bekræftet dine rettigheder eller dit webhotels Tesseract-installation.
+
+Når admin har aktiveret funktionen, henter den en begrænset **aktuel** avisoversigt via Prejs officielle API. Hver avis får maksimalt 24 sider i OCR-køen. Der oprettes maksimalt **48 sider per kalenderdag** i køen, fordelt round-robin mellem familiens valgte butikker; ved flere sider markeres status **ufuldstændig**. WordPress-Cron behandler **én side pr. 15-minutterskørsel** og starter ikke før **kl. 06 dansk tid**. Billeder hentes kun fra den eksakte tilladte `img.prej.app/flyers/...`-adresse uden redirects, maks. 6 MB, og behandles som midlertidig fil, der slettes umiddelbart efter OCR. Der gemmes ikke avisbilleder eller rå OCR-tekst.
+
+Det daglige OCR-indeks gemmer op til 300 **uvaliderede produkt-/prisforslag** med butik og gyldighedsperiode; disse vises under **Se tilbud** ved indkøbsvarerne. Hele indekset er datomærket og bliver usynligt næste dag, indtil dagens kørsel er i gang. Det er **ikke** en komplet kopi af alle reklameaviser og er ikke garanteret at finde alle tilbud; lange kataloger, kvotegrænser, hostingtidsgrænser og OCR-fejl giver eksplicit delvis dækning. Kørslen er trafikstyret af WP-Cron; et rigtigt server-cronjob er nødvendigt for stabil kørsel på et site med få besøg.
+
+**Kilde/ret:** API-vilkår https://prej.dk/vilkaar-api og Prej brugsregler https://prej.dk/vilkaar. Funktionen må kun aktiveres, når du har det nødvendige grundlag til billedbehandlingen. Ingen ekstra betalte API-kald eller AI-abonnementer, kun lokal Tesseract. Tests: `tests/daily_ocr.php` og `tests/daily_ocr_contract.py`.

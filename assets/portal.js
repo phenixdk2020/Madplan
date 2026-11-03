@@ -608,10 +608,10 @@ content.innerHTML=html+'</div>';content.querySelector('#back-recipes').onclick=r
 }
 async function shopping(){
  content.innerHTML='<p class="mp-help">Henter indkøbslisten…</p>';
- var list,settings,history,daily;
+ var list,settings,history,daily,dailyOCR;
  try{
-  var data=await Promise.all([api('shopping'),api('shopping/stores'),api('shopping/history'),api('shopping/daily/status')]);
-  list=data[0];settings=data[1];history=data[2]||[];daily=data[3]||{};
+  var data=await Promise.all([api('shopping'),api('shopping/stores'),api('shopping/history'),api('shopping/daily/status'),api('shopping/daily-ocr/status')]);
+  list=data[0];settings=data[1];history=data[2]||[];daily=data[3]||{};dailyOCR=data[4]||{};
  }catch(e){return fail(e);}
  var options=settings.options||['Alle'];
  function storeSelect(selected){
@@ -669,6 +669,24 @@ async function shopping(){
  '<div class="mp-daily-buttons"><button type="button" class="mp-btn mp-btn-primary" id="mp-daily-save">Gem daglig opdatering</button>'+
  '<button type="button" class="mp-btn" id="mp-daily-now" '+(!daily.enabled?'disabled':'')+'>Kør næste lille batch nu</button></div>':'')+
  '<p class="mp-help">Indekset gemmer kun matchende varer og priser – ikke en kopi af samtlige kataloger. Hvis alle valgte butikker ikke kan gennemgås inden kvoten, vises det som ufuldstændigt.</p></details>'+
+ '<details class="mp-shop-filter mp-daily-ocr"><summary>Daglig OCR af tilbudsaviser'+
+ (dailyOCR.enabled?' · aktiv':' · slået fra')+'</summary>'+
+ '<p class="mp-help">Frivillig, rettighedsstyret billed-OCR. En avisside behandles ad gangen, maks. '+esc(dailyOCR.cap||48)+' sider pr. dag. Billeder og den fulde OCR-tekst slettes efter behandlingen.</p>'+
+ '<p class="mp-help">Dette kræver Tesseract på serveren og tilladelse fra rettighedshaverne til systematisk billedbehandling. At siden er privat giver ikke i sig selv denne tilladelse.</p>'+
+ '<p class="mp-daily-progress" aria-live="polite">'+
+ (dailyOCR.tesseract?'Tesseract tilgængelig':'Tesseract ikke tilgængelig')+
+ ' · I dag: '+esc(dailyOCR.processed||0)+'/'+esc(dailyOCR.total||0)+' sider OCR-behandlet'+
+ ' · '+esc(dailyOCR.offers||0)+' mulige tilbud'+
+ (dailyOCR.partial?' · ufuldstændigt':'')+
+ (dailyOCR.error?' · '+esc(dailyOCR.error):'')+'</p>'+
+ (cfg.admin?'<label class="mp-daily-switch"><input type="checkbox" id="mp-daily-ocr-rights" '+
+ (dailyOCR.rights_confirmed?'checked':'')+'> Jeg har indhentet de nødvendige rettigheder til automatiseret OCR af de valgte avisbilleder.</label>'+
+ '<label class="mp-daily-switch"><input type="checkbox" id="mp-daily-ocr-enabled" '+
+ (dailyOCR.enabled?'checked':'')+(!dailyOCR.tesseract?' disabled':'')+
+ '> Aktiver daglig OCR-behandling</label>'+
+ '<div class="mp-daily-buttons"><button type="button" class="mp-btn mp-btn-primary" id="mp-daily-ocr-save">Gem OCR-indstillinger</button>'+
+ '<button type="button" class="mp-btn" id="mp-daily-ocr-next" '+(!dailyOCR.enabled?'disabled':'')+'>Behandl næste avisside nu</button></div>':'')+
+ '<small class="mp-help">OCR-fund bliver markeret som usikre. Ved mange avissider bliver kørslen ufuldstændig og fortsætter ikke ubegrænset.</small></details>'+
  '<div class="mp-shopping-bulk-actions"><button type="button" id="mp-clear-purchased" class="mp-btn" '+
  (!purchased.length?'disabled':'')+'>Ryd købte varer ('+purchased.length+')</button>'+
  '<button type="button" id="mp-check-offers-all" class="mp-btn mp-shopping-bulk" '+(!pending.length?'disabled':'')+
@@ -838,6 +856,27 @@ async function shopping(){
    msg('Dagens tilbudsindeks: '+result.offers+' mulige fund. '+
        (result.complete?'Kørslen er afsluttet.':'Flere små batches mangler.'));
   }catch(e){fail(e);dailyNow.disabled=false;}
+ };
+ var ocrDailySave=content.querySelector('#mp-daily-ocr-save');
+ var ocrDailyRun=content.querySelector('#mp-daily-ocr-next');
+ if(ocrDailySave)ocrDailySave.onclick=async function(){
+  ocrDailySave.disabled=true;
+  try{
+   var data=await api('shopping/daily-ocr/settings','POST',{
+    enabled:content.querySelector('#mp-daily-ocr-enabled').checked,
+    rights_confirmed:content.querySelector('#mp-daily-ocr-rights').checked
+   });
+   await shopping();msg(data.enabled?'Daglig OCR aktiveret.':'Daglig OCR slået fra.');
+  }catch(e){fail(e);ocrDailySave.disabled=false;}
+ };
+ if(ocrDailyRun)ocrDailyRun.onclick=async function(){
+  ocrDailyRun.disabled=true;
+  try{
+   var result=await api('shopping/daily-ocr/run','POST',{});
+   await shopping();
+   msg('OCR: '+result.processed+'/'+result.total+' sider i dag.'+
+    (result.error?' '+result.error:''));
+  }catch(e){fail(e);ocrDailyRun.disabled=false;}
  };
  var offerSave=content.querySelector('#mp-save-offer-stores');
  offerSave.onclick=async function(){
@@ -1056,6 +1095,22 @@ async function shopping(){
       '<small>'+esc(v.store)+' · '+esc(v.source)+'</small></div>'+
       '<div class="mp-offer-price"><strong>'+esc(v.price_label)+'</strong>'+
       '<small>'+(v.ends?'Til '+esc(v.ends):'Slutdato ukendt')+'</small></div></div>';
+    }).join('');
+  }).catch(function(){});
+  // Daily scheduled OCR candidates have their own date-stamped index.
+  var scheduledArea=document.createElement('div');
+  scheduledArea.className='mp-daily-matches';
+  panel.insertBefore(scheduledArea,panel.querySelector('.mp-ocr-matches'));
+  api('shopping/daily-ocr/matches?id='+encodeURIComponent(item.id)).then(function(result){
+   if(!scheduledArea.isConnected)return;
+   var matches=result.offers||[];
+   if(!matches.length)return;
+   scheduledArea.innerHTML='<strong>Dagens automatisk OCR-læste fund (ikke verificeret)</strong>'+
+    matches.map(function(v){
+     return '<div class="mp-offer-row"><div><strong>'+esc(v.name)+'</strong>'+
+      '<small>'+esc(v.store)+' · OCR fra tilbudsavis</small></div>'+
+      '<div class="mp-offer-price"><strong>'+esc(v.price_label)+'</strong>'+
+      '<small>Gælder til '+esc(v.valid_to)+'</small></div></div>';
     }).join('');
   }).catch(function(){});
   var ocrArea=panel.querySelector('.mp-ocr-matches');

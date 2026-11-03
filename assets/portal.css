@@ -459,3 +459,12 @@ body.mp-full-page.mp-theme-burgundy{background:#f9f0f3;color:#41212c}
 .mp-portal .mp-daily-matches{border-top:1px solid var(--mp-line);margin-top:8px;padding-top:9px}
 .mp-portal .mp-daily-matches:empty{display:none}
 @media(max-width:560px){.mp-portal .mp-daily-buttons .mp-btn{width:100%}}
+
+/* v0.1.24: rights-gated daily OCR status, settings and bounded progress */
+.mp-portal .mp-daily-ocr{margin:12px 0;border:1px solid var(--mp-line);
+ border-radius:11px;padding:12px}
+.mp-portal .mp-daily-ocr>summary{cursor:pointer;font-weight:750;min-height:42px}
+.mp-portal .mp-daily-ocr .mp-daily-switch{display:flex;gap:8px;min-height:44px;align-items:center}
+.mp-portal .mp-daily-ocr .mp-daily-buttons{display:flex;gap:8px;flex-wrap:wrap;padding:9px 0}
+.mp-portal .mp-daily-ocr .mp-daily-buttons .mp-btn{min-height:44px}
+@media(max-width:560px){.mp-portal .mp-daily-ocr .mp-btn{width:100%}}

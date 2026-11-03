@@ -204,3 +204,11 @@ MP_Portal::render() udstiller data-module=shopping på tredje hjemmekort. Klient
 - Server matches only currently unpurchased shopping product titles. REST GET /shopping/daily/status, GET /shopping/daily/matches, admin POST /shopping/daily/settings, admin POST /shopping/daily/run. WordPress permission callback and nonce as existing.
 - On cron-disabled hosts use an actual server cron; WP-Cron is traffic-triggered. No automatic flyer image retrieval/OCR pending rights clearance and host capability.
 - Duplicate missing-offer notification in JS removed.
+
+
+## v0.1.24 – permissioned auto OCR
+- MP_DailyOCR cron `mp_daily_ocr_tick`, 15 minute interval; admin config option mp_daily_ocr_settings_v1 requires rights_confirmed and running local Tesseract. Disabled by default.
+- Source page references come from MP_FlyerLibrary::listing; queue at most 48 pages/day, at most 24 pages per flyer, round robin across selected household chains. Listing can itself be partial if Prej's API has more than 200 flyers.
+- WP safe remote fetches ONLY host img.prej.app and known /flyers/* paths with 0 redirects and 6 MB response cap; image MIME/pixel validation; tempnam in system temporary directory; try/finally unlinks file.
+- MP_FlyerOCR::text_from_local_image uses existing local Tesseract command; parser only emits short product/price candidates; daily index option mp_daily_ocr_state_v1 hides records on following day, keeps max 300 candidate records.
+- REST admin POST /shopping/daily-ocr/settings and /shopping/daily-ocr/run; authenticated GET /shopping/daily-ocr/status and /shopping/daily-ocr/matches. No unverified automatic rights assumption. Status explicitly partial and records failure.
