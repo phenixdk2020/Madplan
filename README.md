@@ -359,3 +359,18 @@ bliver en **mulig**, ikke verificeret, prislinje **Faxe Kondi — 65,00 kr**. Da
 **Rettighedsgrænse:** Funktionen henter **ikke** automatisk Prej-billedsider, og behandler ikke uden tilladelse hele kæders tilbudsavisarkiver. Private, ikke-kommercielle projekter kan benytte Prejs gratis API-plan, men Prejs TDM-forbehold og tredjeparts billedrettigheder skal respekteres. Før en automatisk helavis-scanner aktiveres, skal brugsretten afklares med relevant kilde. Se https://prej.dk/vilkaar-api og https://prej.dk/vilkaar.
 
 Teknik: `MP_FlyerOCR`, REST `GET /shopping/ocr/status`, `GET /shopping/ocr/matches?id=`, admin-only `POST /shopping/ocr/upload`, admin-only `POST /shopping/ocr/import-text`, admin-only `DELETE /shopping/ocr/clear`. Status kræver ingen Prej-nøgle; OCR bruger kun lokale værktøjer. Tests `php tests/flyer_ocr.php`, `python3 tests/flyer_ocr_contract.py`.
+
+
+## v0.1.23 – frivillig daglig tilbudsopdatering og fejlfikset SuperBrugsen-visning
+
+Under **Indkøbsliste → Dagligt tilbudsindeks** kan en WordPress-administrator aktivere en fælles automatisk daglig scanning. Den er **slået fra som standard** og kræver den allerede konfigurerede Prej API-nøgle. WP-Cron læser **Prejs strukturerede tilbud** fra familievalgte butikker, tidligst kl. 05:30 lokal tid efter Prejs natlige dataopdatering. Én WordPress-Cron-batch kan lave højst ét API-kald, og automatisk scanning er begrænset til otte kald pr. UTC-døgn. Alle kald trækkes fra den almindelige konservative grænse på **20 kald pr. dag**, der også deles med almindelige tilbudssøgninger.
+
+Søgningen gennemgår op til **to resultatsider á 100 tilbud per valgt butik**, indtil den daglige kvote er brugt. **Der er ikke fuld katalogdækning** ved flere butikker eller mange produkter: status viser **ufuldstændigt** og hvor mange butikker der faktisk er kontrolleret. Der gemmes højst 100 små vare/pris-resultater, og **kun** produkter, der matcher familiens aktive/ukøbte indkøbsvarer. Dagsindekset i WordPress er datomærket og bruges aldrig som dagens kilde efter midnat, før en frisk kørsel er gennemført. Ved “Se tilbud” vises eventuelle **Dagens gemte tilbud** sammen med de normale direkte søgninger.
+
+**Vigtigt:** Dette er en automatisering af **strukturerede tilbud via det officielle Prej API**, ikke en automatisk OCR-læsning af alle avissidebilleder. Automatisk hentning/billed-OCR på tredjeparts avisbilleder kræver separat brugsret og OCR-driftsmiljø. Den manuelle lokale Tesseract OCR-pilot fra v0.1.22 er uændret.
+
+Der er samtidig rettet en konkret UI-fejl: beskeden **“Ingen tekstmatch i de gennemgåede tilbud”** vises ikke længere dobbelt ved resultatløs udvidet SuperBrugsen-søgning.
+
+WP-Cron afhænger af besøg på webstedet og garanterer ikke et præcist klokkeslæt. For stabil daglig opdatering kræves server-cron, som regel mod WordPress' wp-cron.php. **Ingen automatisk opgradering til betalt Prej-plan.**
+
+Kilder: https://prej.dk/api , https://prej.dk/vilkaar-api . Tests: `tests/daily_offers.php`, `tests/daily_offers_contract.py`.

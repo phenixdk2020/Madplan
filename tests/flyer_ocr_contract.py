@@ -7,7 +7,7 @@ js=Path('assets/portal.js').read_text()
 backup=Path('includes/class-mp-checkpoints.php').read_text()
 wf=Path('.github/workflows/package.yml').read_text()
 for source,needle in [
- (main,'Version: 0.1.22'),
+ (main,' * Version: '),
  (main,"require_once MP_DIR . 'includes/class-mp-flyer-ocr.php'"),
  (rest,"self::route('/shopping/ocr/upload', 'POST', 'shopping_ocr_upload', true, true)"),
  (rest,"self::route('/shopping/ocr/import-text', 'POST', 'shopping_ocr_import_text', true, true)"),

@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/phenixdk2020/Madplan
  * Update URI: https://github.com/phenixdk2020/Madplan
  * Description: Mobilvenlig familieportal med fælles TV-/film-premierer, watchlist, madplan og opskrifter.
- * Version: 0.1.22
+ * Version: 0.1.23
  * Requires at least: 6.4
  * Requires PHP: 8.0
  * Text Domain: hangar18-madplan
@@ -12,7 +12,7 @@
 declare(strict_types=1);
 
 if (!defined('ABSPATH')) { exit; }
-define('MP_VERSION', '0.1.22');
+define('MP_VERSION', '0.1.23');
 define('MP_FILE', __FILE__);
 define('MP_DIR', plugin_dir_path(__FILE__));
 define('MP_URL', plugin_dir_url(__FILE__));
@@ -25,6 +25,7 @@ require_once MP_DIR . 'includes/class-mp-offers.php';
 require_once MP_DIR . 'includes/class-mp-offer-flyers.php';
 require_once MP_DIR . 'includes/class-mp-flyer-library.php';
 require_once MP_DIR . 'includes/class-mp-flyer-ocr.php';
+require_once MP_DIR . 'includes/class-mp-daily-offers.php';
 require_once MP_DIR . 'includes/class-mp-shopping-stores.php';
 require_once MP_DIR . 'includes/class-mp-shopping-history.php';
 require_once MP_DIR . 'includes/class-mp-shopping-details.php';
@@ -48,7 +49,10 @@ final class MP_Plugin {
         add_action('admin_enqueue_scripts', [self::class, 'admin_assets']);
         add_action('mp_sync_tv', [MP_TVmaze::class, 'sync_all']);
         add_action('mp_sync_tv', [MP_Movies::class, 'refresh_pending'], 20);
+        add_filter('cron_schedules', [MP_DailyOffers::class, 'schedule_interval']);
+        add_action('mp_daily_offer_tick', [MP_DailyOffers::class, 'tick']);
         add_action('init', [self::class, 'ensure_cron']);
+        add_action('init', [MP_DailyOffers::class, 'ensure_if_enabled']);
         add_filter('plugin_action_links_' . plugin_basename(MP_FILE), [self::class, 'links']);
     }
     public static function activate(): void {
@@ -74,10 +78,12 @@ final class MP_Plugin {
             }
         }
         self::ensure_cron();
+        if (MP_DailyOffers::enabled()) { MP_DailyOffers::ensure_schedule(); }
         MP_Home::configure();
     }
     public static function deactivate(): void {
         wp_clear_scheduled_hook('mp_sync_tv');
+        wp_clear_scheduled_hook('mp_daily_offer_tick');
         // Data never removed on deactivation.
     }
     public static function ensure_cron(): void {

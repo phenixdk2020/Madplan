@@ -195,3 +195,12 @@ MP_Portal::render() udstiller data-module=shopping på tredje hjemmekort. Klient
 - Local Tesseract via proc_open array args (no shell), detects binary, max image 6MB / 36MP, only uploaded image, MIME/image validation. Optional MP_TESSERACT_PATH, dan+eng fallback to eng. If server disallows proc_open, manual OCR text import. No automatic download of flyer page images or external OCR API.
 - Scope: manual one-page test, admin-only upload/import/clear and WordPress REST nonce; all logged-in household members can match against shared option mp_grocery_ocr_candidates_v1. File stays in PHP temporary upload only and text gets discarded after extraction; max 300 short candidate records; expiry and store filters.
 - OCR candidates are unverified; product-price pairing from visually laid out ads can be mistaken. A shopping item may have OCR suggestions in addition to Prej data, shown with clear provenance. No paid dependencies and no extra Prej calls while searching index.
+
+
+## v0.1.23 – daily structured-offer snapshot
+- MP_DailyOffers settings `mp_daily_offer_settings_v1`: admin opt-in disabled by default.
+- Cron `mp_daily_offer_tick` each 15 min, but no API calls before 05:30 local. One provider call per tick; at most eight per day in the daily job; shared `MP_Offers::reserve_flyer_call()` protects the overall 20-call local cap and free 25-call Prej plan.
+- Per-day option `mp_daily_offer_state_v1`: selection signature, progress cursor, page, calls, matched offers (max 100), checked stores, partial coverage and error. Index hidden on dates after the saved day. Maximum 2 API pages per chain, 100 offers per page; no bulk dataset copy.
+- Server matches only currently unpurchased shopping product titles. REST GET /shopping/daily/status, GET /shopping/daily/matches, admin POST /shopping/daily/settings, admin POST /shopping/daily/run. WordPress permission callback and nonce as existing.
+- On cron-disabled hosts use an actual server cron; WP-Cron is traffic-triggered. No automatic flyer image retrieval/OCR pending rights clearance and host capability.
+- Duplicate missing-offer notification in JS removed.

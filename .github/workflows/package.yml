@@ -47,6 +47,8 @@ jobs:
           php tests/flyer_search.php
           php tests/flyer_library.php
           php tests/flyer_ocr.php
+          php tests/daily_offers.php
+          python3 tests/daily_offers_contract.py
           python3 tests/flyer_ocr_contract.py
           python3 tests/flyer_library_contract.py
           python3 tests/flyer_search_contract.py

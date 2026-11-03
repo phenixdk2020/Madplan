@@ -608,10 +608,10 @@ content.innerHTML=html+'</div>';content.querySelector('#back-recipes').onclick=r
 }
 async function shopping(){
  content.innerHTML='<p class="mp-help">Henter indkøbslisten…</p>';
- var list,settings,history;
+ var list,settings,history,daily;
  try{
-  var data=await Promise.all([api('shopping'),api('shopping/stores'),api('shopping/history')]);
-  list=data[0];settings=data[1];history=data[2]||[];
+  var data=await Promise.all([api('shopping'),api('shopping/stores'),api('shopping/history'),api('shopping/daily/status')]);
+  list=data[0];settings=data[1];history=data[2]||[];daily=data[3]||{};
  }catch(e){return fail(e);}
  var options=settings.options||['Alle'];
  function storeSelect(selected){
@@ -656,6 +656,19 @@ async function shopping(){
  '<button id="mp-ocr-import-text" type="button" class="mp-btn">Indlæs OCR-tekst</button></details>'+
  '<div id="mp-ocr-import-result" class="mp-help" aria-live="polite"></div>'+
  '</details>':'')+
+ '<details class="mp-shop-filter mp-daily-index"><summary>Dagligt tilbudsindeks'+
+ (daily.enabled?' · aktivt':' · slået fra')+'</summary>'+
+ '<p class="mp-help">Prejs strukturerede tilbud på familiens indkøbsliste opdateres automatisk efter kl. 05.30, hvis WordPress Cron kører. Indekset gælder kun for den aktuelle dag. Avisbilleder OCR-læses ikke automatisk.</p>'+
+ '<div class="mp-daily-progress" aria-live="polite">'+
+ (daily.updated_today?'Sidste opdatering: '+esc(daily.last_checked)+' · ':'Endnu ikke opdateret i dag · ')+
+ esc(daily.offers||0)+' mulige fund · '+esc((daily.checked_stores||[]).length)+' butikker gennemgået'+
+ (daily.partial?' · ufuldstændig dækning':'')+
+ (daily.error?' · '+esc(daily.error):'')+'</div>'+
+ (cfg.admin?'<label class="mp-daily-switch"><input type="checkbox" id="mp-daily-enabled" '+
+ (daily.enabled?'checked':'')+'> Opdatér automatisk hver dag (maks. 8 Prej API-kald/døgn)</label>'+
+ '<div class="mp-daily-buttons"><button type="button" class="mp-btn mp-btn-primary" id="mp-daily-save">Gem daglig opdatering</button>'+
+ '<button type="button" class="mp-btn" id="mp-daily-now" '+(!daily.enabled?'disabled':'')+'>Kør næste lille batch nu</button></div>':'')+
+ '<p class="mp-help">Indekset gemmer kun matchende varer og priser – ikke en kopi af samtlige kataloger. Hvis alle valgte butikker ikke kan gennemgås inden kvoten, vises det som ufuldstændigt.</p></details>'+
  '<div class="mp-shopping-bulk-actions"><button type="button" id="mp-clear-purchased" class="mp-btn" '+
  (!purchased.length?'disabled':'')+'>Ryd købte varer ('+purchased.length+')</button>'+
  '<button type="button" id="mp-check-offers-all" class="mp-btn mp-shopping-bulk" '+(!pending.length?'disabled':'')+
@@ -808,6 +821,24 @@ async function shopping(){
    finally{importButton.disabled=false;}
   };
  }
+ var dailySave=content.querySelector('#mp-daily-save');
+ var dailyNow=content.querySelector('#mp-daily-now');
+ if(dailySave)dailySave.onclick=async function(){
+  dailySave.disabled=true;
+  try{
+   await api('shopping/daily/settings','POST',{enabled:content.querySelector('#mp-daily-enabled').checked});
+   await shopping();msg('Den daglige tilbudsopdatering er gemt for hele familien.');
+  }catch(e){fail(e);dailySave.disabled=false;}
+ };
+ if(dailyNow)dailyNow.onclick=async function(){
+  dailyNow.disabled=true;
+  try{
+   var result=await api('shopping/daily/run','POST',{});
+   await shopping();
+   msg('Dagens tilbudsindeks: '+result.offers+' mulige fund. '+
+       (result.complete?'Kørslen er afsluttet.':'Flere små batches mangler.'));
+  }catch(e){fail(e);dailyNow.disabled=false;}
+ };
  var offerSave=content.querySelector('#mp-save-offer-stores');
  offerSave.onclick=async function(){
   var stores=Array.from(content.querySelectorAll('.mp-filter-store:checked')).map(function(input){return input.value;});
@@ -974,12 +1005,12 @@ async function shopping(){
   var heading=item.expanded?'Tilbudsavis: '+(item.store||''):'Mulige tilbud på '+item.title;
   var markup='<strong>'+esc(heading)+'</strong>'+
    '<p class="mp-help">Sammenlign varenavn, mærke og pakningsstørrelse. Tilbudspriser kan variere lokalt.</p>';
-  if(item.expanded&&item.message) {
-   markup+='<p class="mp-help mp-flyer-summary">'+esc(item.message)+'</p>';
-  }
   if(!offers.length){
-   markup+='<p class="mp-help">'+esc(item.message||'Ingen aktuelle tilbud fundet i datakilden.')+'</p>';
+   markup+='<p class="mp-help mp-flyer-summary">'+esc(item.message||'Ingen aktuelle tilbud fundet i datakilden.')+'</p>';
   }else{
+   if(item.expanded&&item.message){
+    markup+='<p class="mp-help mp-flyer-summary">'+esc(item.message)+'</p>';
+   }
    var byStore={};
    offers.forEach(function(o){
     if(!byStore[o.store])byStore[o.store]=[];
@@ -1011,6 +1042,22 @@ async function shopping(){
   }
   markup+='<div class="mp-ocr-matches" aria-live="polite"></div>';
   panel.innerHTML=markup;panel.hidden=false;panel.dataset.loaded='1';
+  // Daily index is shared and local; it never triggers an external Prej API call.
+  var dailyArea=document.createElement('div');
+  dailyArea.className='mp-daily-matches';
+  panel.insertBefore(dailyArea,panel.querySelector('.mp-ocr-matches'));
+  api('shopping/daily/matches?id='+encodeURIComponent(item.id)).then(function(result){
+   if(!dailyArea.isConnected)return;
+   var matches=result.offers||[];
+   if(!matches.length)return;
+   dailyArea.innerHTML='<strong>Dagens gemte tilbud ('+esc(result.day)+')</strong>'+
+    matches.map(function(v){
+     return '<div class="mp-offer-row"><div><strong>'+esc(v.name)+'</strong>'+
+      '<small>'+esc(v.store)+' · '+esc(v.source)+'</small></div>'+
+      '<div class="mp-offer-price"><strong>'+esc(v.price_label)+'</strong>'+
+      '<small>'+(v.ends?'Til '+esc(v.ends):'Slutdato ukendt')+'</small></div></div>';
+    }).join('');
+  }).catch(function(){});
   var ocrArea=panel.querySelector('.mp-ocr-matches');
   // Local stored results only; no Prej call and no image download.
   api('shopping/ocr/matches?id='+encodeURIComponent(item.id)).then(function(found){
