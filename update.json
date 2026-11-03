@@ -1,11 +1,11 @@
 {
   "name": "Hangar18 Madplan & TV-plan",
   "slug": "hangar18-madplan",
-  "version": "0.1.26",
+  "version": "0.1.27",
   "homepage": "https://github.com/phenixdk2020/Madplan",
   "requires": "6.4",
   "requires_php": "8.0",
-  "package": "https://raw.githubusercontent.com/phenixdk2020/Madplan/main/dist/hangar18-madplan-v0.1.26.zip",
-  "sha256": "8d550524e472273dfe889ca89d2d280ff866cd533823fe56d0fe37948f5803c1",
-  "source_commit": "80d00c027ec0e449693522c667c97a8f279274cd"
+  "package": "https://raw.githubusercontent.com/phenixdk2020/Madplan/main/dist/hangar18-madplan-v0.1.27.zip",
+  "sha256": "2bcd6a7719435cc0a99b6fb495458169a5ad53737860ab7165ae00ebe7c77da8",
+  "source_commit": "78d91053735de9a391dcaacdceb2ceab1682dc5d"
 }
