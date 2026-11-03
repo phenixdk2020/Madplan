@@ -752,6 +752,7 @@ async function shopping(){
   '<h3 id="mp-barcode-heading">Scan stregkode</h3>'+
   '<p class="mp-help">Hold kameraet over varens EAN-stregkode. Kendte varer tilføjes automatisk til familiens liste.</p>'+
   '<video id="mp-barcode-video" autoplay muted playsinline hidden></video>'+
+  '<div id="mp-barcode-reader" class="mp-barcode-reader" hidden></div>'+
   '<p id="mp-barcode-message" class="mp-help" role="status" aria-live="polite"></p>'+
   '<div class="mp-barcode-actions"><button type="button" class="mp-btn mp-btn-primary" id="mp-barcode-camera">Start kamera</button>'+
   '<button type="button" class="mp-btn" id="mp-barcode-close">Luk</button></div>'+
@@ -763,7 +764,7 @@ async function shopping(){
   '<label>Varenavn<input id="mp-barcode-new-title" maxlength="255" required placeholder="Fx Faxe Kondi"></label>'+
   '<label>Pakningsstørrelse (valgfri)<input id="mp-barcode-new-quantity" maxlength="80" placeholder="Fx 1,5 liter"></label>'+
   '<button type="submit" class="mp-btn mp-btn-primary">Gem og tilføj vare</button></form>'+
-  '<p class="mp-help">Produktnavne fra familiens data, Prej og Open Food Facts. Kamera kræver HTTPS og en understøttet browser.</p>'+
+  '<p class="mp-help">Kamera kræver HTTPS og din tilladelse. Scanning behandles på telefonen; kun stregkoden sendes til WordPress.</p>'+
   '</dialog>');
  var barcodeDialog=content.querySelector('#mp-barcode-dialog');
  var barcodeVideo=content.querySelector('#mp-barcode-video');
@@ -772,10 +773,37 @@ async function shopping(){
  var barcodeStart=content.querySelector('#mp-barcode-camera');
  var barcodeUnknown=content.querySelector('#mp-barcode-new-form');
  var barcodeStream=null,barcodeRun=0,barcodeWorking=false,barcodeUnknownCode='';
+ var barcodeReader=content.querySelector('#mp-barcode-reader');
+ var barcodeFallback=null,barcodeFallbackLoader=null;
+ function barcodeLoadFallback(){
+  if(typeof window.Html5Qrcode==='function')return Promise.resolve();
+  if(!barcodeFallbackLoader){
+   barcodeFallbackLoader=new Promise(function(resolve,reject){
+    var script=document.createElement('script');
+    script.src='https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js';
+    script.integrity='sha512-r6rDA7W6ZeQhvl8S7yRVQUKVHdexq+GAlNkNNqVC7YyIV+NwqCTJe2hDWCiffTyRNOeGEzRRJ9ifvRm/HCzGYg==';
+    script.crossOrigin='anonymous';
+    script.referrerPolicy='no-referrer';
+    script.onload=function(){
+     if(typeof window.Html5Qrcode==='function')resolve();
+     else reject(new Error('Scannerbiblioteket kunne ikke indlæses.'));
+    };
+    script.onerror=function(){reject(new Error('Scannerbiblioteket blev blokeret eller kunne ikke hentes.'));};
+    document.head.appendChild(script);
+   }).catch(function(err){barcodeFallbackLoader=null;throw err;});
+  }
+  return barcodeFallbackLoader;
+ }
  function barcodeStop(){
   barcodeRun++;
   if(barcodeStream){barcodeStream.getTracks().forEach(function(track){track.stop();});barcodeStream=null;}
-  barcodeVideo.hidden=true;barcodeVideo.srcObject=null;
+  if(barcodeFallback){
+   var oldScanner=barcodeFallback;barcodeFallback=null;
+   Promise.resolve().then(function(){return oldScanner.stop();}).catch(function(){}).then(function(){
+    try{oldScanner.clear();}catch(ignore){}
+   });
+  }
+  barcodeVideo.hidden=true;barcodeVideo.srcObject=null;barcodeReader.hidden=true;
   barcodeStart.disabled=false;
  }
  function barcodeClose(){
@@ -827,9 +855,49 @@ async function shopping(){
    content.querySelector('#mp-barcode-new-quantity').value.trim());
  };
  barcodeStart.onclick=async function(){
-  if(!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia ||
-     !('BarcodeDetector' in window)){
-   barcodeMessage.textContent='Kamerascanning understøttes ikke her. Brug Chrome på din Android-telefon, eller indtast EAN-koden.';
+  if(!window.isSecureContext){
+   barcodeMessage.textContent='Kamera kræver HTTPS. Åbn https://hangar18.dk/ i Safari eller Chrome.';
+   return;
+  }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+   barcodeMessage.textContent='Browseren tillader ikke kameraadgang. Brug Safari eller Chrome, eller indtast EAN-koden.';
+   return;
+  }
+  // Safari on iOS has no BarcodeDetector by default. Use an in-browser decoder instead.
+  // The bundled library is fetched only when needed; camera frames never leave the device.
+  if(typeof window.BarcodeDetector!=='function'){
+   barcodeStop();
+   var fallbackRequest=++barcodeRun;
+   barcodeStart.disabled=true;
+   barcodeMessage.textContent='Indlæser kamerascanner til Safari…';
+   try{
+    await barcodeLoadFallback();
+    if(barcodeRun!==fallbackRequest || !barcodeDialog.open)return;
+    if(typeof window.Html5QrcodeSupportedFormats!=='object')
+     throw new Error('Browserens scannerformater er ikke tilgængelige.');
+    var scanFormats=window.Html5QrcodeSupportedFormats;
+    var scanner=new window.Html5Qrcode('mp-barcode-reader',{
+     formatsToSupport:[scanFormats.EAN_13,scanFormats.EAN_8,scanFormats.UPC_A,scanFormats.UPC_E],
+     useBarCodeDetectorIfSupported:false
+    },false);
+    barcodeFallback=scanner;
+    barcodeReader.hidden=false;
+    barcodeMessage.textContent='Tillad kameraadgang i Safari, når du bliver spurgt…';
+    await scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:260,height:130}},
+     function(value){
+      if(barcodeRun!==fallbackRequest || barcodeWorking)return;
+      var code=String(value||'').trim();
+      if(/^(?:[0-9]{8}|[0-9]{12,14})$/.test(code))barcodeAdd(code);
+     },function(){});
+    if(barcodeRun!==fallbackRequest || !barcodeDialog.open){barcodeStop();return;}
+    barcodeMessage.textContent='Hold stregkoden stille i kameraets ramme.';
+   }catch(e){
+    barcodeStop();
+    var permissionDenied=e.name==='NotAllowedError'||/permission|denied|tilladelse/i.test(String(e.message||''));
+    barcodeMessage.textContent=permissionDenied?
+     'Kameraadgang blev afvist. Giv hangar18.dk adgang under Safari → Webstedsindstillinger → Kamera, og prøv igen.':
+     'Kameraet kunne ikke startes: '+(e.message||'ukendt fejl')+'. Prøv igen, eller indtast EAN-koden.';
+   }finally{barcodeStart.disabled=false;}
    return;
   }
   barcodeStop();
