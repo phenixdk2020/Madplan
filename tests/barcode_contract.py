@@ -7,7 +7,7 @@ files={p:Path(p).read_text() for p in [
  'includes/class-mp-shopping-details.php','includes/class-mp-checkpoints.php',
  'assets/portal.js','assets/portal.css','.github/workflows/package.yml']}
 for path,needle in [
- ('hangar18-madplan.php','Version: 0.1.26'),
+ ('hangar18-madplan.php','Version: 0.1.27'),
  ('hangar18-madplan.php',"require_once MP_DIR . 'includes/class-mp-barcode.php'"),
  ('includes/class-mp-barcode.php',"'mp_shopping_barcode_catalog_v1'"),
  ('includes/class-mp-barcode.php','https://api.prej.app/v1/scan/'),
@@ -27,7 +27,6 @@ for path,needle in [
  ('assets/portal.js','Html5QrcodeSupportedFormats'),
  ('assets/portal.js','mp-barcode-reader'),
  ('assets/portal.js','useBarCodeDetectorIfSupported:false'),
- ('assets/portal.js','script.integrity='),
  ('assets/portal.js','getUserMedia('),
  ('assets/portal.js','barcodeStream.getTracks()'),
  ('assets/portal.js',"api('shopping/barcode/add','POST'"),
@@ -39,4 +38,5 @@ for path,needle in [
 assert "prej_dev_" not in files['assets/portal.js']
 assert "api.prej.app" not in files['assets/portal.js']
 assert "toDataURL(" not in files['assets/portal.js']
+assert 'script.integrity=' not in files['assets/portal.js']
 print('Private family barcode scanner and camera fallback contract PASS')
