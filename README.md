@@ -263,7 +263,7 @@ Da fornavnet allerede vises i topbaren, fjernes det dobbelte visningsnavn til h�
 
 Frivillig gratis, privat ikke-kommerciel integration med [Prej API](https://prej.dk/api). Admin opsætter en Prej Bearer-nøgle under **Hangar18 → Oversigt → Indkøbsliste og tilbudsaviser** eller i `wp-config.php` som `MP_PREJ_API_TOKEN`. WordPress gemmer nøglen server-side (option `mp_prej_api_key_v1`). Ingen ekstra abonnementer eller automatisk køb.
 
-Under **Madplan → Indkøbsliste** findes **Find tilbud** på ukøbte varer og **Find tilbud på indkøbslisten** (maks 10 varer per klik). Resultater viser mulige produktmatches: varenavn, butik, pris i kroner, størrelse/enhedspris hvis registreret, kilde som Tilbudsavis eller Butikskatalog og udløbsdato. Købte varer, udløbne og fremtidige tilbud udelades. Resultater er **forslag**, ikke garanti for præcis vare eller pakkestørrelse. Butikspriser kan variere lokalt.
+Under **Madplan → Indkøbsliste** findes **Find tilbud** på ukøbte varer og **Find tilbud på indkøbslisten** (maks 10 varer per klik). Resultater viser mulige produktmatches: varenavn, butik, pris i kroner, størrelse/enhedspris hvis registreret, kilde som Avis-tilbud eller Katalogpris (fra Prej) og gyldighedsdato. Købte varer, udløbne og fremtidige tilbud udelades. Resultater er **forslag**, ikke garanti for præcis vare eller pakkestørrelse. Butikspriser kan variere lokalt.
 
 Prej Gratis er 25 opslag per døgn, og integrationen stopper ved 20 udgående opslag per UTC-døgn og cacher forespørgsler i 6 timer på tværs af familien. Ingen scraping, ingen automatisk cron/opslag, ingen vareliste til offentliggørelse. Prej kilder krediteres, se [Prej API-vilkår](https://prej.dk/vilkaar-api). Gratisplanen er kun til **ikke-kommercielle projekter**, uden reklamer og affiliate-indtægter. Tilbudsbilleder/avisfotos kopieres ikke.
 
@@ -386,6 +386,10 @@ Det daglige OCR-indeks gemmer op til 300 **uvaliderede produkt-/prisforslag** me
 
 **Kilde/ret:** API-vilkår https://prej.dk/vilkaar-api og Prej brugsregler https://prej.dk/vilkaar. Funktionen må kun aktiveres, når du har det nødvendige grundlag til billedbehandlingen. Ingen ekstra betalte API-kald eller AI-abonnementer, kun lokal Tesseract. Tests: `tests/daily_ocr.php` og `tests/daily_ocr_contract.py`.
 
+
+## v0.1.28 – præcise pris- og kildeetiketter
+
+Tilbudssøgningen skelner nu mellem **Katalogpris · Prej** (pris fra kædens produkt-/priskatalog) og **Avis-tilbud · Prej** (struktureret tilbud registreret med kilde `flyer`). Butikken vises fortsat som overskrift. Gyldighedsdato vises i dansk format, eksempelvis **Gælder til 05.11.2026**, eller som periode når både start- og slutdato findes. Manglende slutdato vises tydeligt. Den samme datovisning bruges ved daglige gemte fund og OCR-fund. Tidligere cachede source-navne konverteres ved visning. Et konkret fysisk avisnummer eller avisnavn kan ikke udledes af de aktuelle Prej-produktoplysninger og opfindes derfor ikke. Ingen ændringer i scanner, gratis API-kvote eller indkøbsdata.
 
 ## v0.1.27 – rettelse til indlæsning af Safari-scanner
 

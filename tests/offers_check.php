@@ -48,7 +48,12 @@ $r=MP_Offers::scan([5,6,5,999]);
 check(count($r['items'])===1,'Only existing unchecked unique items');
 check(count($r['items'][0]['offers'])===1,'Expired, future, non-offer removed');
 check($r['items'][0]['offers'][0]['price_label']==='12,95 kr.','Kroner from ore');
-check($r['items'][0]['offers'][0]['source']==='Tilbudsavis','Source flyer labelled');
+check($r['items'][0]['offers'][0]['source']==='Avis-tilbud','Source flyer labelled');
+$catalog=MP_Offers::normalize_product(['name'=>'Kaffe','prices'=>[
+ ['chain_name'=>'Meny','price'=>1995,'is_offer'=>true,'source'=>'catalog',
+  'offer_ends'=>'2026-11-05']
+]],'2026-11-01');
+check(count($catalog)===1 && $catalog[0]['source']==='Katalogpris','Catalog price labelled');
 check(count($GLOBALS['calls'])===1,'One provider request');
 check(str_contains($GLOBALS['calls'][0]['url'],'on_offer=1'),'Offer query');
 check(str_contains($GLOBALS['calls'][0]['url'],'exclude_border_trade=1'),'No border trade');

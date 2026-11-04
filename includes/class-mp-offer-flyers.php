@@ -57,7 +57,7 @@ final class MP_OfferFlyers {
             'quantity'=>sanitize_text_field((string)($offer['quantity_label']??'')),
             'unit_price'=>sanitize_text_field((string)($offer['unit_price_label']??'')),
             'starts'=>$start,'ends'=>$end,
-            'source'=>(string)($offer['source']??'')==='flyer'?'Tilbudsavis':'Butikskatalog',
+            'source'=>(string)($offer['source']??'')==='flyer'?'Avis-tilbud':'Katalogpris',
             'multi_buy'=>$multi_text,'last_seen'=>'',
         ];
     }

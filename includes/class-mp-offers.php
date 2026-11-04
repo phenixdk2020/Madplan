@@ -72,7 +72,7 @@ final class MP_Offers {
                 'quantity'=>sanitize_text_field((string)($product['quantity_label']??'')),
                 'unit_price'=>sanitize_text_field((string)($price['unit_price_label']??'')),
                 'starts'=>$starts,'ends'=>$ends,
-                'source'=>($price['source']??'')==='flyer'?'Tilbudsavis':'Butikskatalog',
+                'source'=>($price['source']??'')==='flyer'?'Avis-tilbud':'Katalogpris',
                 'last_seen'=>sanitize_text_field((string)($price['last_seen_date']??'')),
             ];
         }
