@@ -11,7 +11,9 @@ for source,needle in [
  (p,"'exclude_border_trade'=>1"),(p,"'offer_ends'"),
  (p,"MP_Storage::table('shopping')"),(r,"'/shopping/offers'"),
  (j,"api('shopping/offers','POST',{ids:ids})"),(j,"mp-check-offers-all"),
- (j,"Tilbudsdata fra"),(w,"php tests/offers_check.php")
+ (j,"Tilbudsdata fra"),(p,"'Avis-tilbud':'Katalogpris'"),
+ (j,"function offerSourceLabel(source)"),(j,"function offerValidity(item)"),
+ (w,"php tests/offers_check.php")
 ]:
  assert needle in source,needle
 assert "MP_PREJ_API_TOKEN" not in j
