@@ -1234,6 +1234,26 @@ async function shopping(){
    }catch(e){fail(e);sel.disabled=false;}
   };
  });
+ // Keep previously cached offers readable after source labels change.
+ function offerSourceLabel(source){
+  var label=String(source||'');
+  if(label==='Butikskatalog'||label==='Katalogpris')return 'Katalogpris · Prej';
+  if(label==='Tilbudsavis'||label==='Avis-tilbud')return 'Avis-tilbud · Prej';
+  return label;
+ }
+ function offerDate(value){
+  var date=String(value||'');
+  return /^\d{4}-\d{2}-\d{2}$/.test(date)?
+   date.slice(8,10)+'.'+date.slice(5,7)+'.'+date.slice(0,4):date;
+ }
+ function offerValidity(item){
+  var start=offerDate(item.starts||item.valid_from);
+  var end=offerDate(item.ends||item.valid_to);
+  if(start&&end)return 'Gælder '+start+' – '+end;
+  if(end)return 'Gælder til '+end;
+  if(start)return 'Gælder fra '+start+' · udløbsdato ikke oplyst';
+  return 'Udløbsdato ikke oplyst';
+ }
  function displayOfferResult(item){
   var panel=content.querySelector('#mp-item-offers-'+item.id);
   if(!panel)return;
@@ -1256,10 +1276,10 @@ async function shopping(){
     markup+='<h4 class="mp-offer-store">'+esc(store)+'</h4>';
     byStore[store].forEach(function(o){
      markup+='<div class="mp-offer-row"><div><strong>'+esc(o.name)+'</strong>'+
-      '<small>'+esc(o.source)+(o.multi_buy?' · '+esc(o.multi_buy):'')+'</small>'+
+      '<small>'+esc(offerSourceLabel(o.source))+(o.multi_buy?' · '+esc(o.multi_buy):'')+'</small>'+
       '<small>'+esc([o.quantity,o.unit_price].filter(Boolean).join(' · ')||'Kontrollér pakningsstørrelse')+'</small></div>'+
       '<div class="mp-offer-price"><strong>'+esc(o.price_label)+'</strong>'+
-      '<small>'+(o.ends?'Til '+esc(o.ends):'Slutdato ikke oplyst')+'</small></div></div>';
+      '<small>'+esc(offerValidity(o))+'</small></div></div>';
     });
    });
   }
@@ -1289,9 +1309,9 @@ async function shopping(){
    dailyArea.innerHTML='<strong>Dagens gemte tilbud ('+esc(result.day)+')</strong>'+
     matches.map(function(v){
      return '<div class="mp-offer-row"><div><strong>'+esc(v.name)+'</strong>'+
-      '<small>'+esc(v.store)+' · '+esc(v.source)+'</small></div>'+
+      '<small>'+esc(v.store)+' · '+esc(offerSourceLabel(v.source))+'</small></div>'+
       '<div class="mp-offer-price"><strong>'+esc(v.price_label)+'</strong>'+
-      '<small>'+(v.ends?'Til '+esc(v.ends):'Slutdato ukendt')+'</small></div></div>';
+      '<small>'+esc(offerValidity(v))+'</small></div></div>';
     }).join('');
   }).catch(function(){});
   // Daily scheduled OCR candidates have their own date-stamped index.
@@ -1307,7 +1327,7 @@ async function shopping(){
      return '<div class="mp-offer-row"><div><strong>'+esc(v.name)+'</strong>'+
       '<small>'+esc(v.store)+' · OCR fra tilbudsavis</small></div>'+
       '<div class="mp-offer-price"><strong>'+esc(v.price_label)+'</strong>'+
-      '<small>Gælder til '+esc(v.valid_to)+'</small></div></div>';
+      '<small>'+esc(offerValidity(v))+'</small></div></div>';
     }).join('');
   }).catch(function(){});
   var ocrArea=panel.querySelector('.mp-ocr-matches');
@@ -1320,9 +1340,9 @@ async function shopping(){
     '<p class="mp-help">Disse priser er læst fra et avisbillede og skal kontrolleres manuelt.</p>'+
     matches.map(function(v){
      return '<div class="mp-offer-row"><div><strong>'+esc(v.name)+'</strong>'+
-      '<small>'+esc(v.store)+' · '+esc(v.source)+'</small></div>'+
+      '<small>'+esc(v.store)+' · '+esc(offerSourceLabel(v.source))+'</small></div>'+
       '<div class="mp-offer-price"><strong>'+esc(v.price_label)+'</strong>'+
-      '<small>Gælder til '+esc(v.valid_to)+'</small></div></div>';
+      '<small>'+esc(offerValidity(v))+'</small></div></div>';
     }).join('');
   }).catch(function(){ /* Shopping offers remain usable without OCR. */ });
 
