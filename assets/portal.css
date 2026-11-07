@@ -532,3 +532,9 @@ body.mp-full-page.mp-theme-burgundy{background:#f9f0f3;color:#41212c}
  .mp-portal .mp-home-card>span:last-child{display:none}
  .mp-portal .mp-home .mp-intro{margin-bottom:8px}
 }
+
+/* v0.1.31: food screens use the homepage as their only global navigation. */
+.mp-portal #mp-tabs[hidden]{display:none!important}
+.mp-portal .mp-main:has(#mp-tabs[hidden]) .mp-module-head{margin-bottom:8px}
+.mp-portal .mp-main:has(#mp-tabs[hidden]) .mp-status:empty{min-height:0}
+.mp-portal .mp-week-recipes{display:inline-flex;align-items:center;justify-content:center;min-height:44px;margin:0 0 12px;max-width:100%}

@@ -48,7 +48,20 @@ function weekNo(t){var d=dt(t);d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7))
 function msg(m,error){status.textContent=m||'';status.classList.toggle('mp-error',!!error);}
 function fail(e){msg(e&&e.message?e.message:'Ukendt fejl',true);}
 async function api(path,method,body){var opt={method:method||'GET',credentials:'same-origin',headers:{'X-WP-Nonce':cfg.nonce}};if(body!==undefined){opt.headers['Content-Type']='application/json';opt.body=JSON.stringify(body);}var r=await fetch(cfg.api+path,opt),j=await r.json().catch(function(){return {};});if(!r.ok)throw new Error(j.message||'Serverfejl');return j;}
-function setTab(t){if(s.freezerStop){s.freezerStop();s.freezerStop=null;}s.tab=t;root.querySelector('#mp-module-title').textContent=s.module==='tv'?'TV-ugeplan':(t==='freezer'?'Fryser':(t==='shopping'?'Indkøbsliste':'Madplan'));tabs.innerHTML=(s.module==='tv'?[['week','Ugeplan'],['watch','Serier'],['movies','Film']]:[['week','Madplan'],['recipes','Opskrifter'],['shopping','Indkøbsliste'],['freezer','Fryser']]).map(function(x){return '<button type="button" class="mp-tab" data-tab="'+x[0]+'" '+(t===x[0]?'aria-current="page"':'')+'>'+x[1]+'</button>';}).join('');tabs.querySelectorAll('button').forEach(function(b){b.onclick=function(){setTab(b.dataset.tab);};});render();}
+function setTab(t){
+ if(s.freezerStop){s.freezerStop();s.freezerStop=null;}
+ s.tab=t;
+ var isTv=s.module==='tv';
+ root.querySelector('#mp-module-title').textContent=isTv?'TV-ugeplan':
+  (t==='freezer'?'Fryser':(t==='shopping'?'Indkøbsliste':(t==='recipes'?'Opskrifter':'Madplan')));
+ // The four food destinations live on the front page, not in a second navigation row.
+ tabs.hidden=!isTv;
+ tabs.innerHTML=isTv?[['week','Ugeplan'],['watch','Serier'],['movies','Film']].map(function(x){
+  return '<button type="button" class="mp-tab" data-tab="'+x[0]+'" '+(t===x[0]?'aria-current="page"':'')+'>'+x[1]+'</button>';
+ }).join(''):'';
+ if(isTv){tabs.querySelectorAll('button').forEach(function(b){b.onclick=function(){setTab(b.dataset.tab);};});}
+ render();
+}
 function module(name,tab){if(name==='shopping'){name='food';tab='shopping';}if(name==='freezer'){name='food';tab='freezer';}s.module=name;home.hidden=true;main.hidden=false;setTab(tab||'week');}
 root.querySelectorAll('[data-module]').forEach(function(b){b.onclick=function(){module(b.dataset.module);};});
 function openHash(){
@@ -84,7 +97,7 @@ content.innerHTML=toolbar()+'<p>Henter planen…</p>';bindToolbar();
 try{await load();}catch(e){return fail(e);}
 var current=s.start===mon(cfg.today),limit=7;
 var addText=s.module==='tv'?'+ Tilføj TV-program':'+ Tilføj aftensmad';
-var html=toolbar()+'<div class="mp-mobile-actions"><button type="button" id="mp-quick-add" class="mp-btn mp-btn-primary mp-add-primary">'+addText+'</button>'+(s.module==='tv'?'<button type="button" id="mp-movie-add" class="mp-btn mp-add-primary">+ Tilføj film</button>':'')+'</div>'+
+var html=toolbar()+'<div class="mp-mobile-actions"><button type="button" id="mp-quick-add" class="mp-btn mp-btn-primary mp-add-primary">'+addText+'</button>'+(s.module==='tv'?'<button type="button" id="mp-movie-add" class="mp-btn mp-add-primary">+ Tilføj film</button>':'')+'</div>'+ (s.module==='tv'?'':'<button type="button" id="mp-open-recipes" class="mp-btn mp-week-recipes">📖 Se opskrifter</button>')+
 '<p class="mp-help">'+(s.module==='tv'?'Serier følger afsnit/sæsoner; film vises kun én gang på premieredatoen. Danske streamingdatoer og biografdatoer mærkes særskilt.':'Hver dag har fire personrækker. Alle tidligere uger gemmes.')+'</p><div class="mp-days">';
 for(var i=0;i<limit;i++){
  var date=add(s.start,i);
@@ -132,6 +145,7 @@ content.querySelector('#mp-quick-add').onclick=function(){
  else { editDay(current?cfg.today:s.start); }
 };
 var movieAdd=content.querySelector('#mp-movie-add');if(movieAdd)movieAdd.onclick=function(){setTab('movies');};
+var openRecipes=content.querySelector('#mp-open-recipes');if(openRecipes)openRecipes.onclick=function(){setTab('recipes');};
 content.querySelectorAll('.edit-day').forEach(function(b){b.onclick=function(){editDay(b.dataset.date);};});
  if(s.freezerDraft){var draft=s.freezerDraft;s.freezerDraft=null;editDay(cfg.today,draft.title);}
 }
