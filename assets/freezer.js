@@ -20,7 +20,7 @@ window.MP_FREEZER=async function(ctx){
   html+='<button class="mp-freezer-location" data-location="'+roomKey+'" type="button">❄️ Rum '+room+'<small>'+count(roomKey)+' stk.</small></button>';
   if(room<4){
    var basket='basket'+room;
-   html+='<button class="mp-freezer-location mp-freezer-basket" data-location="'+basket+'" type="button">🧺 Kurv '+room+'<small>'+count(basket)+' stk.</small></button>';
+   html+='<button class="mp-freezer-location mp-freezer-basket" data-location="'+basket+'" type="button"><span class="mp-freezer-basket-icon" aria-hidden="true">🧺</span><span>Kurv '+room+'</span><small>'+count(basket)+' stk.</small></button>';
   }else html+='<div class="mp-freezer-blank">Ingen kurv</div>';
   html+='</div>';
  }
