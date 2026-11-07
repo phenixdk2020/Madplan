@@ -4,6 +4,7 @@
 .mp-portal .mp-freezer-location{display:flex;flex:1;min-height:85px;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:8px 4px;border:1px solid var(--mp-line);border-radius:10px;background:var(--mp-card);color:var(--mp-ink);font-weight:650;cursor:pointer;font-size:13px}
 .mp-portal .mp-freezer-location small{display:block;font-weight:400;color:var(--mp-muted);font-size:11px}
 .mp-portal .mp-freezer-basket{min-height:65px;background:var(--mp-bg)}
+.mp-portal .mp-freezer-basket-icon{display:block;font-size:2em;line-height:1}
 .mp-portal .mp-freezer-selected{outline:3px solid var(--mp-primary);outline-offset:-3px}
 .mp-portal .mp-freezer-blank{display:flex;align-items:center;justify-content:center;min-height:65px;font-size:11px;color:var(--mp-muted)}
 .mp-portal .mp-freezer-form{display:grid;gap:13px}
