@@ -6,6 +6,11 @@ var s={module:'',tab:'week',start:mon(cfg.today),week:null,next:null,recipes:nul
 /* Personal preferences are stored in WordPress user_meta, not localStorage. */
 var themeOptions=['default','dark','forest','purple','sand','ocean','rose','sunset','mint','burgundy'];
 var themeSelect=root.querySelector('#mp-theme-select');
+var settingsMenu=root.querySelector('#mp-settings-menu');
+if(settingsMenu){
+ document.addEventListener('click',function(e){if(settingsMenu.open&&!settingsMenu.contains(e.target))settingsMenu.open=false;});
+ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&settingsMenu.open){settingsMenu.open=false;settingsMenu.querySelector('summary').focus();}});
+}
 function applyTheme(value){
  if(themeOptions.indexOf(value)===-1)value='default';
  root.setAttribute('data-mp-theme',value);

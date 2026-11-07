@@ -83,15 +83,25 @@ final class MP_Portal {
           <header class="mp-topbar">
             <div class="mp-brand"><span aria-hidden="true">⌂</span><div><strong><?php echo esc_html(self::greeting(wp_get_current_user())); ?></strong><small>Familieplan</small></div></div>
             <div class="mp-header-right">
-              <label class="mp-theme-control" for="mp-theme-select">
-                <span>Farvetema</span>
-                <select id="mp-theme-select" name="mp-theme" aria-label="Vælg dit personlige farvetema">
-                  <?php foreach ($themes as $value => $label) : ?>
-                    <option value="<?php echo esc_attr($value); ?>" <?php selected($theme, $value); ?>><?php echo esc_html($label); ?></option>
-                  <?php endforeach; ?>
-                </select>
-              </label>
-              <a class="mp-logout" href="<?php echo esc_url(wp_logout_url(get_permalink())); ?>">Log ud</a>
+              <details class="mp-settings-menu" id="mp-settings-menu">
+                <summary aria-label="Indstillinger" title="Indstillinger">
+                  <svg class="mp-settings-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"/>
+                    <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.86 1.86-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1 1.57V21h-2.64v-.04A1.7 1.7 0 0 0 10.72 19a1.7 1.7 0 0 0-1.88.34l-.06.06-1.86-1.86.06-.06A1.7 1.7 0 0 0 6.64 15a1.7 1.7 0 0 0-1.57-1H5v-2.64h.07A1.7 1.7 0 0 0 6.64 10a1.7 1.7 0 0 0-.34-1.88l-.06-.06L8.1 6.2l.06.06A1.7 1.7 0 0 0 10.04 6a1.7 1.7 0 0 0 1-1.57V4h2.64v.43A1.7 1.7 0 0 0 15.32 6a1.7 1.7 0 0 0 1.88-.34l.06-.06 1.86 1.86-.06.06A1.7 1.7 0 0 0 18.72 10a1.7 1.7 0 0 0 1.57 1H21v2.64h-.71A1.7 1.7 0 0 0 19.4 15Z"/>
+                  </svg>
+                </summary>
+                <div class="mp-settings-panel">
+                  <label class="mp-theme-control" for="mp-theme-select">
+                    <span>Farvetema</span>
+                    <select id="mp-theme-select" name="mp-theme" aria-label="Vælg dit personlige farvetema">
+                      <?php foreach ($themes as $value => $label) : ?>
+                        <option value="<?php echo esc_attr($value); ?>" <?php selected($theme, $value); ?>><?php echo esc_html($label); ?></option>
+                      <?php endforeach; ?>
+                    </select>
+                  </label>
+                  <a class="mp-logout" href="<?php echo esc_url(wp_logout_url(get_permalink())); ?>">Log ud</a>
+                </div>
+              </details>
             </div>
           </header>
           <div class="mp-home" id="mp-home">

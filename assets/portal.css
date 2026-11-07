@@ -493,3 +493,42 @@ body.mp-full-page.mp-theme-burgundy{background:#f9f0f3;color:#41212c}
 /* Fryser: fourth homepage entry, balanced layout on tablets and desktop. */
 @media (min-width:740px) and (max-width:1050px){.mp-portal .mp-home-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (min-width:1051px){.mp-portal .mp-home-cards{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* v0.1.30: compact navigation and one accessible settings control. */
+.mp-portal{margin-top:8px}
+.mp-portal .mp-topbar{min-height:52px;margin-bottom:11px;padding:4px 10px;gap:8px;flex-wrap:nowrap;border-radius:12px}
+.mp-portal .mp-brand{gap:8px;min-width:0}
+.mp-portal .mp-brand>span{width:30px;height:30px;flex:0 0 30px;border-radius:8px;font-size:19px}
+.mp-portal .mp-brand strong{font-size:14px;line-height:1.2}
+.mp-portal .mp-brand small{font-size:11px;line-height:1.1}
+.mp-portal .mp-header-right{margin-left:auto;flex:0 0 auto}
+.mp-portal .mp-settings-menu{position:relative}
+.mp-portal .mp-settings-menu>summary{display:grid;place-items:center;width:44px;height:44px;list-style:none;border:1px solid transparent;border-radius:10px;color:#fff;cursor:pointer;touch-action:manipulation}
+.mp-portal .mp-settings-menu>summary::-webkit-details-marker{display:none}
+.mp-portal .mp-settings-menu>summary:hover,.mp-portal .mp-settings-menu[open]>summary{background:rgba(255,255,255,.14)}
+.mp-portal .mp-settings-menu>summary:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
+.mp-portal .mp-settings-icon{width:21px;height:21px}
+.mp-portal .mp-settings-panel{position:absolute;top:calc(100% + 6px);right:0;z-index:50;min-width:225px;max-width:min(86vw,300px);padding:15px;border:1px solid var(--mp-line);border-radius:12px;background:var(--mp-card);color:var(--mp-ink);box-shadow:0 12px 30px rgba(0,0,0,.2)}
+.mp-portal .mp-settings-panel .mp-theme-control{display:grid;gap:6px;white-space:normal}
+.mp-portal .mp-settings-panel .mp-theme-control span{color:var(--mp-ink)}
+.mp-portal .mp-settings-panel .mp-theme-control select{width:100%;max-width:none;min-width:0}
+.mp-portal .mp-topbar .mp-settings-panel .mp-logout{display:block;margin-top:12px;padding:10px 0 0;border-top:1px solid var(--mp-line);color:var(--mp-ink)!important;text-decoration:underline}
+@media(max-width:739px){
+ .mp-portal .mp-topbar{flex-wrap:nowrap}
+ .mp-portal .mp-home .mp-intro{font-size:17px;margin:2px 0 9px}
+ .mp-portal .mp-home-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .mp-portal .mp-home-card{min-width:0;min-height:108px;padding:10px 12px;gap:4px;justify-content:center}
+ .mp-portal .mp-home-card .mp-emoji{font-size:25px;line-height:1}
+ .mp-portal .mp-home-card strong{font-size:15px;line-height:1.18}
+ .mp-portal .mp-home-card>span:last-child{font-size:11px;line-height:1.28;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+}
+@media(max-width:360px){
+ .mp-portal .mp-home-card{min-height:88px}
+ .mp-portal .mp-home-card>span:last-child{display:none}
+}
+@media(max-height:520px) and (orientation:landscape){
+ .mp-portal .mp-home-cards{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+ .mp-portal .mp-home-card{min-height:85px;padding:8px}
+ .mp-portal .mp-home-card>span:last-child{display:none}
+ .mp-portal .mp-home .mp-intro{margin-bottom:8px}
+}

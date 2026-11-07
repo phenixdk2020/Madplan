@@ -16,7 +16,9 @@ assert "if(s.tab==='shopping')return shopping();" in js
 assert "api('shopping')" in js
 assert "else if(hash==='shopping'||hash==='indkoeb')module('food','shopping');" in js
 assert "t==='shopping'?'Indkøbsliste':'Madplan'" in js
-assert 'grid-template-columns:repeat(3,minmax(0,1fr))' in css
-assert 'grid-template-columns:minmax(0,1fr)' in css
+assert '.mp-portal .mp-home-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}' in css
+assert '.mp-portal .mp-home-card{min-width:0;min-height:108px;' in css
+assert 'grid-template-columns:repeat(4,minmax(0,1fr))' in css
+assert portal.count('class="mp-home-card" data-module=') == 4
 assert "data-module=\"shopping\"" in portal
 print('Homepage direct shopping link and mobile layout PASS')

@@ -14,6 +14,10 @@ assert "get_user_meta(get_current_user_id(), 'mp_portal_theme', true)" in php
 assert "self::route('/theme', 'POST', 'save_theme', true)" in php
 assert "'theme'=>MP_REST::current_theme()" in view
 assert 'id="mp-theme-select"' in view
+assert 'id="mp-settings-menu"' in view
+assert '<summary aria-label="Indstillinger"' in view
+assert 'mp-settings-panel' in css
+assert "settingsMenu.open=false" in js
 assert 'selected($theme, $value)' in view
 assert "'default' => 'Default'" in view
 assert 'data-mp-theme="' in view
