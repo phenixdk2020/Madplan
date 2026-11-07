@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Barcode scan must be saved to family list and not leak camera frames or Prej token."""
 from pathlib import Path
+import re
 files={p:Path(p).read_text() for p in [
  'hangar18-madplan.php','includes/class-mp-barcode.php',
  'includes/class-mp-rest.php','includes/class-mp-offers.php',
  'includes/class-mp-shopping-details.php','includes/class-mp-checkpoints.php',
  'assets/portal.js','assets/portal.css','.github/workflows/package.yml']}
 for path,needle in [
- ('hangar18-madplan.php','Version: 0.1.28'),
  ('hangar18-madplan.php',"require_once MP_DIR . 'includes/class-mp-barcode.php'"),
  ('includes/class-mp-barcode.php',"'mp_shopping_barcode_catalog_v1'"),
  ('includes/class-mp-barcode.php','https://api.prej.app/v1/scan/'),
@@ -35,6 +35,8 @@ for path,needle in [
  ('assets/portal.css','.mp-barcode-dialog'),
  ('.github/workflows/package.yml','php tests/barcode.php')]:
  assert needle in files[path],f'Missing {needle} in {path}'
+version=re.search(r'^\s*\*\s*Version:\s*(\S+)',files['hangar18-madplan.php'],re.M)
+assert version and f"define('MP_VERSION', '{version.group(1)}')" in files['hangar18-madplan.php']
 assert "prej_dev_" not in files['assets/portal.js']
 assert "api.prej.app" not in files['assets/portal.js']
 assert "toDataURL(" not in files['assets/portal.js']
