@@ -85,6 +85,12 @@ final class MP_REST {
         self::route('/shows/(?P<id>\d+)', 'DELETE', 'delete_show', true, true);
         self::route('/shows/(?P<id>\d+)/sync', 'POST', 'sync_show', true);
         self::route('/shows/(?P<id>\d+)/dk-schedule', 'POST', 'save_danish_schedule', true);
+        self::route('/freezer', 'GET', 'freezer');
+        self::route('/freezer', 'POST', 'freezer_add', true);
+        self::route('/freezer/from-shopping', 'POST', 'freezer_from_shopping', true);
+        self::route('/freezer/(?P<id>\\d+)', 'POST', 'freezer_update', true);
+        self::route('/freezer/(?P<id>\\d+)', 'DELETE', 'freezer_delete', true);
+        self::route('/freezer/(?P<id>\\d+)/to-shopping', 'POST', 'freezer_to_shopping', true);
         self::route('/shopping/stores', 'GET', 'shopping_stores');
         self::route('/shopping/history', 'GET', 'shopping_history');
         self::route('/shopping/barcode/lookup', 'POST', 'shopping_barcode_lookup', true);
@@ -405,6 +411,34 @@ final class MP_REST {
         if (!$row) { return new WP_Error('mp_shopping_missing','Varen findes ikke.',['status'=>404]); }
         return MP_ShoppingStores::save((string)$row['title'],
             sanitize_text_field((string)$r->get_param('store')));
+    }
+    public static function freezer(): array { return MP_Freezer::all(); }
+    private static function freezer_input(WP_REST_Request $r): array {
+        return [
+            'title'=>$r->get_param('title'),
+            'barcode'=>$r->get_param('barcode'),
+            'quantity'=>$r->get_param('quantity'),
+            'unit'=>$r->get_param('unit'),
+            'location'=>$r->get_param('location'),
+            'frozen_at'=>$r->get_param('frozen_at'),
+            'best_before'=>$r->get_param('best_before'),
+        ];
+    }
+    public static function freezer_add(WP_REST_Request $r) {
+        return MP_Freezer::add(self::freezer_input($r));
+    }
+    public static function freezer_update(WP_REST_Request $r) {
+        return MP_Freezer::update(absint($r['id']),self::freezer_input($r));
+    }
+    public static function freezer_delete(WP_REST_Request $r) {
+        return MP_Freezer::remove(absint($r['id']));
+    }
+    public static function freezer_from_shopping(WP_REST_Request $r) {
+        return MP_Freezer::from_shopping(absint($r->get_param('shopping_id')),
+            sanitize_key((string)$r->get_param('location')));
+    }
+    public static function freezer_to_shopping(WP_REST_Request $r) {
+        return MP_Freezer::to_shopping(absint($r['id']));
     }
     public static function shopping_history(): array { return MP_ShoppingHistory::suggestions(); }
     public static function shopping_barcode_lookup(WP_REST_Request $r) {
