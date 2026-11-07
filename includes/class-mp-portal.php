@@ -41,6 +41,12 @@ final class MP_Portal {
                 'recipeCreate'=>admin_url('post-new.php?post_type=mp_recipe'),
             ]) . ';', 'before');
         }
+        if (!wp_style_is('mp-freezer','enqueued')) {
+            wp_enqueue_style('mp-freezer', MP_URL . 'assets/freezer.css', ['mp-portal'], MP_VERSION);
+        }
+        if (!wp_script_is('mp-freezer','enqueued')) {
+            wp_enqueue_script('mp-freezer', MP_URL . 'assets/freezer.js', ['mp-portal'], MP_VERSION, true);
+        }
     }
     public static function render(): string {
         if (!is_user_logged_in()) {
