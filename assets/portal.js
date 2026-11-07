@@ -44,7 +44,7 @@ function msg(m,error){status.textContent=m||'';status.classList.toggle('mp-error
 function fail(e){msg(e&&e.message?e.message:'Ukendt fejl',true);}
 async function api(path,method,body){var opt={method:method||'GET',credentials:'same-origin',headers:{'X-WP-Nonce':cfg.nonce}};if(body!==undefined){opt.headers['Content-Type']='application/json';opt.body=JSON.stringify(body);}var r=await fetch(cfg.api+path,opt),j=await r.json().catch(function(){return {};});if(!r.ok)throw new Error(j.message||'Serverfejl');return j;}
 function setTab(t){if(s.freezerStop){s.freezerStop();s.freezerStop=null;}s.tab=t;root.querySelector('#mp-module-title').textContent=s.module==='tv'?'TV-ugeplan':(t==='shopping'?'Indkøbsliste':(t==='freezer'?'Fryser':'Madplan'));tabs.innerHTML=(s.module==='tv'?[['week','Ugeplan'],['watch','Serier'],['movies','Film']]:[['week','Madplan'],['recipes','Opskrifter'],['shopping','Indkøbsliste'],['freezer','Fryser']]).map(function(x){return '<button type="button" class="mp-tab" data-tab="'+x[0]+'" '+(t===x[0]?'aria-current="page"':'')+'>'+x[1]+'</button>';}).join('');tabs.querySelectorAll('button').forEach(function(b){b.onclick=function(){setTab(b.dataset.tab);};});render();}
-function module(name,tab){if(name==='shopping'||name==='freezer'){tab=name;name='food';}s.module=name;home.hidden=true;main.hidden=false;setTab(tab||'week');}
+function module(name,tab){if(name==='shopping'){name='food';tab='shopping';}if(name==='freezer'){name='food';tab='freezer';}s.module=name;home.hidden=true;main.hidden=false;setTab(tab||'week');}
 root.querySelectorAll('[data-module]').forEach(function(b){b.onclick=function(){module(b.dataset.module);};});
 function openHash(){
  var hash=(window.location.hash||'').replace(/^#/,'').toLowerCase();
