@@ -120,6 +120,7 @@ final class MP_Checkpoints {
                 'mp_people'=>get_option('mp_people'),
                 'mp_portal_page'=>get_option('mp_portal_page'),
                 'mp_db_version'=>get_option('mp_db_version'),
+                'mp_freezer_schema_v1'=>get_option('mp_freezer_schema_v1'),
                 'mp_movies_v1'=>get_option('mp_movies_v1',[]),
                 'mp_household_streaming_services_v1'=>get_option('mp_household_streaming_services_v1',[]),
                 'mp_shopping_favourite_stores_v1'=>get_option('mp_shopping_favourite_stores_v1',[]),
@@ -134,7 +135,7 @@ final class MP_Checkpoints {
                 'mp_watch_monitor_v1'=>get_option('mp_watch_monitor_v1',[]),
             ], 'tables'=>[], 'recipes'=>[], 'recipe_meta'=>[],
         ];
-        foreach (['meals','shows','episodes','shopping','audit'] as $name) {
+        foreach (['meals','shows','episodes','shopping','freezer','audit'] as $name) {
             $table = MP_Storage::table($name);
             $rows = $wpdb->get_results("SELECT * FROM $table", ARRAY_A);
             if ($rows === null) { return new WP_Error('mp_table_backup','Databaselæsning fejlede: ' . $name); }
