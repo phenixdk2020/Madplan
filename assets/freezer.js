@@ -25,7 +25,7 @@ window.MP_FREEZER=async function(ctx){
   html+='</div>';
  }
  html+='</div></section>'+
-  '<section class="mp-card"><h3 id="mp-freezer-heading">Registrer madvare</h3>'+
+  '<section class="mp-card mp-freezer-panel"><details class="mp-freezer-disclosure" id="mp-freezer-register"><summary id="mp-freezer-heading">Registrer madvare</summary>'+
   '<form id="mp-freezer-form" class="mp-freezer-form"><input type="hidden" name="item_id">'+
   '<label>Varenavn<input name="title" required maxlength="255" placeholder="Fx hakket oksekød"></label>'+
   '<label>Stregkode (EAN/GTIN)<input name="barcode" inputmode="numeric" pattern="[0-9]*" maxlength="14" placeholder="Scan eller skriv koden"></label>'+
@@ -40,13 +40,13 @@ window.MP_FREEZER=async function(ctx){
   '<label>Indfrysningsdato<input name="frozen_at" type="date" required value="'+esc(cfg.today)+'"></label>'+
   '<label>Bedst før (valgfrit)<input name="best_before" type="date"></label></div>'+
   '<div class="mp-freezer-actions"><button class="mp-btn mp-btn-primary" type="submit" id="mp-freezer-submit">Gem i fryser</button>'+
-  '<button class="mp-btn" type="button" id="mp-freezer-reset">Nulstil</button></div></form></section>'+
-  '<section class="mp-card"><h3>Hent fra indkøbslisten</h3>'+
+  '<button class="mp-btn" type="button" id="mp-freezer-reset">Nulstil</button></div></form></details></section>'+
+  '<section class="mp-card mp-freezer-panel"><details class="mp-freezer-disclosure" id="mp-freezer-shopping"><summary>Hent fra indkøbslisten</summary>'+
   '<p class="mp-help">Kopiér en købt vare til fryseren. Den bliver stående som købt på indkøbslisten.</p>'+
   '<form id="mp-freezer-from-shopping" class="mp-freezer-actions"><select name="shopping_id" required aria-label="Vælg købt vare">'+
   '<option value="">Vælg købt vare</option>'+
   shopping.filter(function(v){return Number(v.checked)>0;}).map(function(v){return '<option value="'+Number(v.id)+'">'+esc(v.title)+'</option>';}).join('')+
-  '</select><button class="mp-btn" type="submit">Læg i fryser</button></form></section>'+
+  '</select><button class="mp-btn" type="submit">Læg i fryser</button></form></details></section>'+
   '<section class="mp-card"><h3>Fryserens indhold</h3><label>Filtrér placering <select id="mp-freezer-filter">'+
   '<option value="">Alle placeringer</option>'+options()+'</select></label>'+
   '<div id="mp-freezer-items"></div></section>';
@@ -85,6 +85,7 @@ window.MP_FREEZER=async function(ctx){
     form.elements.item_id.value=item.id;
     content.querySelector('#mp-freezer-heading').textContent='Ret eller flyt madvare';
     content.querySelector('#mp-freezer-submit').textContent='Gem ændringer';
+    content.querySelector('#mp-freezer-register').open=true;
     form.scrollIntoView({behavior:'smooth',block:'start'});return;
    }
    if(action==='meal'){

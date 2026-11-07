@@ -37,4 +37,8 @@ assert "window.confirm(" in js
 assert "['meals','shows','episodes','shopping','freezer','audit']" in backup
 assert "mp_freezer_schema_v1" in backup
 assert "mp-freezer-map" in style
+assert '<details class="mp-freezer-disclosure" id="mp-freezer-register">' in js
+assert '<details class="mp-freezer-disclosure" id="mp-freezer-shopping">' in js
+assert "content.querySelector('#mp-freezer-register').open=true" in js
+assert "mp-freezer-disclosure>summary" in style
 print('Freezer inventory, security, scanner, integrations, backup contract PASS')

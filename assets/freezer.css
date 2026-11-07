@@ -25,3 +25,6 @@
 @media(max-width:540px){.mp-portal .mp-freezer-map{grid-template-columns:repeat(4,minmax(82px,1fr));gap:5px}
 .mp-portal .mp-freezer-fields{grid-template-columns:1fr}.mp-portal .mp-freezer-actions .mp-btn{flex:1 1 120px}
 .mp-portal .mp-freezer-column{padding:7px 4px}.mp-portal .mp-freezer-location{font-size:12px}}
+.mp-portal .mp-freezer-disclosure>summary{cursor:pointer;font-size:1.1rem;font-weight:700;line-height:1.4;padding:4px 0}
+.mp-portal .mp-freezer-disclosure[open]>summary{margin-bottom:14px}
+.mp-portal .mp-freezer-disclosure>summary:focus-visible{outline:2px solid var(--mp-primary);outline-offset:4px;border-radius:4px}
