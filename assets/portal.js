@@ -66,7 +66,7 @@ function backToMenu(){
 }
 root.querySelector('#mp-back').onclick=backToMenu;
 root.querySelector('#mp-back-bottom').onclick=backToMenu;
-function render(){msg('');if(s.tab==='week')return week();if(s.tab==='watch')return watch();if(s.tab==='movies')return movies();if(s.tab==='recipes')return recipes();if(s.tab==='shopping')return shopping();if(s.tab==='freezer'&&window.MP_FREEZER)return window.MP_FREEZER({content:content,api:api,esc:esc,msg:msg,fail:fail,cfg:cfg,s:s,setTab:setTab});}
+function render(){msg('');if(s.tab==='week')return week();if(s.tab==='watch')return watch();if(s.tab==='movies')return movies();if(s.tab==='recipes')return recipes();if(s.tab==='shopping')return shopping();if(s.tab==='freezer'&&window.MP_FREEZER)return window.MP_FREEZER({content:content,api:api,esc:esc,msg:msg,fail:fail,cfg:cfg,s:s,setTab:setTab,mon:mon});}
 function toolbar(){return '<div class="mp-toolbar"><h3>Uge '+weekNo(s.start)+'</h3><div class="mp-toolbar-actions"><button type="button" class="mp-btn" id="prev">‹</button><button type="button" class="mp-btn" id="now">I dag</button><button type="button" class="mp-btn" id="next">›</button></div></div>';}
 function bindToolbar(){content.querySelector('#prev').onclick=function(){s.start=add(s.start,-7);week();};content.querySelector('#next').onclick=function(){s.start=add(s.start,7);week();};content.querySelector('#now').onclick=function(){s.start=mon(cfg.today);week();};}
 function rows(){return (s.week.meals||[]).concat(s.next?s.next.meals:[]);}
