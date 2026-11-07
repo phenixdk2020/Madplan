@@ -489,3 +489,7 @@ body.mp-full-page.mp-theme-burgundy{background:#f9f0f3;color:#41212c}
 .mp-portal .mp-barcode-actions{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:9px}
 .mp-portal .mp-barcode-dialog button{min-height:44px}
 @media(max-width:540px){.mp-portal .mp-barcode-dialog{padding:14px}.mp-portal .mp-barcode-dialog form button{width:100%}}
+
+/* Fryser: fourth homepage entry, balanced layout on tablets and desktop. */
+@media (min-width:740px) and (max-width:1050px){.mp-portal .mp-home-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1051px){.mp-portal .mp-home-cards{grid-template-columns:repeat(4,minmax(0,1fr))}}

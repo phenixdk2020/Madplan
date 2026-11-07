@@ -7,7 +7,7 @@ files={p:Path(p).read_text() for p in [
  'includes/class-mp-shopping-details.php','includes/class-mp-checkpoints.php',
  'assets/portal.js','assets/portal.css','.github/workflows/package.yml']}
 for path,needle in [
- ('hangar18-madplan.php','Version: 0.1.27'),
+ ('hangar18-madplan.php','Version: 0.1.28'),
  ('hangar18-madplan.php',"require_once MP_DIR . 'includes/class-mp-barcode.php'"),
  ('includes/class-mp-barcode.php',"'mp_shopping_barcode_catalog_v1'"),
  ('includes/class-mp-barcode.php','https://api.prej.app/v1/scan/'),

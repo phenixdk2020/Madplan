@@ -1,5 +1,16 @@
 # Hangar18 Madplan & TV-plan
 
+## Version 0.1.28 — Fryser
+
+- Nyt hovedmenupunkt **Fryser** med 4 rum og 3 kurve, samlet 7 selvstændige placeringer; kurvesymbolerne er dobbelt størrelse.
+- Indhold kan registreres og flyttes med antal, pakningsstørrelse, stregkode, indfrysningsdato og valgfri bedst-før-dato.
+- Eksisterende EAN/GTIN-opslag genbruges; scanning på iPhone/Safari og Android/Chrome med manuel indtastning som alternativ.
+- Købte varer kan kopieres fra indkøbslisten til fryseren. Fryservarer kan oprettes som indkøb igen uden at ændre lagerantal.
+- Fryservarer kan bruges som forslag til dagens madplan; lageret reduceres ikke automatisk.
+- Fælles WordPress-lager i ny tabel, med lagerdata inkluderet i programmets opdateringsbackup.
+- Følg WordPress → Hangar18 → Opdateringer → **Tjek GitHub-opdatering** for at installere versionen på hjemmesiden.
+
+
 WordPress-plugin med mobil-first familieportal og desktop-orienteret opskriftseditor.
 Repository: https://github.com/phenixdk2020/Madplan
 
