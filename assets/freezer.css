@@ -1,0 +1,26 @@
+.mp-portal .mp-freezer-map{display:grid;grid-template-columns:repeat(4,minmax(84px,1fr));gap:8px;overflow-x:auto;padding:8px 0 14px}
+.mp-portal .mp-freezer-column{display:flex;flex-direction:column;gap:8px;min-width:84px;padding:9px 6px;background:var(--mp-bg);border:1px solid var(--mp-line);border-radius:12px;text-align:center}
+.mp-portal .mp-freezer-column>strong{font-size:13px}
+.mp-portal .mp-freezer-location{display:flex;flex:1;min-height:85px;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:8px 4px;border:1px solid var(--mp-line);border-radius:10px;background:var(--mp-card);color:var(--mp-ink);font-weight:650;cursor:pointer;font-size:13px}
+.mp-portal .mp-freezer-location small{display:block;font-weight:400;color:var(--mp-muted);font-size:11px}
+.mp-portal .mp-freezer-basket{min-height:65px;background:var(--mp-bg)}
+.mp-portal .mp-freezer-selected{outline:3px solid var(--mp-primary);outline-offset:-3px}
+.mp-portal .mp-freezer-blank{display:flex;align-items:center;justify-content:center;min-height:65px;font-size:11px;color:var(--mp-muted)}
+.mp-portal .mp-freezer-form{display:grid;gap:13px}
+.mp-portal .mp-freezer-form label{display:grid;gap:5px;font-weight:600;font-size:14px}
+.mp-portal .mp-freezer-form input,.mp-portal .mp-freezer-form select,.mp-portal #mp-freezer-filter,.mp-portal #mp-freezer-from-shopping select{min-width:0;max-width:100%;width:100%;box-sizing:border-box;border:1px solid var(--mp-line);border-radius:9px;background:var(--mp-card);color:var(--mp-ink);min-height:44px;padding:9px;font-size:16px}
+.mp-portal .mp-freezer-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.mp-portal .mp-freezer-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.mp-portal .mp-freezer-actions .mp-btn{min-height:44px}
+.mp-portal #mp-freezer-from-shopping select{flex:1;min-width:150px}
+.mp-portal .mp-freezer-scanner{min-height:230px;background:#101010;border-radius:10px;overflow:hidden}
+.mp-portal .mp-freezer-scanner[hidden]{display:none}
+.mp-portal .mp-freezer-scanner video{width:100%;max-height:340px;object-fit:cover}
+.mp-portal .mp-freezer-item{border-top:1px solid var(--mp-line);padding:13px 0;display:grid;gap:9px}
+.mp-portal .mp-freezer-item:first-child{border-top:none}
+.mp-portal .mp-freezer-item-info{display:grid;gap:4px}
+.mp-portal .mp-freezer-item-info strong{overflow-wrap:anywhere}
+.mp-portal .mp-freezer-item-info small{color:var(--mp-muted)}
+@media(max-width:540px){.mp-portal .mp-freezer-map{grid-template-columns:repeat(4,minmax(82px,1fr));gap:5px}
+.mp-portal .mp-freezer-fields{grid-template-columns:1fr}.mp-portal .mp-freezer-actions .mp-btn{flex:1 1 120px}
+.mp-portal .mp-freezer-column{padding:7px 4px}.mp-portal .mp-freezer-location{font-size:12px}}
