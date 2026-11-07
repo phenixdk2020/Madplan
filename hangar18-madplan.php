@@ -31,6 +31,7 @@ require_once MP_DIR . 'includes/class-mp-shopping-stores.php';
 require_once MP_DIR . 'includes/class-mp-shopping-history.php';
 require_once MP_DIR . 'includes/class-mp-shopping-details.php';
 require_once MP_DIR . 'includes/class-mp-barcode.php';
+require_once MP_DIR . 'includes/class-mp-freezer.php';
 require_once MP_DIR . 'includes/class-mp-movies.php';
 require_once MP_DIR . 'includes/class-mp-portal.php';
 require_once MP_DIR . 'includes/class-mp-home.php';
@@ -43,6 +44,7 @@ final class MP_Plugin {
         MP_Updater::register();
         MP_Home::register();
         add_action('init', [self::class, 'recipes']);
+        add_action('init', [MP_Freezer::class, 'install']);
         add_action('init', [self::class, 'shortcodes']);
         add_action('rest_api_init', [MP_REST::class, 'register']);
         add_action('admin_menu', [self::class, 'admin_menu']);
@@ -121,6 +123,7 @@ final class MP_Plugin {
         add_submenu_page('mp-hangar18','Oversigt','Oversigt','manage_options','mp-hangar18',[self::class,'settings_page']);
         add_submenu_page('mp-hangar18','TV-guide','TV-guide','manage_options','mp-hangar18-tv',[self::class,'admin_tv']);
         add_submenu_page('mp-hangar18','Madplan','Madplan','manage_options','mp-hangar18-food',[self::class,'admin_food']);
+        add_submenu_page('mp-hangar18','Fryser','Fryser','manage_options','mp-hangar18-freezer',[self::class,'admin_freezer']);
     }
     public static function admin_tv(): void {
         if (!current_user_can('manage_options')) { return; }
@@ -133,6 +136,11 @@ final class MP_Plugin {
         if (!current_user_can('manage_options')) { return; }
         echo '<div class="wrap"><h1>Madplan</h1><p>Fælles aftensmad til fire personer.</p><a class="button button-primary" href="' .
             esc_url(MP_Home::url('food')) . '">Åbn madplan</a></div>';
+    }
+    public static function admin_freezer(): void {
+        if (!current_user_can('manage_options')) { return; }
+        echo '<div class="wrap"><h1>Fryser</h1><p>Familiens syv fryserplaceringer.</p><a class="button button-primary" href="' .
+            esc_url(MP_Home::url('freezer')) . '">Åbn fryser</a></div>';
     }
     public static function settings_page(): void {
         if (!current_user_can('manage_options')) { return; }
