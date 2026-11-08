@@ -6,6 +6,6 @@
   "requires": "6.4",
   "requires_php": "8.0",
   "package": "https://raw.githubusercontent.com/phenixdk2020/Madplan/main/dist/hangar18-madplan-v0.1.35.zip",
-  "sha256": "e20cfad045a0470cd9bedb71e68782cfe285fee82a8ae35aebf4799d79b12029",
-  "source_commit": "bf23dd69c9acde97030f18a6c6e576b38926250d"
+  "sha256": "15f556cede76d64ce7dd540ab883bcd284dd4011f22baf13b332100fd92c3750",
+  "source_commit": "5a3076b7da335110717868deb96fd5b504c47ecf"
 }
