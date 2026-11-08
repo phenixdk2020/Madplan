@@ -325,6 +325,7 @@ final class MP_DailyOCR {
             if (is_wp_error($s)) { return $s; }
             update_option(self::STATE,$s,false);
         }
+        update_option('mp_daily_ocr_external_last_poll',gmdate('c'),false);
         return [
             'day'=>self::day(),'next'=>(int)($s['next']??0),
             'total'=>(int)($s['total']??0),
