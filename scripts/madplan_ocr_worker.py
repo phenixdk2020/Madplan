@@ -90,7 +90,7 @@ def ocr_page(url: str) -> str:
         raise ValueError("Image decoding failed") from exc
     # The file only exists during one OCR call and is always deleted.
     with tempfile.TemporaryDirectory(prefix="madplan_ocr_") as tempdir:
-        path = Path(tempdir) / "page.img"
+        path = Path(tempdir) / ("page" + Path(url).suffix)
         path.write_bytes(data)
         result = subprocess.run(
             ["tesseract", str(path), "stdout", "-l", "dan+eng", "--psm", "11"],
