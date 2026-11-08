@@ -73,4 +73,5 @@ assert "toLocaleLowerCase('da-DK')" in js
 assert "Ingen madvarer matcher søgningen." in js
 assert ".mp-freezer-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))" in style
 assert ".mp-freezer-item{display:grid;grid-template-columns:minmax(0,1fr) auto" in style
+assert "php tests/freezer_duplicates.php" in Path('.github/workflows/package.yml').read_text(encoding='utf-8')
 print('Freezer inventory, security, scanner, integrations, backup contract PASS')

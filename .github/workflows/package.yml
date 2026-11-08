@@ -69,6 +69,7 @@ jobs:
           python3 tests/week_layout_contract.py
           python3 tests/home_shopping_contract.py
           python3 tests/freezer_contract.py
+          php tests/freezer_duplicates.php
           php tests/theme_user_meta.php
           python3 tests/theme_contract.py
       - name: Assemble versioned WordPress package
