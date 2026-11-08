@@ -250,9 +250,10 @@ final class MP_DailyOCR {
                 if (time()<(int)$s['retry_after']) { return self::status(); }
                 $s=self::prepare();
                 if (is_wp_error($s)) {
+                    $error=$s->get_error_message();
                     $s=self::state();
                     $s['retry_after']=time()+3600;
-                    $s['error']='Ny OCR-forsøg mislykkedes: '.$s->get_error_message();
+                    $s['error']='Nyt OCR-forsøg mislykkedes: '.$error;
                     update_option(self::STATE,$s,false);
                     return self::status();
                 }
