@@ -361,6 +361,18 @@ final class MP_REST {
         }
         return MP_OfferFlyers::scan(absint($id),sanitize_text_field($store));
     }
+    public static function shopping_local_offers(WP_REST_Request $r) {
+        $ids=$r->get_param('ids');
+        if (!is_array($ids) || count($ids)>10) {
+            return new WP_Error('mp_local_ids','Angiv højst 10 vare-ID\'er.',['status'=>400]);
+        }
+        foreach ($ids as $id) {
+            if (!is_scalar($id) || (string)$id!==(string)absint($id) || absint($id)<1) {
+                return new WP_Error('mp_local_id','Ugyldigt vare-ID.',['status'=>400]);
+            }
+        }
+        return MP_LocalOffers::scan($ids);
+    }
     public static function shopping_offers(WP_REST_Request $r) {
         $ids=$r->get_param('ids');
         if (!is_array($ids)) {
