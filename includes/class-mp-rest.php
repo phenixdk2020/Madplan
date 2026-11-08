@@ -100,6 +100,7 @@ final class MP_REST {
         self::route('/shopping/(?P<id>\d+)/photo', 'POST', 'upload_shopping_photo', true);
         self::route('/shopping/(?P<id>\\d+)/store', 'POST', 'save_shopping_store', true);
         self::route('/shopping', 'GET', 'shopping');
+        self::route('/shopping/local-offers', 'POST', 'shopping_local_offers', true);
         self::route('/shopping/offers', 'POST', 'shopping_offers', true);
         self::route('/shopping/flyer-search', 'POST', 'shopping_flyer_search', true);
         self::route('/shopping/flyers', 'GET', 'shopping_flyers');
