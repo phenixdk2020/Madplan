@@ -351,11 +351,14 @@ final class MP_DailyOCR {
         set_transient('mp_daily_ocr_external_lock',1,90);
         try {
             $s=self::state();
-            if (($s['day']??'')!==$day || !isset($s['pages'][$index])) {
-                return new WP_Error('mp_ocr_page','Avissiden findes ikke i dagens godkendte kø.',['status'=>409]);
+            if (($s['day']??'')!==$day) {
+                return new WP_Error('mp_ocr_page','Køen er ikke fra samme dag.',['status'=>409]);
             }
             if ($index<(int)$s['next']) { // Safe retry after a lost HTTP response.
                 return ['accepted'=>true,'already_processed'=>true,'next'=>(int)$s['next']];
+            }
+            if (!isset($s['pages'][$index])) {
+                return new WP_Error('mp_ocr_page','Avissiden findes ikke i dagens godkendte kø.',['status'=>409]);
             }
             if ($index!==(int)$s['next']) {
                 return new WP_Error('mp_ocr_order','Avissider skal indlæses i rækkefølge.',['status'=>409]);
