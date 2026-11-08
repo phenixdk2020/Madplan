@@ -127,7 +127,7 @@ final class MP_DailyOCR {
             $allUrls=(array)($flyer['page_urls']??[]);
             $urls=array_values(array_filter(array_slice($allUrls,0,self::MAX_PAGES_PER_FLYER),'is_string'));
             $count=count($urls);
-            if (count($allUrls)>$count || (int)($flyer['page_count']??$count)>$count) {
+            if (count($allUrls)>$count || (int)($flyer['source_page_count']??$count)>$count) {
                 $partial=true;
             }
             if ($count===0) { continue; }
