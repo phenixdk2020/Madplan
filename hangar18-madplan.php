@@ -55,6 +55,7 @@ final class MP_Plugin {
         add_action('mp_sync_tv', [MP_TVmaze::class, 'sync_all']);
         add_action('mp_sync_tv', [MP_Movies::class, 'refresh_pending'], 20);
         add_filter('cron_schedules', [MP_DailyOffers::class, 'schedule_interval']);
+        add_filter('cron_schedules', [MP_DailyOCR::class, 'schedule_interval']);
         add_action('mp_daily_offer_tick', [MP_DailyOffers::class, 'tick']);
         add_action('mp_daily_ocr_tick', [MP_DailyOCR::class, 'tick']);
         add_action('init', [MP_DailyOCR::class, 'ensure_if_enabled']);
