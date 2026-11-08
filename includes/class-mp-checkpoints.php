@@ -133,6 +133,7 @@ final class MP_Checkpoints {
                 'mp_daily_offer_settings_v1'=>get_option('mp_daily_offer_settings_v1',[]),
                 'mp_daily_ocr_settings_v1'=>get_option('mp_daily_ocr_settings_v1',[]),
                 'mp_daily_ocr_archive_v1'=>get_option('mp_daily_ocr_archive_v1',[]),
+                'mp_daily_ocr_positions_v1'=>get_option('mp_daily_ocr_positions_v1',[]),
                 'mp_dk_schedules_v1'=>get_option('mp_dk_schedules_v1',[]),
                 'mp_watch_monitor_v1'=>get_option('mp_watch_monitor_v1',[]),
             ], 'tables'=>[], 'recipes'=>[], 'recipe_meta'=>[],
