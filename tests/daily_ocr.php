@@ -83,6 +83,7 @@ $a=MP_DailyOCR::tick();
 verify($a['processed']===1 && $a['total']===2,'One flyer page per tick');
 verify($a['offers']===1,'First OCR candidate indexed');
 verify($GLOBALS['pages_fetched']===1,'One remote image fetched');
+verify(count($GLOBALS['opts']['mp_daily_ocr_positions_v1']??[])===1,'Progress saved per flyer');
 verify(MP_DailyOCR::matches(4)['offers'][0]['price_label']==='65,00 kr.','Faxe match in daily OCR index');
 $b=MP_DailyOCR::tick();
 verify($b['processed']===2 && $b['complete'],'All two pages handled');
