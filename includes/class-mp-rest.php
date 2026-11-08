@@ -117,6 +117,8 @@ final class MP_REST {
         self::route('/shopping/daily-ocr/matches', 'GET', 'shopping_daily_ocr_matches');
         self::route('/shopping/daily-ocr/settings', 'POST', 'shopping_daily_ocr_settings', true, true);
         self::route('/shopping/daily-ocr/run', 'POST', 'shopping_daily_ocr_run', true, true);
+        self::route('/shopping/daily-ocr/external-queue', 'GET', 'shopping_daily_ocr_external_queue', false, true);
+        self::route('/shopping/daily-ocr/external-result', 'POST', 'shopping_daily_ocr_external_result', true, true);
         self::route('/shopping/clear-purchased', 'POST', 'clear_purchased', true);
         self::route('/shopping', 'POST', 'add_shopping');
         self::route('/shopping/(?P<id>\d+)', 'POST', 'toggle_shopping');
@@ -347,11 +349,27 @@ final class MP_REST {
     public static function shopping_daily_ocr_settings(WP_REST_Request $r) {
         return MP_DailyOCR::set_enabled(
             rest_sanitize_boolean($r->get_param('enabled')),
-            rest_sanitize_boolean($r->get_param('rights_confirmed'))
+            rest_sanitize_boolean($r->get_param('rights_confirmed')),
+            (string)($r->get_param('mode')?:'server')
         );
     }
     public static function shopping_daily_ocr_run(): array {
         return MP_DailyOCR::tick();
+    }
+    public static function shopping_daily_ocr_external_queue() {
+        return MP_DailyOCR::external_queue();
+    }
+    public static function shopping_daily_ocr_external_result(WP_REST_Request $r) {
+        $index=$r->get_param('index');
+        $day=$r->get_param('day');
+        $text=$r->get_param('text');
+        $error=$r->get_param('error');
+        if (!is_scalar($index) || (string)$index!==(string)absint($index) ||
+            !is_string($day) || !preg_match('/^\\d{4}-\\d{2}-\\d{2}$/D',$day) ||
+            !is_string($text) || !is_string($error??'')) {
+            return new WP_Error('mp_ocr_input','Ugyldigt OCR-resultat.',['status'=>400]);
+        }
+        return MP_DailyOCR::external_result((int)$index,$day,$text,(string)$error);
     }
     public static function shopping_flyer_search(WP_REST_Request $r) {
         $id=$r->get_param('id');
