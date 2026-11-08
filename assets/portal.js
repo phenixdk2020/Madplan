@@ -716,7 +716,7 @@ async function shopping(){
  '<p class="mp-help">Indekset gemmer kun matchende varer og priser – ikke en kopi af samtlige kataloger. Hvis alle valgte butikker ikke kan gennemgås inden kvoten, vises det som ufuldstændigt.</p></details>'+
  '<details class="mp-shop-filter mp-daily-ocr"><summary>Daglig OCR af tilbudsaviser'+
  (dailyOCR.enabled?' · aktiv':' · slået fra')+'</summary>'+
- '<p class="mp-help">Frivillig, rettighedsstyret billed-OCR. En avisside behandles ad gangen, maks. '+esc(dailyOCR.cap||48)+' sider pr. dag. Billeder og den fulde OCR-tekst slettes efter behandlingen.</p>'+
+ '<p class="mp-help">Frivillig, rettighedsstyret billed-OCR. En avisside behandles ad gangen, maks. '+esc(dailyOCR.cap||192)+' sider pr. dag. Billeder og den fulde OCR-tekst slettes efter behandlingen.</p>'+
  '<p class="mp-help">Dette kræver Tesseract på serveren og tilladelse fra rettighedshaverne til systematisk billedbehandling. At siden er privat giver ikke i sig selv denne tilladelse.</p>'+
  '<p class="mp-daily-progress" aria-live="polite">'+
  (dailyOCR.tesseract?'Tesseract tilgængelig':'Tesseract ikke tilgængelig')+
