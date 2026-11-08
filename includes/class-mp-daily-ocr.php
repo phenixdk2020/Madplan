@@ -25,19 +25,27 @@ final class MP_DailyOCR {
         $s=self::config();
         return !empty($s['enabled']) && !empty($s['rights_confirmed']);
     }
-    public static function set_enabled(bool $enabled,bool $rights): array|WP_Error {
+    public static function mode(): string {
+        return (string)(self::config()['mode']??'server')==='github'?'github':'server';
+    }
+    public static function set_enabled(bool $enabled,bool $rights,string $mode='server'): array|WP_Error {
+        if (!in_array($mode,['server','github'],true)) {
+            return new WP_Error('mp_ocr_mode','Ukendt OCR-tilstand.',['status'=>400]);
+        }
         if ($enabled && !$rights) {
             return new WP_Error('mp_ocr_rights',
                 'Automatisk billed-OCR kræver, at du har tilladelse til at behandle kildernes avisbilleder.',
                 ['status'=>400]);
         }
-        if ($enabled && !MP_FlyerOCR::status()['available']) {
+        if ($enabled && $mode==='server' && !MP_FlyerOCR::status()['available']) {
             return new WP_Error('mp_ocr_engine',
                 'Tesseract kan ikke køres på webhotellet. Automatisk OCR kan ikke aktiveres.',
                 ['status'=>503]);
         }
-        update_option(self::SETTINGS,['enabled'=>$enabled,'rights_confirmed'=>$enabled && $rights],false);
-        if ($enabled) { self::ensure_schedule(); }
+        update_option(self::SETTINGS,[
+            'enabled'=>$enabled,'rights_confirmed'=>$enabled && $rights,'mode'=>$mode,
+        ],false);
+        if ($enabled && $mode==='server') { self::ensure_schedule(); }
         else { wp_clear_scheduled_hook('mp_daily_ocr_tick'); }
         return self::status();
     }
@@ -46,7 +54,7 @@ final class MP_DailyOCR {
         return $schedules;
     }
     public static function ensure_if_enabled(): void {
-        if (self::enabled()) { self::ensure_schedule(); }
+        if (self::enabled() && self::mode()==='server') { self::ensure_schedule(); }
     }
     public static function ensure_schedule(): void {
         // Migrate old 15-minute schedule on upgrades, retaining the opt-in.
@@ -95,7 +103,7 @@ final class MP_DailyOCR {
         $today=self::day();
         $fresh=($s['day']??'')===$today;
         return [
-            'enabled'=>self::enabled(),'day'=>$today,
+            'enabled'=>self::enabled(),'mode'=>self::mode(),'day'=>$today,
             'rights_confirmed'=>!empty(self::config()['rights_confirmed']),
             'tesseract'=>MP_FlyerOCR::status()['available'],
             'processed'=>$fresh?(int)($s['processed']??0):0,
@@ -103,6 +111,7 @@ final class MP_DailyOCR {
             'offers'=>$fresh?count((array)($s['offers']??[])):0,
             'saved_offers'=>count(self::retained()),
             'cron_scheduled'=>(bool)wp_next_scheduled('mp_daily_ocr_tick'),
+            'external_worker_required'=>self::enabled() && self::mode()==='github',
             'partial'=>$fresh&&!empty($s['partial']),
             'complete'=>$fresh&&!empty($s['complete']),
             'last_checked'=>$fresh?(string)($s['checked_at']??''):'',
@@ -224,7 +233,7 @@ final class MP_DailyOCR {
         }
     }
     public static function tick(): array {
-        if (!self::enabled() || current_datetime()->format('Hi')<'0600') {
+        if (!self::enabled() || self::mode()!=='server' || current_datetime()->format('Hi')<'0600') {
             return self::status();
         }
         if (get_transient('mp_daily_ocr_lock_v1')) { return self::status(); }
@@ -300,6 +309,91 @@ final class MP_DailyOCR {
             delete_transient('mp_daily_ocr_lock_v1');
         }
     }
+    /** API for the external runner. Requires an authenticated WP administrator. */
+    public static function external_queue(): array|WP_Error {
+        if (!self::enabled() || self::mode()!=='github') {
+            return new WP_Error('mp_ocr_disabled',
+                'Aktivér daglig OCR og vælg GitHub Actions som OCR-motor.',['status'=>409]);
+        }
+        if (get_transient('mp_daily_ocr_external_lock')) {
+            return new WP_Error('mp_ocr_busy','OCR-køen er låst kortvarigt.',['status'=>503]);
+        }
+        $s=self::state();
+        if (($s['day']??'')!==self::day()) {
+            $s=self::prepare();
+            if (is_wp_error($s)) { return $s; }
+            update_option(self::STATE,$s,false);
+        }
+        return [
+            'day'=>self::day(),'next'=>(int)($s['next']??0),
+            'total'=>(int)($s['total']??0),
+            'pages'=>array_slice((array)($s['pages']??[]),(int)($s['next']??0)),
+            'complete'=>!empty($s['complete']),
+            'partial'=>!empty($s['partial']),
+        ];
+    }
+    /** Accept only the next page in the *server prepared* queue, never arbitrary stores or URLs. */
+    public static function external_result(int $index,string $day,string $text,string $error=''): array|WP_Error {
+        if (!self::enabled() || self::mode()!=='github') {
+            return new WP_Error('mp_ocr_disabled','GitHub OCR er ikke aktiveret.',['status'=>409]);
+        }
+        if ($day!==self::day()) {
+            return new WP_Error('mp_ocr_day','Kørslen hører til en anden dag.',['status'=>409]);
+        }
+        if (strlen($text)>200000 || strlen($error)>200 || $index<0) {
+            return new WP_Error('mp_ocr_limit','OCR-svaret er for stort eller ugyldigt.',['status'=>400]);
+        }
+        if (get_transient('mp_daily_ocr_external_lock')) {
+            return new WP_Error('mp_ocr_busy','OCR-køen opdateres.',['status'=>503]);
+        }
+        set_transient('mp_daily_ocr_external_lock',1,90);
+        try {
+            $s=self::state();
+            if (($s['day']??'')!==$day || !isset($s['pages'][$index])) {
+                return new WP_Error('mp_ocr_page','Avissiden findes ikke i dagens godkendte kø.',['status'=>409]);
+            }
+            if ($index<(int)$s['next']) { // Safe retry after a lost HTTP response.
+                return ['accepted'=>true,'already_processed'=>true,'next'=>(int)$s['next']];
+            }
+            if ($index!==(int)$s['next']) {
+                return new WP_Error('mp_ocr_order','Avissider skal indlæses i rækkefølge.',['status'=>409]);
+            }
+            $page=$s['pages'][$index];
+            $candidates=[];
+            if ($error==='' && trim($text)!=='') {
+                $candidates=MP_FlyerOCR::parse_candidates(
+                    $text,(string)$page['store'],(string)$page['valid_to']);
+                self::retain_new($candidates);
+                foreach ($candidates as $offer) {
+                    $key=md5($offer['store'].'|'.$offer['name'].'|'.$offer['price_ore']);
+                    $s['offers'][$key]=$offer;
+                    if (count($s['offers'])>self::MAX_OFFERS) {
+                        $s['offers']=array_slice($s['offers'],0,self::MAX_OFFERS,true);
+                        $s['partial']=true;
+                    }
+                }
+            } elseif ($error!=='') {
+                $s['failed']=(int)($s['failed']??0)+1;
+                $s['partial']=true;
+                $s['error']='En avisside fejlede i ekstern OCR: '.sanitize_text_field($error);
+            }
+            self::advance_page($page);
+            $s['next']=$index+1;
+            $s['processed']=(int)($s['processed']??0)+1;
+            $s['checked_at']=gmdate('c');
+            if ($s['next']>=count($s['pages'])) {
+                $s['complete']=true;
+                $s['pages']=[];
+            }
+            update_option(self::STATE,$s,false);
+            return ['accepted'=>true,'imported'=>count($candidates),
+                'next'=>$s['next'],'complete'=>!empty($s['complete']),
+                'saved_offers'=>count(self::retained())];
+        } finally {
+            delete_transient('mp_daily_ocr_external_lock');
+        }
+    }
+
     public static function matches(int $id): array|WP_Error {
         global $wpdb;
         $table=MP_Storage::table('shopping');
