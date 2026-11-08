@@ -674,7 +674,7 @@ async function shopping(){
  '<div class="mp-shopping-bulk-actions"><button type="button" id="mp-clear-purchased" class="mp-btn" '+
  (!purchased.length?'disabled':'')+'>Ryd købte varer ('+purchased.length+')</button>'+
  '<button type="button" id="mp-check-offers-all" class="mp-btn mp-shopping-bulk" '+(!pending.length?'disabled':'')+
- '>Søg tilbud på op til 10 varer</button></div><p id="mp-offer-note" class="mp-help" aria-live="polite"></p></section>'+
+ '>Søg gemte tilbud på op til 10 varer</button></div><p id="mp-offer-note" class="mp-help" aria-live="polite"></p></section>'+
  '<dialog id="mp-shopping-settings-dialog" class="mp-shopping-settings-dialog" aria-labelledby="mp-shopping-settings-title">'+
  '<div class="mp-shop-dialog-heading mp-shopping-settings-heading"><h3 id="mp-shopping-settings-title">Indkøbslistens opsætning</h3><button type="button" class="mp-btn" id="mp-shopping-settings-close" aria-label="Luk indstillinger">Luk</button></div>'+
  '<p class="mp-help">Butikker, tilbudsaviser, OCR og vedligeholdelse af indkøbslisten.</p>'+
@@ -1327,8 +1327,12 @@ async function shopping(){
     '<button type="button" class="mp-btn mp-btn-primary mp-flyer-search-btn">Søg i butikkens tilbudsavis</button>'+
     '<small>Gennemgår op til 400 registrerede tilbud fra den valgte kæde. Kan bruge op til fire Prej-kald, men samme kæde caches til familien i 6 timer.</small></div>';
   }
+  if(item.local_index){markup+='<div class="mp-local-prej-action"><button type="button" class="mp-btn mp-prej-live-btn">Søg også hos Prej (bruger API-kvote)</button></div>';}
   markup+='<div class="mp-ocr-matches" aria-live="polite"></div>';
   panel.innerHTML=markup;panel.hidden=false;panel.dataset.loaded='1';
+  var live=panel.querySelector('.mp-prej-live-btn');
+  if(live)live.onclick=function(){scanLive([Number(item.id)],live);};
+  if(!item.local_index){
   // Daily index is shared and local; it never triggers an external Prej API call.
   var dailyArea=document.createElement('div');
   dailyArea.className='mp-daily-matches';
@@ -1376,6 +1380,7 @@ async function shopping(){
       '<small>Gælder til '+esc(v.valid_to)+'</small></div></div>';
     }).join('');
   }).catch(function(){ /* Shopping offers remain usable without OCR. */ });
+  }
 
   var expand=panel.querySelector('.mp-flyer-search-btn');
   if(expand)expand.onclick=async function(){
@@ -1391,17 +1396,28 @@ async function shopping(){
    }catch(e){note.textContent=e.message||'Avisopslaget fejlede.';fail(e);expand.disabled=false;}
   };
  }
- async function scan(ids,b){
+ async function scanLive(ids,b){
   if(b)b.disabled=true;
   var note=content.querySelector('#mp-offer-note');
-  note.textContent='Søger efter aktuelle tilbud…';
+  note.textContent='Slår op hos Prej (bruger API-kvote)…';
   try{
    var results=await api('shopping/offers','POST',{ids:ids});
    (results.items||[]).forEach(displayOfferResult);
    var usage=results.usage||{};
-   note.textContent='Kontrolleret '+(results.items||[]).length+' vare(r). Gratis API-kvote: '+
-    (usage.used||0)+' / '+(usage.limit||20)+' opslag i dag.';
-  }catch(e){note.textContent=e.message||'Kunne ikke hente tilbud.';fail(e);}
+   note.textContent='Prej-opslag: '+(usage.used||0)+' / '+(usage.limit||20)+' i dag.';
+  }catch(e){note.textContent=e.message||'Prej-opslag fejlede.';fail(e);}
+  finally{if(b)b.disabled=false;}
+ }
+ async function scan(ids,b){
+  if(b)b.disabled=true;
+  var note=content.querySelector('#mp-offer-note');
+  note.textContent='Søger i familiens gemte tilbud og OCR-data…';
+  try{
+   var results=await api('shopping/local-offers','POST',{ids:ids});
+   (results.items||[]).forEach(displayOfferResult);
+   note.textContent='Kontrolleret '+(results.items||[]).length+
+    ' vare(r) i den lokale tilbudsdatabase – 0 Prej-kald.';
+  }catch(e){note.textContent=e.message||'Kunne ikke søge i gemte tilbud.';fail(e);}
   finally{if(b)b.disabled=false;}
  }
  content.querySelector('#mp-check-offers-all').onclick=function(){
