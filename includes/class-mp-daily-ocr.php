@@ -10,9 +10,10 @@ if (!defined('ABSPATH')) { exit; }
 final class MP_DailyOCR {
     private const SETTINGS='mp_daily_ocr_settings_v1';
     private const STATE='mp_daily_ocr_state_v1';
-    private const MAX_PAGES_PER_DAY=48;
-    private const MAX_PAGES_PER_FLYER=24;
-    private const MAX_OFFERS=300;
+    private const ARCHIVE='mp_daily_ocr_archive_v1';
+    private const MAX_PAGES_PER_DAY=192;
+    private const MAX_PAGES_PER_FLYER=80;
+    private const MAX_OFFERS=1200;
     private const MAX_BYTES=6*1024*1024;
 
     public static function config(): array {
@@ -40,25 +41,53 @@ final class MP_DailyOCR {
         return self::status();
     }
     public static function schedule_interval(array $schedules): array {
-        if (!isset($schedules['mp_quarter_hour'])) {
-            $schedules['mp_quarter_hour']=['interval'=>900,'display'=>'Madplan hvert kvarter'];
-        }
+        $schedules['mp_five_minutes']=['interval'=>300,'display'=>'Madplan OCR hvert femte minut'];
         return $schedules;
     }
     public static function ensure_if_enabled(): void {
         if (self::enabled()) { self::ensure_schedule(); }
     }
     public static function ensure_schedule(): void {
+        // Migrate old 15-minute schedule on upgrades, retaining the opt-in.
+        if (function_exists('wp_get_schedule') && wp_next_scheduled('mp_daily_ocr_tick') &&
+            wp_get_schedule('mp_daily_ocr_tick')!=='mp_five_minutes') {
+            wp_clear_scheduled_hook('mp_daily_ocr_tick');
+        }
         if (!wp_next_scheduled('mp_daily_ocr_tick')) {
             $next=new DateTimeImmutable('today 06:00:00',wp_timezone());
-            if ($next->getTimestamp()<=time()) { $next=$next->modify('+1 day'); }
-            wp_schedule_event($next->getTimestamp(),'mp_quarter_hour','mp_daily_ocr_tick');
+            $at=$next->getTimestamp();
+            if ($at<=time()) { $at=time()+60; } // Start today after activation.
+            wp_schedule_event($at,'mp_five_minutes','mp_daily_ocr_tick');
         }
     }
     private static function day(): string { return current_datetime()->format('Y-m-d'); }
     private static function state(): array {
         $s=get_option(self::STATE,[]);
         return is_array($s)?$s:[];
+    }
+    /** Retain only short product/price candidates for as long as the flyer is valid. */
+    private static function retained(): array {
+        $raw=get_option(self::ARCHIVE,[]);
+        if (!is_array($raw)) { return []; }
+        $today=self::day();$result=[];
+        foreach ($raw as $key=>$entry) {
+            if (!is_array($entry) || (string)($entry['valid_to']??'')<$today ||
+                (string)($entry['name']??'')==='') { continue; }
+            $result[$key]=$entry;
+        }
+        return array_slice($result,0,self::MAX_OFFERS,true);
+    }
+    private static function retain_new(array $offers): void {
+        $archive=self::retained();
+        foreach ($offers as $entry) {
+            if (!is_array($entry) || (string)($entry['valid_to']??'')<self::day()) { continue; }
+            $key=md5(mb_strtolower((string)$entry['store'].'|'.$entry['name'],'UTF-8').'|'.
+                (string)$entry['price_ore'].'|'.(string)$entry['valid_to']);
+            $archive[$key]=$entry;
+        }
+        // Most recent findings first; no images or full OCR text retained.
+        $archive=array_slice(array_reverse($archive,true),0,self::MAX_OFFERS,true);
+        update_option(self::ARCHIVE,$archive,false);
     }
     public static function status(): array {
         $s=self::state();
@@ -71,18 +100,19 @@ final class MP_DailyOCR {
             'processed'=>$fresh?(int)($s['processed']??0):0,
             'total'=>$fresh?(int)($s['total']??0):0,
             'offers'=>$fresh?count((array)($s['offers']??[])):0,
+            'saved_offers'=>count(self::retained()),
+            'cron_scheduled'=>(bool)wp_next_scheduled('mp_daily_ocr_tick'),
             'partial'=>$fresh&&!empty($s['partial']),
             'complete'=>$fresh&&!empty($s['complete']),
             'last_checked'=>$fresh?(string)($s['checked_at']??''):'',
             'error'=>$fresh?(string)($s['error']??''):'',
             'cap'=>self::MAX_PAGES_PER_DAY,
-            'note'=>'Automatisk OCR er kun beregnet til avissider, du har ret til at behandle. Maks. 48 sider/døgn, én side pr. WordPress-Cron-kørsel.',
+            'note'=>'OCR behandler kun avissider, du har tilladelse til at behandle. Maks. 192 sider/døgn, én side pr. femminutters WP-Cron-kørsel. Gemte tilbud bevares til avisens udløb.',
         ];
     }
     private static function prepare(): array|WP_Error {
         // Fetch currently valid source references through the official API.
         // This listing has an explicit maximum of 200 flyers and reports partial.
-        delete_transient('mp_flyer_library_v1');
         $listing=MP_FlyerLibrary::listing();
         if (is_wp_error($listing)) { return $listing; }
         $queues=[];$partial=!empty($listing['partial']);
@@ -199,6 +229,7 @@ final class MP_DailyOCR {
                 $s['partial']=true;
                 $s['error']='En eller flere avis-sider kunne ikke OCR-behandles: '.$data->get_error_message();
             } else {
+                self::retain_new($data);
                 foreach ($data as $offer) {
                     $key=md5($offer['store'].'|'.$offer['name'].'|'.$offer['price_ore']);
                     $s['offers'][$key]=$offer;
@@ -227,10 +258,14 @@ final class MP_DailyOCR {
         $row=$wpdb->get_row($wpdb->prepare(
             "SELECT id,title,checked FROM $table WHERE id=%d",$id),ARRAY_A);
         if (!$row) { return new WP_Error('mp_item_missing','Varen findes ikke.',['status'=>404]); }
-        $s=self::state();$hits=[];
-        if (($s['day']??'')===self::day() && (int)$row['checked']===0) {
+        $hits=[];
+        if ((int)$row['checked']===0) {
             $term=MP_Offers::search_phrase((string)$row['title']);
-            foreach ((array)($s['offers']??[]) as $offer) {
+            $allowed=class_exists('MP_ShoppingDetails')?MP_ShoppingDetails::selected_stores():null;
+            foreach (self::retained() as $offer) {
+                if ($allowed!==null && !in_array((string)($offer['store']??''),$allowed,true)) {
+                    continue;
+                }
                 if (MP_OfferFlyers::matching_name((string)($offer['name']??''),$term)) {
                     $hits[]=$offer;
                 }
