@@ -11,6 +11,7 @@ final class MP_DailyOCR {
     private const SETTINGS='mp_daily_ocr_settings_v1';
     private const STATE='mp_daily_ocr_state_v1';
     private const ARCHIVE='mp_daily_ocr_archive_v1';
+    private const POSITIONS='mp_daily_ocr_positions_v1';
     private const MAX_PAGES_PER_DAY=192;
     private const MAX_PAGES_PER_FLYER=80;
     private const MAX_OFFERS=1200;
@@ -116,19 +117,30 @@ final class MP_DailyOCR {
         $listing=MP_FlyerLibrary::listing();
         if (is_wp_error($listing)) { return $listing; }
         $queues=[];$partial=!empty($listing['partial']);
-        // Round-robin by household-selected chain, so a long flyer from one
-        // shop does not starve all other shops under the daily page cap.
+        $positions=get_option(self::POSITIONS,[]);
+        if (!is_array($positions)) { $positions=[]; }
+        // Round-robin by selected chain; resume large flyers after yesterday's
+        // last processed page rather than repeatedly scanning only page one.
         foreach ((array)($listing['flyers']??[]) as $flyer) {
             $chain=(string)($flyer['chain']??'');
             if ($chain==='') { continue; }
-            $urls=array_slice((array)($flyer['page_urls']??[]),0,self::MAX_PAGES_PER_FLYER);
-            if (count((array)($flyer['page_urls']??[]))>count($urls)) { $partial=true; }
+            $allUrls=(array)($flyer['page_urls']??[]);
+            $urls=array_values(array_filter(array_slice($allUrls,0,self::MAX_PAGES_PER_FLYER),'is_string'));
+            $count=count($urls);
+            if (count($allUrls)>$count || (int)($flyer['page_count']??$count)>$count) {
+                $partial=true;
+            }
+            if ($count===0) { continue; }
+            $valid=(string)($flyer['valid_to']??'');
+            $key=md5($chain.'|'.(string)($flyer['flyer_id']??'').'|'.$valid.'|'.$urls[0]);
+            $start=((int)($positions[$key]['next']??0))%$count;
             if (!isset($queues[$chain])) { $queues[$chain]=[]; }
-            foreach ($urls as $url) {
-                if (!is_string($url)) { continue; }
+            for ($i=0;$i<$count;$i++) {
+                $n=($start+$i)%$count;
                 $queues[$chain][]=[
-                    'url'=>$url,'store'=>$chain,
-                    'valid_to'=>(string)$flyer['valid_to'],
+                    'url'=>$urls[$n],'store'=>$chain,
+                    'valid_to'=>$valid,
+                    'cursor_key'=>$key,'page_count'=>$count,'position'=>$n,
                 ];
             }
         }
@@ -153,6 +165,28 @@ final class MP_DailyOCR {
             'checked_at'=>gmdate('c'),'failed'=>0,
         ];
     }
+    /** Remember page progress so a large flyer continues at another page tomorrow. */
+    private static function advance_page(array $page): void {
+        $key=(string)($page['cursor_key']??'');
+        $count=(int)($page['page_count']??0);
+        if ($key==='' || $count<1) { return; }
+        $positions=get_option(self::POSITIONS,[]);
+        if (!is_array($positions)) { $positions=[]; }
+        $today=self::day();
+        foreach ($positions as $k=>$value) {
+            if (!is_array($value) || (string)($value['valid_to']??'')<$today) {
+                unset($positions[$k]);
+            }
+        }
+        $positions[$key]=[
+            'next'=>((int)($page['position']??0)+1)%$count,
+            'valid_to'=>(string)($page['valid_to']??$today),
+        ];
+        // Keep a bounded progress record, never image data.
+        $positions=array_slice($positions,-200,null,true);
+        update_option(self::POSITIONS,$positions,false);
+    }
+
     /** Grab a single allowlisted URL with no redirects; never save outside temp. */
     private static function page_candidates(array $page): array|WP_Error {
         $url=(string)($page['url']??'');
@@ -203,10 +237,22 @@ final class MP_DailyOCR {
                     $s=[
                         'day'=>self::day(),'pages'=>[],'total'=>0,
                         'next'=>0,'processed'=>0,'offers'=>[],
-                        'complete'=>true,'partial'=>true,
+                        'complete'=>false,'partial'=>true,
+                        'retry_after'=>time()+3600,
                         'error'=>'Kunne ikke hente avisoversigten: '.$s->get_error_message(),
                         'checked_at'=>gmdate('c'),'failed'=>0
                     ];
+                    update_option(self::STATE,$s,false);
+                    return self::status();
+                }
+            }
+            if (!empty($s['retry_after'])) {
+                if (time()<(int)$s['retry_after']) { return self::status(); }
+                $s=self::prepare();
+                if (is_wp_error($s)) {
+                    $s=self::state();
+                    $s['retry_after']=time()+3600;
+                    $s['error']='Ny OCR-forsøg mislykkedes: '.$s->get_error_message();
                     update_option(self::STATE,$s,false);
                     return self::status();
                 }
@@ -222,6 +268,7 @@ final class MP_DailyOCR {
                 return self::status();
             }
             $data=self::page_candidates($s['pages'][$n]);
+            self::advance_page($s['pages'][$n]);
             $s['next']=$n+1;
             $s['processed']++;
             if (is_wp_error($data)) {
