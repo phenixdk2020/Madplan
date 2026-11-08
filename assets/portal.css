@@ -538,3 +538,19 @@ body.mp-full-page.mp-theme-burgundy{background:#f9f0f3;color:#41212c}
 .mp-portal .mp-main:has(#mp-tabs[hidden]) .mp-module-head{margin-bottom:8px}
 .mp-portal .mp-main:has(#mp-tabs[hidden]) .mp-status:empty{min-height:0}
 .mp-portal .mp-week-recipes{display:inline-flex;align-items:center;justify-content:center;min-height:44px;margin:0 0 12px;max-width:100%}
+
+/* v0.1.36: remove admin/offer settings from shopping view; open from header gear instead. */
+.mp-portal #mp-open-shopping-settings[hidden]{display:none!important}
+.mp-portal .mp-settings-panel .mp-settings-entry{display:block;width:100%;min-height:44px;margin-top:10px;padding:10px 2px;border:0;border-top:1px solid var(--mp-line);background:transparent;color:var(--mp-ink);font-size:14px;font-weight:650;line-height:1.35;text-align:left;cursor:pointer}
+.mp-portal .mp-settings-panel .mp-settings-entry:hover{text-decoration:underline}
+.mp-portal .mp-settings-panel .mp-settings-entry:focus-visible{outline:3px solid var(--mp-primary);outline-offset:2px}
+.mp-portal .mp-shopping-settings-dialog{box-sizing:border-box;width:min(94vw,620px);max-width:calc(100% - 20px);max-height:calc(100dvh - 24px);padding:16px;border:1px solid var(--mp-line);border-radius:17px;overflow-y:auto;background:var(--mp-card);color:var(--mp-ink);box-shadow:0 16px 60px rgba(0,0,0,.25)}
+.mp-portal .mp-shopping-settings-dialog::backdrop{background:rgba(8,24,37,.7)}
+.mp-portal .mp-shopping-settings-dialog:not([open]){display:none}
+.mp-portal .mp-shopping-settings-heading{position:sticky;top:-16px;z-index:2;min-height:52px;padding:6px 0 12px;background:var(--mp-card);border-bottom:1px solid var(--mp-line)}
+.mp-portal .mp-shopping-settings-heading h3{font-size:19px}
+.mp-portal .mp-shopping-settings-dialog .mp-shop-filter{margin:10px 0;padding:11px}
+.mp-portal .mp-shopping-settings-dialog .mp-shopping-bulk-actions{padding-top:10px}
+.mp-portal #mp-shopping-settings-feedback:empty{display:none}
+.mp-portal #mp-shopping-settings-feedback:not(:empty){padding:10px;border-radius:8px;background:var(--mp-status-bg,#e9f3ff);color:var(--mp-ink)}
+@media(max-width:540px){.mp-portal .mp-shopping-settings-dialog{padding:12px}.mp-portal .mp-shopping-settings-heading{top:-12px}.mp-portal .mp-shopping-settings-heading h3{font-size:17px}}

@@ -28,4 +28,16 @@ assert "id=\"mp-open-recipes\"" in js
 assert "setTab('recipes')" in js
 assert "#mp-tabs[hidden]{display:none!important}" in css
 assert "data-module=\"shopping\"" in portal
+assert 'id="mp-open-shopping-settings"' in portal
+assert 'hidden>⚙ Indkøbslistens opsætning' in portal
+assert "shoppingSettingsLink.hidden=t!=='shopping'" in js
+assert "if(shoppingSettingsLink)shoppingSettingsLink.hidden=true;" in js
+assert "var oldSettingsDialog=content.querySelector('#mp-shopping-settings-dialog');" in js
+assert 'id="mp-shopping-settings-dialog"' in js
+assert 'id="mp-shopping-settings-close"' in js
+assert "settingsDialog.showModal()" in js
+assert "expandedSettings.forEach" in js
+assert 'id="mp-clear-purchased"' in js and 'id="mp-check-offers-all"' in js
+assert js.index("Scan stregkode</button></section>") < js.index("'<dialog id=\"mp-shopping-settings-dialog\"'")
+assert ".mp-shopping-settings-dialog:not([open]){display:none}" in css
 print('Homepage direct shopping link and mobile layout PASS')

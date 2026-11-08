@@ -99,6 +99,7 @@ final class MP_Portal {
                       <?php endforeach; ?>
                     </select>
                   </label>
+                  <button type="button" id="mp-open-shopping-settings" class="mp-settings-entry" aria-haspopup="dialog" aria-controls="mp-shopping-settings-dialog" hidden>⚙ Indkøbslistens opsætning</button>
                   <a class="mp-logout" href="<?php echo esc_url(wp_logout_url(get_permalink())); ?>">Log ud</a>
                 </div>
               </details>

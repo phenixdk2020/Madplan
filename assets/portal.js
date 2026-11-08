@@ -7,6 +7,14 @@ var s={module:'',tab:'week',start:mon(cfg.today),week:null,next:null,recipes:nul
 var themeOptions=['default','dark','forest','purple','sand','ocean','rose','sunset','mint','burgundy'];
 var themeSelect=root.querySelector('#mp-theme-select');
 var settingsMenu=root.querySelector('#mp-settings-menu');
+var shoppingSettingsLink=root.querySelector('#mp-open-shopping-settings');
+if(shoppingSettingsLink)shoppingSettingsLink.onclick=function(){
+ if(s.tab!=='shopping'||main.hidden)return;
+ var dialog=content.querySelector('#mp-shopping-settings-dialog');
+ if(!dialog||typeof dialog.showModal!=='function'){msg('Opsætningen kunne ikke åbnes i denne browser.',true);return;}
+ if(settingsMenu)settingsMenu.open=false;
+ if(!dialog.open)dialog.showModal();
+};
 if(settingsMenu){
  document.addEventListener('click',function(e){if(settingsMenu.open&&!settingsMenu.contains(e.target))settingsMenu.open=false;});
  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&settingsMenu.open){settingsMenu.open=false;settingsMenu.querySelector('summary').focus();}});
@@ -51,6 +59,7 @@ async function api(path,method,body){var opt={method:method||'GET',credentials:'
 function setTab(t){
  if(s.freezerStop){s.freezerStop();s.freezerStop=null;}
  s.tab=t;
+ if(shoppingSettingsLink)shoppingSettingsLink.hidden=t!=='shopping';
  var isTv=s.module==='tv';
  root.querySelector('#mp-module-title').textContent=isTv?'TV-ugeplan':
   (t==='freezer'?'Fryser':(t==='shopping'?'Indkøbsliste':(t==='recipes'?'Opskrifter':'Madplan')));
@@ -79,6 +88,7 @@ openHash();
 function backToMenu(){
  if(s.freezerStop){s.freezerStop();s.freezerStop=null;}
  home.hidden=false;main.hidden=true;s.module='';s.tab='week';msg('');
+ if(shoppingSettingsLink)shoppingSettingsLink.hidden=true;
  if(window.history&&window.history.replaceState){window.history.replaceState(null,'',window.location.pathname+window.location.search);}
  window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -630,6 +640,9 @@ if(r.images.length)html+='<h3>Flere billeder</h3><div class="mp-recipe-gallery">
 content.innerHTML=html+'</div>';content.querySelector('#back-recipes').onclick=recipes;
 }
 async function shopping(){
+ var oldSettingsDialog=content.querySelector('#mp-shopping-settings-dialog');
+ var reopenSettings=!!(oldSettingsDialog&&oldSettingsDialog.open);
+ var expandedSettings=oldSettingsDialog?Array.from(oldSettingsDialog.querySelectorAll('details')).map(function(d,i){return d.open?i:-1;}).filter(function(i){return i>=0;}):[];
  content.innerHTML='<p class="mp-help">Henter indkøbslisten…</p>';
  var list,settings,history,daily,dailyOCR;
  try{
@@ -657,7 +670,11 @@ async function shopping(){
  '<div id="mp-history-matches" class="mp-history-matches" role="listbox" hidden></div></div>'+
  '<input id="item-amount" maxlength="80" aria-label="Mængde" placeholder="Mængde">'+
  '<button type="submit" class="mp-btn mp-btn-primary">Tilføj</button></form>'+
- '<button type="button" id="mp-open-barcode" class="mp-btn mp-barcode-open">📷 Scan stregkode</button>'+
+ '<button type="button" id="mp-open-barcode" class="mp-btn mp-barcode-open">📷 Scan stregkode</button></section>'+
+ '<dialog id="mp-shopping-settings-dialog" class="mp-shopping-settings-dialog" aria-labelledby="mp-shopping-settings-title">'+
+ '<div class="mp-shop-dialog-heading mp-shopping-settings-heading"><h3 id="mp-shopping-settings-title">Indkøbslistens opsætning</h3><button type="button" class="mp-btn" id="mp-shopping-settings-close" aria-label="Luk indstillinger">Luk</button></div>'+
+ '<p class="mp-help">Butikker, tilbudsaviser, OCR og vedligeholdelse af indkøbslisten.</p>'+
+ '<p id="mp-shopping-settings-feedback" class="mp-help" role="status" aria-live="polite"></p>'+
  '<details class="mp-shop-filter"><summary>Butikker til tilbudssøgning ('+offerSelected.length+' valgt)</summary>'+
  '<p class="mp-help">Kun tilbud fra de valgte butikker vises. Valget gælder hele familien.</p>'+
  '<div class="mp-shop-filter-grid">'+offerOptions.map(offerToggleMarkup).join('')+'</div>'+
@@ -714,7 +731,7 @@ async function shopping(){
  '<div class="mp-shopping-bulk-actions"><button type="button" id="mp-clear-purchased" class="mp-btn" '+
  (!purchased.length?'disabled':'')+'>Ryd købte varer ('+purchased.length+')</button>'+
  '<button type="button" id="mp-check-offers-all" class="mp-btn mp-shopping-bulk" '+(!pending.length?'disabled':'')+
- '>Søg tilbud på op til 10 varer</button></div><p id="mp-offer-note" class="mp-help" aria-live="polite"></p></section>';
+ '>Søg tilbud på op til 10 varer</button></div><p id="mp-offer-note" class="mp-help" aria-live="polite"></p></dialog>';
  var groups={};
  list.forEach(function(x){
   var group=Number(x.checked)?'Købt':(x.store||'Alle');
@@ -768,6 +785,16 @@ async function shopping(){
  'Administrator kan aktivere tilbudssøgning med gratis Prej API-nøgle under Hangar18 → Oversigt.')+
  '</p>';
  content.innerHTML=html;
+ var settingsDialog=content.querySelector('#mp-shopping-settings-dialog');
+ content.querySelector('#mp-shopping-settings-close').onclick=function(){settingsDialog.close();};
+ settingsDialog.addEventListener('click',function(ev){if(ev.target===settingsDialog)settingsDialog.close();});
+ settingsDialog.addEventListener('cancel',function(){/* Browser Escape closes the modal. */});
+ if(reopenSettings){
+  var allSettingsDetails=Array.from(settingsDialog.querySelectorAll('details'));
+  expandedSettings.forEach(function(i){if(allSettingsDetails[i])allSettingsDetails[i].open=true;});
+  settingsDialog.showModal();
+  content.querySelector('#mp-shopping-settings-feedback').textContent='Indstillingerne er opdateret.';
+ }
  // Camera decoding happens in the browser; only the GTIN is sent to WordPress.
  // No camera frames or pictures are uploaded or stored.
  content.insertAdjacentHTML('beforeend',
