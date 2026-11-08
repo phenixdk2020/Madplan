@@ -42,6 +42,6 @@ assert js.index('id="mp-clear-purchased"') < js.index('<dialog id="mp-shopping-s
 assert js.index('id="mp-check-offers-all"') < js.index('<dialog id="mp-shopping-settings-dialog"')
 assert js.index('<div class="mp-shopping-bulk-actions">') < js.index('<dialog id="mp-shopping-settings-dialog"')
 assert js.index('id="mp-offer-note"') < js.index('<dialog id="mp-shopping-settings-dialog"')
-assert js.index('Scan stregkode</button></section>') < js.index('<dialog id="mp-shopping-settings-dialog"')
+assert js.index('Scan stregkode</button>') < js.index('id="mp-clear-purchased"')
 assert ".mp-shopping-settings-dialog:not([open]){display:none}" in css
 print('Homepage direct shopping link and mobile layout PASS')
