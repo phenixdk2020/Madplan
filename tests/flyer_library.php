@@ -62,6 +62,7 @@ check(count($result['flyers'])===1,'Selected household chain only, expired omitt
 check($result['flyers'][0]['chain']==='SuperBrugsen','Mapped chain correctly');
 check($result['flyers'][0]['valid_to']==='2026-11-05','Validity preserved');
 check($result['flyers'][0]['page_count']===2,'Only original HTTPS image host links allowed');
+check($result['flyers'][0]['source_page_count']===4,'Original source page count reported separately');
 check($result['flyers'][0]['page_urls'][0]==='https://img.prej.app/flyers/superbrugsen/20261105/page-01.jpg','First page link');
 check($result['usage']['used']===2,'Free API quota counted');
 check(!$result['partial'],'Complete two page listing');
