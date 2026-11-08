@@ -387,6 +387,12 @@ WP-Cron afhænger af besøg på webstedet og garanterer ikke et præcist klokkes
 Kilder: https://prej.dk/api , https://prej.dk/vilkaar-api . Tests: `tests/daily_offers.php`, `tests/daily_offers_contract.py`.
 
 
+## v0.1.39 – fortsæt gennem alle tilgængelige avissider over flere dage
+
+- Daglig OCR gemmer en lille fremskridtsmarkør pr. tilbudsavis. Ved næste dags kørsel starter den dér, hvor den sidst stoppede, i stedet for at genlæse de samme første sider ved kapacitetsgrænsen.
+- Hvis avisoversigten ikke kan hentes, prøver køen igen efter en time i stedet for at opgive hele dagen. Fejlen vises i statussen.
+- Mere end 192 sider samlet eller 80 sider i én avis er fortsat en rapporteret begrænsning. WordPress-Cron skal køre regelmæssigt, og ingen funktion omgår et krav om billedrettigheder eller manglende Tesseract.
+
 ## v0.1.38 – lokal tilbudssøgning, OCR-historik og hurtigere baggrundskø
 
 - **Se tilbud** og **Søg gemte tilbud på op til 10 varer** søger nu først i Madplans eget indeks: daglige strukturerede tilbud, manuelle OCR-fund og automatisk OCR. Det bruger **0 Prej API-kald**. Eksterne Prej-opslag kræver nu, at brugeren aktivt vælger **Søg også hos Prej (bruger API-kvote)** eller den særskilte udvidede avissøgning.
