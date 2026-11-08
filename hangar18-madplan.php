@@ -87,7 +87,7 @@ final class MP_Plugin {
         }
         self::ensure_cron();
         if (MP_DailyOffers::enabled()) { MP_DailyOffers::ensure_schedule(); }
-        if (MP_DailyOCR::enabled()) { MP_DailyOCR::ensure_schedule(); }
+        if (MP_DailyOCR::enabled() && MP_DailyOCR::mode()==='server') { MP_DailyOCR::ensure_schedule(); }
         MP_Home::configure();
     }
     public static function deactivate(): void {
