@@ -92,7 +92,7 @@ assert "if(cameraDialog.open)cameraDialog.close()" in js
 assert "scanning=true;\n     stop();\n     lookup(code);" in js
 assert "reader.hidden=true" in js
 assert "mp-freezer-stop" not in js
-assert r"\\d{8}|\\d{12,14}" in js
-assert "if(!/^(?:\\\\d{8}|\\\\d{12,14})$/.test(code))return;" not in js
+assert r"\d{8}|\d{12,14}" in js
+assert r"\\d{8}|\\d{12,14}" not in js
 assert 'mp-freezer-camera-dialog::backdrop' in style
 print('Freezer inventory, security, scanner, integrations, backup contract PASS')
