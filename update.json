@@ -7,5 +7,5 @@
   "requires_php": "8.0",
   "package": "https://raw.githubusercontent.com/phenixdk2020/Madplan/main/dist/hangar18-madplan-v0.1.34.zip",
   "sha256": "18415c4f1ce74be2cb474ec9176ef24aaea24bdec9a27b9bff19bafcec531d11",
-  "source_commit": "8de3dba060885401eac7464417e48ef66aeff2c0"
+  "source_commit": "8e814617668a9d5838a42327406955f8c81c7294"
 }
