@@ -1,0 +1,39 @@
+name: Madplan OCR (external Tesseract)
+on:
+  schedule:
+    - cron: '23 7 * * *'
+      timezone: Europe/Copenhagen
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: madplan-external-ocr
+  cancel-in-progress: false
+
+jobs:
+  ocr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check WordPress integration credentials
+        env:
+          MADPLAN_OCR_USERNAME: ${{ secrets.MADPLAN_OCR_USERNAME }}
+          MADPLAN_OCR_APP_PASSWORD: ${{ secrets.MADPLAN_OCR_APP_PASSWORD }}
+        run: |
+          if [ -z "$MADPLAN_OCR_USERNAME" ] || [ -z "$MADPLAN_OCR_APP_PASSWORD" ]; then
+            echo "::error::Set MADPLAN_OCR_USERNAME and MADPLAN_OCR_APP_PASSWORD under GitHub Actions secrets."
+            exit 1
+          fi
+      - name: Install local OCR engine (no paid service)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-dan tesseract-ocr-eng python3-pil
+      - name: Process authorized flyer queue
+        env:
+          MADPLAN_SITE_URL: https://hangar18.dk
+          MADPLAN_OCR_USERNAME: ${{ secrets.MADPLAN_OCR_USERNAME }}
+          MADPLAN_OCR_APP_PASSWORD: ${{ secrets.MADPLAN_OCR_APP_PASSWORD }}
+        run: /usr/bin/python3 scripts/madplan_ocr_worker.py
