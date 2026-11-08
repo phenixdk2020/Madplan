@@ -74,4 +74,23 @@ assert "Ingen madvarer matcher søgningen." in js
 assert ".mp-freezer-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))" in style
 assert ".mp-freezer-item{display:grid;grid-template-columns:minmax(0,1fr) auto" in style
 assert "php tests/freezer_duplicates.php" in Path('.github/workflows/package.yml').read_text(encoding='utf-8')
+# Compact date inputs must appear together AFTER the notes input.
+assert 'class="mp-freezer-date-fields"' in js
+assert js.index('class="mp-freezer-notes-label"') < js.index('class="mp-freezer-date-fields"') < js.index('id="mp-freezer-submit"')
+assert 'grid-template-columns:repeat(2,minmax(0,1fr))' in style
+assert '.mp-freezer-date-fields input[type="date"]' in style
+assert 'height:44px;min-height:44px;max-height:44px' in style
+# Camera must be a modal and must release the stream on cancellation, closure or scan.
+assert '<dialog class="mp-freezer-camera-dialog"' in js
+assert 'cameraDialog.showModal()' in js
+assert "cameraDialog.addEventListener('cancel'" in js
+assert "cameraDialog.addEventListener('close'" in js
+assert "cameraDialog.addEventListener('click'" in js
+assert "content.querySelector('#mp-freezer-camera-close').onclick=stop" in js
+assert "content.querySelector('#mp-freezer-camera-cancel').onclick=stop" in js
+assert "if(cameraDialog.open)cameraDialog.close()" in js
+assert "scanning=true;\n     stop();\n     lookup(code);" in js
+assert "reader.hidden=true" in js
+assert "mp-freezer-stop" not in js
+assert 'mp-freezer-camera-dialog::backdrop' in style
 print('Freezer inventory, security, scanner, integrations, backup contract PASS')

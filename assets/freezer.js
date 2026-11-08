@@ -30,18 +30,24 @@ window.MP_FREEZER=async function(ctx){
   '<label>Varenavn<input name="title" required maxlength="255" placeholder="Fx hakket oksekød"></label>'+
   '<label>Stregkode (EAN/GTIN)<input name="barcode" inputmode="numeric" pattern="[0-9]*" maxlength="14" placeholder="Scan eller skriv koden"></label>'+
   '<div class="mp-freezer-actions"><button class="mp-btn" type="button" id="mp-freezer-lookup">Find vare</button>'+
-  '<button class="mp-btn" type="button" id="mp-freezer-camera">📷 Scan stregkode</button>'+
-  '<button class="mp-btn" type="button" id="mp-freezer-stop" hidden>Stop kamera</button></div>'+
+  '<button class="mp-btn" type="button" id="mp-freezer-camera">📷 Scan stregkode</button></div>'+
   '<p id="mp-freezer-scanner-message" class="mp-help" role="status" aria-live="polite"></p>'+
-  '<div id="mp-freezer-scanner" class="mp-freezer-scanner" hidden></div>'+
   '<div class="mp-freezer-fields"><label>Antal<input name="quantity" type="number" min="1" max="999" step="1" required value="1"></label>'+
   '<label>Enhed/pakning<input name="unit" maxlength="80" value="stk" placeholder="Fx pakke 500 g"></label>'+
-  '<label>Placering<select name="location">'+options()+'</select></label>'+
+  '<label>Placering<select name="location">'+options()+'</select></label></div>'+
+  '<label class="mp-freezer-notes-label">Kommentar (valgfri)<textarea name="notes" rows="2" maxlength="500" placeholder="Fx halv pose tilbage, bruges først…"></textarea></label>'+
+  '<div class="mp-freezer-date-fields">'+
   '<label>Indfrysningsdato<input name="frozen_at" type="date" required value="'+esc(cfg.today)+'"></label>'+
   '<label>Bedst før (valgfrit)<input name="best_before" type="date"></label></div>'+
-  '<label class="mp-freezer-notes-label">Kommentar (valgfri)<textarea name="notes" rows="2" maxlength="500" placeholder="Fx halv pose tilbage, bruges først…"></textarea></label>'+
   '<div class="mp-freezer-actions"><button class="mp-btn mp-btn-primary" type="submit" id="mp-freezer-submit">Gem i fryser</button>'+
-  '<button class="mp-btn" type="button" id="mp-freezer-reset">Nulstil</button></div></form></details></section>'+
+  '<button class="mp-btn" type="button" id="mp-freezer-reset">Nulstil</button></div></form>'+
+  '<dialog class="mp-freezer-camera-dialog" id="mp-freezer-camera-dialog" aria-labelledby="mp-freezer-camera-title">'+
+  '<div class="mp-freezer-camera-header"><h3 id="mp-freezer-camera-title">📷 Scan stregkode</h3>'+
+  '<button type="button" class="mp-freezer-camera-close" id="mp-freezer-camera-close" aria-label="Luk stregkodescanner">✕</button></div>'+
+  '<p class="mp-help" id="mp-freezer-camera-status" role="status" aria-live="polite">Hold stregkoden foran kameraet.</p>'+
+  '<div id="mp-freezer-scanner" class="mp-freezer-scanner" hidden></div>'+
+  '<button type="button" class="mp-btn mp-freezer-camera-cancel" id="mp-freezer-camera-cancel">Luk scanning</button>'+
+  '</dialog></details></section>'+
   '<section class="mp-card mp-freezer-panel"><details class="mp-freezer-disclosure" id="mp-freezer-shopping"><summary>Hent fra indkøbslisten</summary>'+
   '<p class="mp-help">Kopiér en købt vare til fryseren. Den bliver stående som købt på indkøbslisten.</p>'+
   '<form id="mp-freezer-from-shopping" class="mp-freezer-actions"><select name="shopping_id" required aria-label="Vælg købt vare">'+
@@ -56,14 +62,20 @@ window.MP_FREEZER=async function(ctx){
  content.innerHTML=html;
  var form=content.querySelector('#mp-freezer-form'),filter=content.querySelector('#mp-freezer-filter'),search=content.querySelector('#mp-freezer-search');
  var reader=content.querySelector('#mp-freezer-scanner'),status=content.querySelector('#mp-freezer-scanner-message');
- var stopButton=content.querySelector('#mp-freezer-stop');
+ var cameraDialog=content.querySelector('#mp-freezer-camera-dialog'),cameraStatus=content.querySelector('#mp-freezer-camera-status');
  var scanner=null,scanId=0,scanning=false;
  function stop(){
   scanId++;scanning=false;
   if(scanner){var old=scanner;scanner=null;Promise.resolve().then(function(){return old.stop();}).catch(function(){}).then(function(){try{old.clear();}catch(ignore){}});}
-  reader.hidden=true;stopButton.hidden=true;
+  if(cameraDialog.open)cameraDialog.close();
+  reader.hidden=true;
  }
- s.freezerStop=stop;stopButton.onclick=stop;
+ s.freezerStop=stop;
+ cameraDialog.addEventListener('close',function(){if(!cameraDialog.open)stop();});
+ cameraDialog.addEventListener('cancel',function(event){event.preventDefault();stop();});
+ cameraDialog.addEventListener('click',function(event){if(event.target===cameraDialog)stop();});
+ content.querySelector('#mp-freezer-camera-close').onclick=stop;
+ content.querySelector('#mp-freezer-camera-cancel').onclick=stop;
  function quantityLabel(item){
   var quantity=Number(item.quantity||0),unit=String(item.unit||'').trim();
   return quantity+' stk.'+(unit&&!/^(?:stk\.?|stykker)$/i.test(unit)?' × '+unit:'');
@@ -165,7 +177,13 @@ window.MP_FREEZER=async function(ctx){
   if(!window.isSecureContext||!navigator.mediaDevices){
    status.textContent='Kamera kræver HTTPS og kameratilladelse. Indtast stregkoden manuelt.';return;
   }
-  stop();var token=++scanId;status.textContent='Åbner kameraet…';
+  if(typeof cameraDialog.showModal!=='function'){
+   status.textContent='Denne browser understøtter ikke scannervinduet. Indtast stregkoden manuelt.';return;
+  }
+  stop();
+  cameraStatus.textContent='Åbner kameraet…';
+  cameraDialog.showModal();
+  var token=++scanId,activeScanner=null;
   try{
    if(typeof window.Html5Qrcode!=='function'){
     await new Promise(function(resolve,reject){
@@ -176,21 +194,32 @@ window.MP_FREEZER=async function(ctx){
      document.head.appendChild(script);
     });
    }
-   if(token!==scanId||!reader.isConnected)return;
+   if(token!==scanId||!cameraDialog.open||!reader.isConnected)return;
    var fmts=window.Html5QrcodeSupportedFormats;
-   scanner=new window.Html5Qrcode('mp-freezer-scanner',{
+   reader.hidden=false;
+   activeScanner=new window.Html5Qrcode('mp-freezer-scanner',{
     formatsToSupport:[fmts.EAN_13,fmts.EAN_8,fmts.UPC_A,fmts.UPC_E],useBarCodeDetectorIfSupported:false
    },false);
-   reader.hidden=false;stopButton.hidden=false;
-   await scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:260,height:130}},
-    function(value){if(token!==scanId||scanning)return;
+   scanner=activeScanner;
+   await activeScanner.start({facingMode:'environment'},{fps:10,qrbox:{width:260,height:130}},
+    function(value){
+     if(token!==scanId||scanning)return;
      var code=String(value||'').trim();
-     if(!/^(?:\d{8}|\d{12,14})$/.test(code))return;
-     scanning=true;stop();lookup(code);
+     if(!/^(?:\\d{8}|\\d{12,14})$/.test(code))return;
+     scanning=true;
+     stop();
+     lookup(code);
     },function(){});
-   if(token===scanId)status.textContent='Hold stregkoden foran kameraet.';
+   if(token!==scanId||!cameraDialog.open){
+    try{await activeScanner.stop();}catch(ignore){}
+    try{activeScanner.clear();}catch(ignore){}
+    return;
+   }
+   cameraStatus.textContent='Hold stregkoden foran kameraet.';
   }catch(e){
-   stop();status.textContent='Kameraet kunne ikke startes: '+(e.message||'ukendt fejl')+'. Indtast koden manuelt.';
+   if(token!==scanId)return;
+   status.textContent='Kameraet kunne ikke startes: '+(e.message||'ukendt fejl')+'. Indtast koden manuelt.';
+   stop();
   }
  };
 };

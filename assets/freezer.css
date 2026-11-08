@@ -52,3 +52,19 @@
 .mp-portal .mp-freezer-notes-label{display:grid;gap:5px;font-weight:600;font-size:14px}
 .mp-portal .mp-freezer-notes-label textarea{display:block;box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:68px;padding:10px;border:1px solid var(--mp-line);border-radius:9px;background:var(--mp-card);color:var(--mp-ink);font-size:16px;resize:vertical}
 .mp-portal .mp-freezer-item-info .mp-freezer-item-note{margin:3px 0 0;font-size:13px;line-height:1.35;color:var(--mp-muted);white-space:pre-line;overflow-wrap:anywhere}
+
+/* v0.1.35: notes above a compact, side-by-side date row; camera in a modal. */
+.mp-portal .mp-freezer-date-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;align-items:start}
+.mp-portal .mp-freezer-date-fields label{display:grid;gap:4px;min-width:0;font-size:13px;line-height:1.25;font-weight:600}
+.mp-portal .mp-freezer-date-fields input[type="date"]{display:block;box-sizing:border-box;width:100%;min-width:0;max-width:100%;height:44px;min-height:44px;max-height:44px;padding:5px 6px;border:1px solid var(--mp-line);border-radius:9px;background:var(--mp-card);color:var(--mp-ink);font-size:14px;line-height:1.2;font-variant-numeric:tabular-nums}
+.mp-portal .mp-freezer-date-fields input[type="date"]::-webkit-date-and-time-value{text-align:left;min-width:0}
+.mp-portal .mp-freezer-camera-dialog{box-sizing:border-box;width:min(460px,calc(100% - 24px));max-width:calc(100% - 24px);max-height:90vh;max-height:calc(100dvh - 32px);margin:auto;padding:16px;border:1px solid var(--mp-line);border-radius:16px;background:var(--mp-card);color:var(--mp-ink);box-shadow:0 18px 48px rgba(0,0,0,.28);overflow:auto}
+.mp-portal .mp-freezer-camera-dialog::backdrop{background:rgba(6,20,34,.72)}
+.mp-portal .mp-freezer-camera-dialog:not([open]){display:none}
+.mp-portal .mp-freezer-camera-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.mp-portal .mp-freezer-camera-header h3{margin:0;font-size:18px}
+.mp-portal .mp-freezer-camera-close{display:grid;place-items:center;width:44px;height:44px;min-width:44px;border:1px solid var(--mp-line);border-radius:10px;background:var(--mp-card);color:var(--mp-ink);font-size:20px;cursor:pointer}
+.mp-portal .mp-freezer-camera-dialog .mp-freezer-scanner{min-height:210px;margin:10px 0}
+.mp-portal .mp-freezer-camera-dialog .mp-freezer-scanner video{width:100%;max-height:min(48vh,340px);object-fit:cover}
+.mp-portal .mp-freezer-camera-cancel{display:block;width:100%;margin-top:12px;min-height:44px}
+.mp-portal .mp-freezer-camera-dialog button:focus-visible{outline:3px solid var(--mp-primary);outline-offset:2px}
