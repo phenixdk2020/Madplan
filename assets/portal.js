@@ -721,7 +721,8 @@ async function shopping(){
  '<p class="mp-daily-progress" aria-live="polite">'+
  (dailyOCR.tesseract?'Tesseract tilgængelig':'Tesseract ikke tilgængelig')+
  ' · I dag: '+esc(dailyOCR.processed||0)+'/'+esc(dailyOCR.total||0)+' sider OCR-behandlet'+
- ' · '+esc(dailyOCR.offers||0)+' mulige tilbud'+
+ ' · '+esc(dailyOCR.offers||0)+' nye OCR-fund · '+esc(dailyOCR.saved_offers||0)+' gemte gyldige tilbud'+
+ (dailyOCR.enabled&&!dailyOCR.cron_scheduled?' · WordPress Cron er ikke planlagt':'')+
  (dailyOCR.partial?' · ufuldstændigt':'')+
  (dailyOCR.error?' · '+esc(dailyOCR.error):'')+'</p>'+
  (cfg.admin?'<label class="mp-daily-switch"><input type="checkbox" id="mp-daily-ocr-rights" '+
