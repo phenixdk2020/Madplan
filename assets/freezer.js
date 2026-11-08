@@ -63,7 +63,7 @@ window.MP_FREEZER=async function(ctx){
  s.freezerStop=stop;stopButton.onclick=stop;
  function quantityLabel(item){
   var quantity=Number(item.quantity||0),unit=String(item.unit||'').trim();
-  return quantity+' stk.'+(unit&&!/^(?:stk\\.?|stykker)$/i.test(unit)?' × '+unit:'');
+  return quantity+' stk.'+(unit&&!/^(?:stk\.?|stykker)$/i.test(unit)?' × '+unit:'');
  }
  function freezerIcon(paths){
   return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'+paths+'</svg>';

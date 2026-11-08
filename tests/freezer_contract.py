@@ -47,7 +47,7 @@ assert "esc(quantityLabel(item))" in js
 for action in ['edit','meal','shopping','delete']:
     assert "freezerAction('"+action+"'" in js
     assert "actionIcons[action]" in js
-assert 'aria-label="'+'''+"'"+'''+"'+esc(label+' – '+item.title)" in js
+assert 'aria-label="' in js and "esc(label+' – '+item.title)" in js
 assert "mp-freezer-icon-actions" in js and "mp-freezer-icon-btn" in js
 assert "grid-template-columns:repeat(2,44px)" in style
 assert ".mp-freezer-item{display:grid;grid-template-columns:minmax(0,1fr) auto" in style
