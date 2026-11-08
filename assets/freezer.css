@@ -28,3 +28,15 @@
 .mp-portal .mp-freezer-disclosure>summary{cursor:pointer;font-size:1.1rem;font-weight:700;line-height:1.4;padding:4px 0}
 .mp-portal .mp-freezer-disclosure[open]>summary{margin-bottom:14px}
 .mp-portal .mp-freezer-disclosure>summary:focus-visible{outline:2px solid var(--mp-primary);outline-offset:4px;border-radius:4px}
+
+/* v0.1.32: compact freezer inventory, with touch-friendly icons on the right. */
+.mp-portal .mp-freezer-item{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px 0}
+.mp-portal .mp-freezer-item-info{min-width:0;align-self:center;gap:3px}
+.mp-portal .mp-freezer-item-info strong{line-height:1.25}
+.mp-portal .mp-freezer-icon-actions{display:grid;grid-template-columns:repeat(2,44px);gap:6px;justify-content:end;align-items:center}
+.mp-portal .mp-freezer-icon-btn{display:grid;place-items:center;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:1px solid var(--mp-line);border-radius:10px;background:var(--mp-card);color:var(--mp-primary);cursor:pointer;touch-action:manipulation}
+.mp-portal .mp-freezer-icon-btn svg{display:block;width:20px;height:20px}
+.mp-portal .mp-freezer-icon-btn:hover{background:var(--mp-bg);border-color:var(--mp-primary)}
+.mp-portal .mp-freezer-icon-btn:focus-visible{outline:3px solid var(--mp-primary);outline-offset:2px}
+.mp-portal .mp-freezer-icon-delete{color:#b42332}
+@media(max-width:360px){.mp-portal .mp-freezer-item{gap:6px}.mp-portal .mp-freezer-icon-actions{gap:4px}}

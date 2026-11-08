@@ -41,4 +41,14 @@ assert '<details class="mp-freezer-disclosure" id="mp-freezer-register">' in js
 assert '<details class="mp-freezer-disclosure" id="mp-freezer-shopping">' in js
 assert "content.querySelector('#mp-freezer-register').open=true" in js
 assert "mp-freezer-disclosure>summary" in style
+assert "function quantityLabel(item)" in js
+assert "quantity+' stk.'" in js and "' × '+unit" in js
+assert "esc(quantityLabel(item))" in js
+for action in ['edit','meal','shopping','delete']:
+    assert "freezerAction('"+action+"'" in js
+    assert "actionIcons[action]" in js
+assert 'aria-label="'+'''+"'"+'''+"'+esc(label+' – '+item.title)" in js
+assert "mp-freezer-icon-actions" in js and "mp-freezer-icon-btn" in js
+assert "grid-template-columns:repeat(2,44px)" in style
+assert ".mp-freezer-item{display:grid;grid-template-columns:minmax(0,1fr) auto" in style
 print('Freezer inventory, security, scanner, integrations, backup contract PASS')

@@ -61,6 +61,22 @@ window.MP_FREEZER=async function(ctx){
   reader.hidden=true;stopButton.hidden=true;
  }
  s.freezerStop=stop;stopButton.onclick=stop;
+ function quantityLabel(item){
+  var quantity=Number(item.quantity||0),unit=String(item.unit||'').trim();
+  return quantity+' stk.'+(unit&&!/^(?:stk\\.?|stykker)$/i.test(unit)?' × '+unit:'');
+ }
+ function freezerIcon(paths){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'+paths+'</svg>';
+ }
+ var actionIcons={
+  edit:freezerIcon('<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>'),
+  meal:freezerIcon('<path d="M4 3v7a3 3 0 0 0 6 0V3"/><path d="M7 3v19"/><path d="M20 3v19"/><path d="M20 3c-5 2-5 9 0 9"/>'),
+  shopping:freezerIcon('<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 2h3l3 14h13l3-10H5"/>'),
+  delete:freezerIcon('<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 15H6L5 6"/><path d="M10 11v6M14 11v6"/>')
+ };
+ function freezerAction(action,label,item){
+  return '<button class="mp-freezer-icon-btn'+(action==='delete'?' mp-freezer-icon-delete':'')+'" type="button" data-freezer="'+action+'" title="'+esc(label)+'" aria-label="'+esc(label+' – '+item.title)+'">'+actionIcons[action]+'</button>';
+ }
  function redraw(){
   var selected=filter.value||'';
   content.querySelectorAll('.mp-freezer-location').forEach(function(b){b.classList.toggle('mp-freezer-selected',b.dataset.location===(selected||chosen));});
@@ -69,12 +85,13 @@ window.MP_FREEZER=async function(ctx){
   if(!shown.length){result.innerHTML='<p class="mp-help">Ingen varer på denne placering.</p>';return;}
   result.innerHTML=shown.map(function(item){return '<article class="mp-freezer-item" data-id="'+Number(item.id)+'">'+
    '<div class="mp-freezer-item-info"><strong>'+esc(item.title)+'</strong>'+
-   '<small>'+esc(names[item.location]||item.location)+' · '+Number(item.quantity)+' '+esc(item.unit||'')+'</small>'+
+   '<small>'+esc(names[item.location]||item.location)+' · '+esc(quantityLabel(item))+'</small>'+
    '<small>Indfrosset '+esc(item.frozen_at)+(item.best_before?' · Bedst før '+esc(item.best_before):'')+'</small></div>'+
-   '<div class="mp-freezer-actions"><button class="mp-btn" type="button" data-freezer="edit">Ret/flyt</button>'+
-   '<button class="mp-btn" type="button" data-freezer="meal">Til madplan</button>'+
-   '<button class="mp-btn" type="button" data-freezer="shopping">Til indkøbsliste</button>'+
-   '<button class="mp-btn" type="button" data-freezer="delete">Slet</button></div></article>';}).join('');
+   '<div class="mp-freezer-icon-actions" role="group" aria-label="Handlinger for '+esc(item.title)+'">'+
+   freezerAction('edit','Ret/flyt',item)+
+   freezerAction('meal','Til madplan',item)+
+   freezerAction('shopping','Til indkøbsliste',item)+
+   freezerAction('delete','Slet',item)+'</div></article>';}).join('');
   result.querySelectorAll('[data-freezer]').forEach(function(button){button.onclick=async function(){
    var id=Number(button.closest('[data-id]').dataset.id);
    var item=items.find(function(x){return Number(x.id)===id;});
