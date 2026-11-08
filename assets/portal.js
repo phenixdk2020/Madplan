@@ -735,7 +735,7 @@ async function shopping(){
  (dailyOCR.enabled?'checked':'')+((dailyOCR.mode!=='github'&&!dailyOCR.tesseract)?' disabled':'')+
  '> Aktiver daglig OCR-behandling</label>'+
  '<div class="mp-daily-buttons"><button type="button" class="mp-btn mp-btn-primary" id="mp-daily-ocr-save">Gem OCR-indstillinger</button>'+
- (dailyOCR.mode==='github'?'<small class="mp-help">I GitHub-tilstand kan køen køres via Actions → Madplan OCR → Run workflow. Her kræves en WordPress Application Password gemt som GitHub Secret.</small>':
+ (dailyOCR.mode==='github'?'<small class="mp-help">GitHub skal have to Actions Secrets: MADPLAN_OCR_USERNAME (WordPress-administratorens login) og MADPLAN_OCR_APP_PASSWORD (en separat WordPress Application Password). Derefter: Actions → Madplan OCR → Run workflow. Der bruges ikke din normale WordPress-adgangskode.</small>':
  '<button type="button" class="mp-btn" id="mp-daily-ocr-next" '+(!dailyOCR.enabled?'disabled':'')+'>Behandl næste avisside nu</button>')+'</div>':'')+
  '<small class="mp-help">OCR-fund bliver markeret som usikre. Ved mange avissider bliver kørslen ufuldstændig og fortsætter ikke ubegrænset.</small></details>'+
  '</dialog>';
