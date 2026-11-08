@@ -717,21 +717,25 @@ async function shopping(){
  '<details class="mp-shop-filter mp-daily-ocr"><summary>Daglig OCR af tilbudsaviser'+
  (dailyOCR.enabled?' · aktiv':' · slået fra')+'</summary>'+
  '<p class="mp-help">Frivillig, rettighedsstyret billed-OCR. En avisside behandles ad gangen, maks. '+esc(dailyOCR.cap||192)+' sider pr. dag. Billeder og den fulde OCR-tekst slettes efter behandlingen.</p>'+
- '<p class="mp-help">Dette kræver Tesseract på serveren og tilladelse fra rettighedshaverne til systematisk billedbehandling. At siden er privat giver ikke i sig selv denne tilladelse.</p>'+
+ '<p class="mp-help">Vælg OCR-motor. GitHub Actions kan køre Tesseract uden installation på webhotellet, når den automatiske workflow-forbindelse er konfigureret. Systematisk billedbehandling kræver fortsat de nødvendige rettigheder.</p>'+
  '<p class="mp-daily-progress" aria-live="polite">'+
- (dailyOCR.tesseract?'Tesseract tilgængelig':'Tesseract ikke tilgængelig')+
+ (dailyOCR.mode==='github'?'GitHub Actions valgt · ekstern OCR kræver GitHub Secrets':(dailyOCR.tesseract?'Server-Tesseract tilgængelig':'Server-Tesseract ikke tilgængelig'))+
  ' · I dag: '+esc(dailyOCR.processed||0)+'/'+esc(dailyOCR.total||0)+' sider OCR-behandlet'+
  ' · '+esc(dailyOCR.offers||0)+' nye OCR-fund · '+esc(dailyOCR.saved_offers||0)+' gemte gyldige tilbud'+
- (dailyOCR.enabled&&!dailyOCR.cron_scheduled?' · WordPress Cron er ikke planlagt':'')+
+ (dailyOCR.enabled&&dailyOCR.mode!=='github'&&!dailyOCR.cron_scheduled?' · WordPress Cron er ikke planlagt':'')+
  (dailyOCR.partial?' · ufuldstændigt':'')+
  (dailyOCR.error?' · '+esc(dailyOCR.error):'')+'</p>'+
- (cfg.admin?'<label class="mp-daily-switch"><input type="checkbox" id="mp-daily-ocr-rights" '+
+ (cfg.admin?'<label for="mp-daily-ocr-mode">OCR-motor</label><select id="mp-daily-ocr-mode">'+
+ '<option value="github" '+(dailyOCR.mode==='github'?'selected':'')+'>GitHub Actions (anbefalet ved webhotel uden Tesseract)</option>'+
+ '<option value="server" '+(dailyOCR.mode!=='github'?'selected':'')+'>Tesseract på WordPress-serveren</option></select>'+
+ '<label class="mp-daily-switch"><input type="checkbox" id="mp-daily-ocr-rights" '+
  (dailyOCR.rights_confirmed?'checked':'')+'> Jeg har indhentet de nødvendige rettigheder til automatiseret OCR af de valgte avisbilleder.</label>'+
  '<label class="mp-daily-switch"><input type="checkbox" id="mp-daily-ocr-enabled" '+
- (dailyOCR.enabled?'checked':'')+(!dailyOCR.tesseract?' disabled':'')+
+ (dailyOCR.enabled?'checked':'')+((dailyOCR.mode!=='github'&&!dailyOCR.tesseract)?' disabled':'')+
  '> Aktiver daglig OCR-behandling</label>'+
  '<div class="mp-daily-buttons"><button type="button" class="mp-btn mp-btn-primary" id="mp-daily-ocr-save">Gem OCR-indstillinger</button>'+
- '<button type="button" class="mp-btn" id="mp-daily-ocr-next" '+(!dailyOCR.enabled?'disabled':'')+'>Behandl næste avisside nu</button></div>':'')+
+ (dailyOCR.mode==='github'?'<small class="mp-help">I GitHub-tilstand kan køen køres via Actions → Madplan OCR → Run workflow. Her kræves en WordPress Application Password gemt som GitHub Secret.</small>':
+ '<button type="button" class="mp-btn" id="mp-daily-ocr-next" '+(!dailyOCR.enabled?'disabled':'')+'>Behandl næste avisside nu</button>')+'</div>':'')+
  '<small class="mp-help">OCR-fund bliver markeret som usikre. Ved mange avissider bliver kørslen ufuldstændig og fortsætter ikke ubegrænset.</small></details>'+
  '</dialog>';
  var groups={};
@@ -1113,7 +1117,8 @@ async function shopping(){
   try{
    var data=await api('shopping/daily-ocr/settings','POST',{
     enabled:content.querySelector('#mp-daily-ocr-enabled').checked,
-    rights_confirmed:content.querySelector('#mp-daily-ocr-rights').checked
+    rights_confirmed:content.querySelector('#mp-daily-ocr-rights').checked,
+    mode:content.querySelector('#mp-daily-ocr-mode').value
    });
    await shopping();msg(data.enabled?'Daglig OCR aktiveret.':'Daglig OCR slået fra.');
   }catch(e){fail(e);ocrDailySave.disabled=false;}
@@ -1126,6 +1131,11 @@ async function shopping(){
    msg('OCR: '+result.processed+'/'+result.total+' sider i dag.'+
     (result.error?' '+result.error:''));
   }catch(e){fail(e);ocrDailyRun.disabled=false;}
+ };
+ var ocrMode=content.querySelector('#mp-daily-ocr-mode');
+ if(ocrMode)ocrMode.onchange=function(){
+  var checkbox=content.querySelector('#mp-daily-ocr-enabled');
+  checkbox.disabled=ocrMode.value==='server'&&!dailyOCR.tesseract;
  };
  var offerSave=content.querySelector('#mp-save-offer-stores');
  offerSave.onclick=async function(){
