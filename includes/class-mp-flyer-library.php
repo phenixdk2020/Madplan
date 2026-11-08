@@ -64,7 +64,7 @@ final class MP_FlyerLibrary {
             $out[$key]=[
                 'chain'=>$slugs[$slug],'valid_from'=>$from,'valid_to'=>$to,
                 'flyer_id'=>$id,'page_urls'=>array_values($urls),
-                'page_count'=>count($urls),
+                'page_count'=>max(count($urls),count((array)($record['page_urls']??[])),absint($record['page_count']??0)),
             ];
         }
         $out=array_values($out);
