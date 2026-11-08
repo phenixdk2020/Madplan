@@ -723,6 +723,7 @@ async function shopping(){
  ' · I dag: '+esc(dailyOCR.processed||0)+'/'+esc(dailyOCR.total||0)+' sider OCR-behandlet'+
  ' · '+esc(dailyOCR.offers||0)+' nye OCR-fund · '+esc(dailyOCR.saved_offers||0)+' gemte gyldige tilbud'+
  (dailyOCR.enabled&&dailyOCR.mode!=='github'&&!dailyOCR.cron_scheduled?' · WordPress Cron er ikke planlagt':'')+
+ (dailyOCR.enabled&&dailyOCR.mode==='github'?' · '+(dailyOCR.external_last_poll?'Seneste GitHub-kontakt: '+esc(dailyOCR.external_last_poll):'Afventer første kontakt fra GitHub-workflow'):'')+
  (dailyOCR.partial?' · ufuldstændigt':'')+
  (dailyOCR.error?' · '+esc(dailyOCR.error):'')+'</p>'+
  (cfg.admin?'<label for="mp-daily-ocr-mode">OCR-motor</label><select id="mp-daily-ocr-mode">'+
