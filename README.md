@@ -389,6 +389,8 @@ Kilder: https://prej.dk/api , https://prej.dk/vilkaar-api . Tests: `tests/daily_
 
 ## v0.1.39 – fortsæt gennem alle tilgængelige avissider over flere dage
 
+Installationspakken udgives først efter den automatiske PHP/JavaScript-regressionstest, og WordPress-aktivering af billed-OCR kræver fortsat, at driftens forudsætninger er på plads.
+
 - Daglig OCR gemmer en lille fremskridtsmarkør pr. tilbudsavis. Ved næste dags kørsel starter den dér, hvor den sidst stoppede, i stedet for at genlæse de samme første sider ved kapacitetsgrænsen.
 - Hvis avisoversigten ikke kan hentes, prøver køen igen efter en time i stedet for at opgive hele dagen. Fejlen vises i statussen.
 - Mere end 192 sider samlet eller 80 sider i én avis er fortsat en rapporteret begrænsning. WordPress-Cron skal køre regelmæssigt, og ingen funktion omgår et krav om billedrettigheder eller manglende Tesseract.
