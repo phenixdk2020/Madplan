@@ -96,6 +96,8 @@ verify($GLOBALS['pages_fetched']===2,'OCR cannot start before 6AM');
 $GLOBALS['clock']='2026-11-04T07:00:00+01:00';
 MP_DailyOCR::tick();
 verify($GLOBALS['pages_fetched']===3,'Next day begins new OCR pass');
+$GLOBALS['clock']='2026-11-09T07:00:00+01:00';
+verify(MP_DailyOCR::matches(4)['offers']===[],'Expired flyers are excluded from searchable OCR archive');
 MP_DailyOCR::set_enabled(false,false);
 verify(!isset($GLOBALS['cron']['mp_daily_ocr_tick']),'Disabling removes scheduled task');
 echo "Rights-gated daily OCR, temporary images, daily index and scheduling PASS\n";
