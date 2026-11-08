@@ -38,6 +38,10 @@ assert 'id="mp-shopping-settings-close"' in js
 assert "settingsDialog.showModal()" in js
 assert "expandedSettings.forEach" in js
 assert 'id="mp-clear-purchased"' in js and 'id="mp-check-offers-all"' in js
+assert js.index('id="mp-clear-purchased"') < js.index('<dialog id="mp-shopping-settings-dialog"')
+assert js.index('id="mp-check-offers-all"') < js.index('<dialog id="mp-shopping-settings-dialog"')
+assert js.index('<div class="mp-shopping-bulk-actions">') < js.index('<dialog id="mp-shopping-settings-dialog"')
+assert js.index('id="mp-offer-note"') < js.index('<dialog id="mp-shopping-settings-dialog"')
 assert js.index('Scan stregkode</button></section>') < js.index('<dialog id="mp-shopping-settings-dialog"')
 assert ".mp-shopping-settings-dialog:not([open]){display:none}" in css
 print('Homepage direct shopping link and mobile layout PASS')
