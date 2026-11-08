@@ -27,6 +27,7 @@ require_once MP_DIR . 'includes/class-mp-flyer-library.php';
 require_once MP_DIR . 'includes/class-mp-flyer-ocr.php';
 require_once MP_DIR . 'includes/class-mp-daily-ocr.php';
 require_once MP_DIR . 'includes/class-mp-daily-offers.php';
+require_once MP_DIR . 'includes/class-mp-local-offers.php';
 require_once MP_DIR . 'includes/class-mp-shopping-stores.php';
 require_once MP_DIR . 'includes/class-mp-shopping-history.php';
 require_once MP_DIR . 'includes/class-mp-shopping-details.php';
