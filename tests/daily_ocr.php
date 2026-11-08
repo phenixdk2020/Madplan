@@ -36,7 +36,9 @@ class MP_FlyerOCR {
  }
 }
 class MP_FlyerLibrary {
- public static function listing():array{
+ public static bool $fail=false;
+ public static function listing():array|WP_Error{
+  if(self::$fail)return new WP_Error('mp_prej_network','Simulated listing failure');
   return [
    'partial'=>false,'flyers'=>[
     ['chain'=>'SuperBrugsen','valid_to'=>'2026-11-05',
@@ -77,7 +79,7 @@ verify(is_wp_error(MP_DailyOCR::set_enabled(true,true)),'Tesseract required');
 MP_FlyerOCR::$available=true;
 $enabled=MP_DailyOCR::set_enabled(true,true);
 verify($enabled['enabled'],'Rights-confirmed status');
-verify(isset($GLOBALS['cron']['mp_daily_ocr_tick']),'Schedules 15 minute batches');
+verify(isset($GLOBALS['cron']['mp_daily_ocr_tick']),'Schedules recurring OCR batches');
 verify($GLOBALS['pages_fetched']===0,'Enabling never fetches images');
 $a=MP_DailyOCR::tick();
 verify($a['processed']===1 && $a['total']===2,'One flyer page per tick');
@@ -99,6 +101,16 @@ MP_DailyOCR::tick();
 verify($GLOBALS['pages_fetched']===3,'Next day begins new OCR pass');
 $GLOBALS['clock']='2026-11-09T07:00:00+01:00';
 verify(MP_DailyOCR::matches(4)['offers']===[],'Expired flyers are excluded from searchable OCR archive');
+$GLOBALS['clock']='2026-11-10T07:00:00+01:00';
+MP_FlyerLibrary::$fail=true;
+$failed=MP_DailyOCR::tick();
+verify($failed['error']!=='' && !$failed['complete'],'Failed listing remains retryable');
+MP_FlyerLibrary::$fail=false;
+$state=$GLOBALS['opts']['mp_daily_ocr_state_v1'];
+$state['retry_after']=time()-1;
+$GLOBALS['opts']['mp_daily_ocr_state_v1']=$state;
+$retry=MP_DailyOCR::tick();
+verify($retry['processed']===1 && $retry['error']==='','Listing recovers and OCR continues after retry');
 MP_DailyOCR::set_enabled(false,false);
 verify(!isset($GLOBALS['cron']['mp_daily_ocr_tick']),'Disabling removes scheduled task');
 echo "Rights-gated daily OCR, temporary images, daily index and scheduling PASS\n";
