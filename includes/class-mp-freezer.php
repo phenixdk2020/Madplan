@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) { exit; }
  * left-to-right rooms 1-4 and baskets 1-3 (no basket 4).
  */
 final class MP_Freezer {
-    private const SCHEMA = 'mp_freezer_schema_v1';
+    private const SCHEMA = 'mp_freezer_schema_v2';
     private const LOCATIONS = [
         'room1'=>'Rum 1','basket1'=>'Kurv 1',
         'room2'=>'Rum 2','basket2'=>'Kurv 2',
@@ -29,6 +29,7 @@ final class MP_Freezer {
             barcode varchar(14) NOT NULL DEFAULT '',
             quantity smallint unsigned NOT NULL DEFAULT 1,
             unit varchar(80) NOT NULL DEFAULT 'stk',
+            notes varchar(500) NOT NULL DEFAULT '',
             location varchar(12) NOT NULL,
             frozen_at date NOT NULL,
             best_before date DEFAULT NULL,
@@ -40,7 +41,8 @@ final class MP_Freezer {
             KEY location (location),
             KEY barcode (barcode)
         ) $charset;");
-        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s',$table))===$table) {
+        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s',$table))===$table
+            && $wpdb->get_var($wpdb->prepare("SHOW COLUMNS FROM $table LIKE %s",'notes'))==='notes') {
             update_option(self::SCHEMA,'1',false);
         }
     }
@@ -55,6 +57,14 @@ final class MP_Freezer {
         $barcode=trim((string)($input['barcode']??''));
         $qty=$input['quantity']??'1';
         $unit=sanitize_text_field(trim((string)($input['unit']??'stk')));
+        $raw_notes=$input['notes']??'';
+        if (!is_scalar($raw_notes)) {
+            return new WP_Error('mp_freezer_notes','Kommentaren skal være tekst.',['status'=>400]);
+        }
+        $notes=sanitize_textarea_field(trim((string)$raw_notes));
+        if (mb_strlen($notes)>500) {
+            return new WP_Error('mp_freezer_notes','Kommentaren må højst være 500 tegn.',['status'=>400]);
+        }
         $location=(string)($input['location']??'');
         $frozen=(string)($input['frozen_at']??current_datetime()->format('Y-m-d'));
         $best=trim((string)($input['best_before']??''));
@@ -77,7 +87,7 @@ final class MP_Freezer {
         if (!self::date($frozen) || ($best!=='' && !self::date($best))) {
             return new WP_Error('mp_freezer_date','Angiv en gyldig dato.',['status'=>400]);
         }
-        return ['title'=>$title,'barcode'=>$barcode,'quantity'=>(int)$qty,'unit'=>$unit,
+        return ['title'=>$title,'barcode'=>$barcode,'quantity'=>(int)$qty,'unit'=>$unit,'notes'=>$notes,
             'location'=>$location,'frozen_at'=>$frozen,
             'best_before'=>$best===''?null:$best];
     }
@@ -85,7 +95,7 @@ final class MP_Freezer {
     public static function all(): array {
         global $wpdb;
         $table=MP_Storage::table('freezer');
-        $rows=$wpdb->get_results("SELECT id,title,barcode,quantity,unit,location,frozen_at,best_before,source_shopping_id
+        $rows=$wpdb->get_results("SELECT id,title,barcode,quantity,unit,notes,location,frozen_at,best_before,source_shopping_id
             FROM $table ORDER BY location, title, id LIMIT 1500",ARRAY_A);
         return ['locations'=>self::LOCATIONS,'items'=>is_array($rows)?$rows:[]];
     }

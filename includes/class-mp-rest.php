@@ -419,6 +419,7 @@ final class MP_REST {
             'barcode'=>$r->get_param('barcode'),
             'quantity'=>$r->get_param('quantity'),
             'unit'=>$r->get_param('unit'),
+            'notes'=>$r->get_param('notes'),
             'location'=>$r->get_param('location'),
             'frozen_at'=>$r->get_param('frozen_at'),
             'best_before'=>$r->get_param('best_before'),

@@ -121,6 +121,7 @@ final class MP_Checkpoints {
                 'mp_portal_page'=>get_option('mp_portal_page'),
                 'mp_db_version'=>get_option('mp_db_version'),
                 'mp_freezer_schema_v1'=>get_option('mp_freezer_schema_v1'),
+                'mp_freezer_schema_v2'=>get_option('mp_freezer_schema_v2'),
                 'mp_movies_v1'=>get_option('mp_movies_v1',[]),
                 'mp_household_streaming_services_v1'=>get_option('mp_household_streaming_services_v1',[]),
                 'mp_shopping_favourite_stores_v1'=>get_option('mp_shopping_favourite_stores_v1',[]),

@@ -36,6 +36,20 @@ assert "window.MP_FREEZER" in js and "scanId" in js
 assert "window.confirm(" in js
 assert "['meals','shows','episodes','shopping','freezer','audit']" in backup
 assert "mp_freezer_schema_v1" in backup
+assert "mp_freezer_schema_v2" in backup
+assert "private const SCHEMA = 'mp_freezer_schema_v2'" in back
+assert "notes varchar(500) NOT NULL DEFAULT ''" in back
+assert "SHOW COLUMNS FROM $table LIKE %s" in back
+assert "sanitize_textarea_field" in back and "mb_strlen($notes)>500" in back
+assert "'notes'=>$notes" in back
+assert "unit,notes,location" in back
+assert "'notes'=>$r->get_param('notes')" in rest
+assert 'name="notes"' in js and 'maxlength="500"' in js
+assert "String(item.notes||'').toLocaleLowerCase('da-DK')" in js
+assert "mp-freezer-item-note" in js and "esc(item.notes)" in js
+assert "form.elements[key].value=item[key]||''" in js and "'best_before','notes'" in js
+assert "data[key]=form.elements[key].value" in js
+assert ".mp-freezer-notes-label textarea" in style
 assert "mp-freezer-map" in style
 assert '<details class="mp-freezer-disclosure" id="mp-freezer-register">' in js
 assert '<details class="mp-freezer-disclosure" id="mp-freezer-shopping">' in js

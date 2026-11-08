@@ -39,6 +39,7 @@ window.MP_FREEZER=async function(ctx){
   '<label>Placering<select name="location">'+options()+'</select></label>'+
   '<label>Indfrysningsdato<input name="frozen_at" type="date" required value="'+esc(cfg.today)+'"></label>'+
   '<label>Bedst før (valgfrit)<input name="best_before" type="date"></label></div>'+
+  '<label class="mp-freezer-notes-label">Kommentar (valgfri)<textarea name="notes" rows="2" maxlength="500" placeholder="Fx halv pose tilbage, bruges først…"></textarea></label>'+
   '<div class="mp-freezer-actions"><button class="mp-btn mp-btn-primary" type="submit" id="mp-freezer-submit">Gem i fryser</button>'+
   '<button class="mp-btn" type="button" id="mp-freezer-reset">Nulstil</button></div></form></details></section>'+
   '<section class="mp-card mp-freezer-panel"><details class="mp-freezer-disclosure" id="mp-freezer-shopping"><summary>Hent fra indkøbslisten</summary>'+
@@ -84,7 +85,7 @@ window.MP_FREEZER=async function(ctx){
   content.querySelectorAll('.mp-freezer-location').forEach(function(b){b.classList.toggle('mp-freezer-selected',b.dataset.location===(selected||chosen));});
   var shown=items.filter(function(item){
    var matchesLocation=!selected||item.location===selected;
-   var matchesSearch=!query||String(item.title||'').toLocaleLowerCase('da-DK').indexOf(query)!==-1||String(item.barcode||'').indexOf(query)!==-1;
+   var matchesSearch=!query||String(item.title||'').toLocaleLowerCase('da-DK').indexOf(query)!==-1||String(item.barcode||'').indexOf(query)!==-1||String(item.notes||'').toLocaleLowerCase('da-DK').indexOf(query)!==-1;
    return matchesLocation&&matchesSearch;
   });
   var result=content.querySelector('#mp-freezer-items');
@@ -92,7 +93,8 @@ window.MP_FREEZER=async function(ctx){
   result.innerHTML=shown.map(function(item){return '<article class="mp-freezer-item" data-id="'+Number(item.id)+'">'+
    '<div class="mp-freezer-item-info"><strong>'+esc(item.title)+'</strong>'+
    '<small>'+esc(names[item.location]||item.location)+' · '+esc(quantityLabel(item))+'</small>'+
-   '<small>Indfrosset '+esc(item.frozen_at)+(item.best_before?' · Bedst før '+esc(item.best_before):'')+'</small></div>'+
+   '<small>Indfrosset '+esc(item.frozen_at)+(item.best_before?' · Bedst før '+esc(item.best_before):'')+'</small>'+
+   (item.notes?'<p class="mp-freezer-item-note">'+esc(item.notes)+'</p>':'')+'</div>'+
    '<div class="mp-freezer-icon-actions" role="group" aria-label="Handlinger for '+esc(item.title)+'">'+
    freezerAction('edit','Ret/flyt',item)+
    freezerAction('meal','Til madplan',item)+
@@ -104,7 +106,7 @@ window.MP_FREEZER=async function(ctx){
    if(!item)return;
    var action=button.dataset.freezer;
    if(action==='edit'){
-    ['title','barcode','quantity','unit','location','frozen_at','best_before'].forEach(function(key){form.elements[key].value=item[key]||'';});
+    ['title','barcode','quantity','unit','location','frozen_at','best_before','notes'].forEach(function(key){form.elements[key].value=item[key]||'';});
     form.elements.item_id.value=item.id;
     content.querySelector('#mp-freezer-heading').textContent='Ret eller flyt madvare';
     content.querySelector('#mp-freezer-submit').textContent='Gem ændringer';
@@ -134,7 +136,7 @@ window.MP_FREEZER=async function(ctx){
  };
  form.onsubmit=async function(event){
   event.preventDefault();var data={};
-  ['title','barcode','quantity','unit','location','frozen_at','best_before'].forEach(function(key){data[key]=form.elements[key].value;});
+  ['title','barcode','quantity','unit','location','frozen_at','best_before','notes'].forEach(function(key){data[key]=form.elements[key].value;});
   var id=form.elements.item_id.value;
   var submit=content.querySelector('#mp-freezer-submit');submit.disabled=true;
   try{await api(id?'freezer/'+id:'freezer','POST',data);stop();await window.MP_FREEZER(ctx);msg(id?'Varen er opdateret.':'Varen er lagt i fryseren.');}

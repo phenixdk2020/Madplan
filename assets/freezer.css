@@ -47,3 +47,8 @@
 .mp-portal #mp-freezer-search{box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:44px;padding:9px;border:1px solid var(--mp-line);border-radius:9px;background:var(--mp-card);color:var(--mp-ink);font-size:16px}
 .mp-portal #mp-freezer-search:focus-visible{outline:2px solid var(--mp-primary);outline-offset:2px}
 @media(max-width:380px){.mp-portal .mp-freezer-controls{gap:7px}}
+
+/* v0.1.34: optional freezer-item comments with wrapping and theme-aware styling. */
+.mp-portal .mp-freezer-notes-label{display:grid;gap:5px;font-weight:600;font-size:14px}
+.mp-portal .mp-freezer-notes-label textarea{display:block;box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:68px;padding:10px;border:1px solid var(--mp-line);border-radius:9px;background:var(--mp-card);color:var(--mp-ink);font-size:16px;resize:vertical}
+.mp-portal .mp-freezer-item-info .mp-freezer-item-note{margin:3px 0 0;font-size:13px;line-height:1.35;color:var(--mp-muted);white-space:pre-line;overflow-wrap:anywhere}
