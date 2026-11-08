@@ -387,6 +387,14 @@ WP-Cron afhænger af besøg på webstedet og garanterer ikke et præcist klokkes
 Kilder: https://prej.dk/api , https://prej.dk/vilkaar-api . Tests: `tests/daily_offers.php`, `tests/daily_offers_contract.py`.
 
 
+## v0.1.38 – lokal tilbudssøgning, OCR-historik og hurtigere baggrundskø
+
+- **Se tilbud** og **Søg gemte tilbud på op til 10 varer** søger nu først i Madplans eget indeks: daglige strukturerede tilbud, manuelle OCR-fund og automatisk OCR. Det bruger **0 Prej API-kald**. Eksterne Prej-opslag kræver nu, at brugeren aktivt vælger **Søg også hos Prej (bruger API-kvote)** eller den særskilte udvidede avissøgning.
+- Daglig billed-OCR bevarer korte vare-/prisforslag, indtil den tilhørende avis udløber; ældre men stadig gyldige tilbud går ikke tabt ved midnat. Billeder og fuld OCR-tekst bliver fortsat ikke gemt.
+- OCR-køen starter samme dag efter aktivering (efter kl. 06) og kontrolleres hvert femte minut, **hvis WordPress-Cron faktisk kører**. Grænsen er hævet til maksimalt 192 avissider/dag og 80 sider/avis; dette giver stadig ikke garanti for komplet dækning af alle valgte tilbudsaviser.
+- I indstillingerne kan administrator se, om Tesseract er tilgængelig, om køen er planlagt, behandlingsfremskridt, fejl og antallet af gyldige gemte tilbud. OCR kræver fortsat lovlig rettighedsbekræftelse og en kørende Tesseract på webhotellet. Konfigurationen kan **ikke** aktiveres automatisk, hvis hosting ikke har Tesseract. Stabil drift kan kræve serverbaseret cron.
+- Indeksdata med gyldige OCR-fund inkluderes i programmets checkpointbackup. Intet nyt abonnement eller API-forbrug.
+
 ## v0.1.24 – opt-in daglig OCR-kø for kilder med billedrettigheder
 
 Denne version tilføjer også **Indkøbsliste → Daglig OCR af tilbudsaviser**. Administratoren kan vælge **Aktiver daglig OCR** **kun**, efter afkrydsning af “Jeg har indhentet de nødvendige rettigheder til automatiseret OCR af de valgte avisbilleder”, og kun hvis webhotellet har en fungerende **Tesseract**-installation. Aktiveringen er **slået fra som standard**. En privat hjemmeside og en Prej API-nøgle er ikke i sig selv en billedlicens; tilladelsen skal dække systematisk automatiseret OCR af tredjeparts avisbilleder. Prejs udtrykkelige TDM-forbehold og billedrettigheder gælder fortsat. Vi har ikke bekræftet dine rettigheder eller dit webhotels Tesseract-installation.
