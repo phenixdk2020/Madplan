@@ -112,6 +112,7 @@ final class MP_DailyOCR {
             'saved_offers'=>count(self::retained()),
             'cron_scheduled'=>(bool)wp_next_scheduled('mp_daily_ocr_tick'),
             'external_worker_required'=>self::enabled() && self::mode()==='github',
+            'external_last_poll'=>(string)(get_option('mp_daily_ocr_external_last_poll','')), 
             'partial'=>$fresh&&!empty($s['partial']),
             'complete'=>$fresh&&!empty($s['complete']),
             'last_checked'=>$fresh?(string)($s['checked_at']??''):'',
