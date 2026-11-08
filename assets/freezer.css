@@ -40,3 +40,10 @@
 .mp-portal .mp-freezer-icon-btn:focus-visible{outline:3px solid var(--mp-primary);outline-offset:2px}
 .mp-portal .mp-freezer-icon-delete{color:#b42332}
 @media(max-width:360px){.mp-portal .mp-freezer-item{gap:6px}.mp-portal .mp-freezer-icon-actions{gap:4px}}
+
+/* v0.1.33: live freezer search next to location dropdown on mobile and desktop. */
+.mp-portal .mp-freezer-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:end;margin:8px 0 12px}
+.mp-portal .mp-freezer-controls label{display:grid;gap:5px;min-width:0;font-weight:600;font-size:14px}
+.mp-portal #mp-freezer-search{box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:44px;padding:9px;border:1px solid var(--mp-line);border-radius:9px;background:var(--mp-card);color:var(--mp-ink);font-size:16px}
+.mp-portal #mp-freezer-search:focus-visible{outline:2px solid var(--mp-primary);outline-offset:2px}
+@media(max-width:380px){.mp-portal .mp-freezer-controls{gap:7px}}

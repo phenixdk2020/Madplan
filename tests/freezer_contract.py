@@ -50,5 +50,13 @@ for action in ['edit','meal','shopping','delete']:
 assert 'aria-label="' in js and "esc(label+' – '+item.title)" in js
 assert "mp-freezer-icon-actions" in js and "mp-freezer-icon-btn" in js
 assert "grid-template-columns:repeat(2,44px)" in style
+assert 'id="mp-freezer-search"' in js
+assert 'type="search"' in js
+assert 'class="mp-freezer-controls"' in js
+assert "search.oninput=redraw" in js
+assert "matchesLocation&&matchesSearch" in js
+assert "toLocaleLowerCase('da-DK')" in js
+assert "Ingen madvarer matcher søgningen." in js
+assert ".mp-freezer-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))" in style
 assert ".mp-freezer-item{display:grid;grid-template-columns:minmax(0,1fr) auto" in style
 print('Freezer inventory, security, scanner, integrations, backup contract PASS')

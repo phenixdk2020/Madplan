@@ -47,11 +47,13 @@ window.MP_FREEZER=async function(ctx){
   '<option value="">Vælg købt vare</option>'+
   shopping.filter(function(v){return Number(v.checked)>0;}).map(function(v){return '<option value="'+Number(v.id)+'">'+esc(v.title)+'</option>';}).join('')+
   '</select><button class="mp-btn" type="submit">Læg i fryser</button></form></details></section>'+
-  '<section class="mp-card"><h3>Fryserens indhold</h3><label>Filtrér placering <select id="mp-freezer-filter">'+
+  '<section class="mp-card"><h3>Fryserens indhold</h3>'+
+  '<div class="mp-freezer-controls"><label>Placering<select id="mp-freezer-filter">'+
   '<option value="">Alle placeringer</option>'+options()+'</select></label>'+
+  '<label>Søg madvare<input id="mp-freezer-search" type="search" placeholder="Søg vare…" autocomplete="off" aria-label="Søg i fryserens madvarer"></label></div>'+
   '<div id="mp-freezer-items"></div></section>';
  content.innerHTML=html;
- var form=content.querySelector('#mp-freezer-form'),filter=content.querySelector('#mp-freezer-filter');
+ var form=content.querySelector('#mp-freezer-form'),filter=content.querySelector('#mp-freezer-filter'),search=content.querySelector('#mp-freezer-search');
  var reader=content.querySelector('#mp-freezer-scanner'),status=content.querySelector('#mp-freezer-scanner-message');
  var stopButton=content.querySelector('#mp-freezer-stop');
  var scanner=null,scanId=0,scanning=false;
@@ -78,11 +80,15 @@ window.MP_FREEZER=async function(ctx){
   return '<button class="mp-freezer-icon-btn'+(action==='delete'?' mp-freezer-icon-delete':'')+'" type="button" data-freezer="'+action+'" title="'+esc(label)+'" aria-label="'+esc(label+' – '+item.title)+'">'+actionIcons[action]+'</button>';
  }
  function redraw(){
-  var selected=filter.value||'';
+  var selected=filter.value||'',query=search.value.trim().toLocaleLowerCase('da-DK');
   content.querySelectorAll('.mp-freezer-location').forEach(function(b){b.classList.toggle('mp-freezer-selected',b.dataset.location===(selected||chosen));});
-  var shown=items.filter(function(item){return !selected||item.location===selected;});
+  var shown=items.filter(function(item){
+   var matchesLocation=!selected||item.location===selected;
+   var matchesSearch=!query||String(item.title||'').toLocaleLowerCase('da-DK').indexOf(query)!==-1||String(item.barcode||'').indexOf(query)!==-1;
+   return matchesLocation&&matchesSearch;
+  });
   var result=content.querySelector('#mp-freezer-items');
-  if(!shown.length){result.innerHTML='<p class="mp-help">Ingen varer på denne placering.</p>';return;}
+  if(!shown.length){result.innerHTML='<p class="mp-help">'+(query?'Ingen madvarer matcher søgningen.':'Ingen varer på denne placering.')+'</p>';return;}
   result.innerHTML=shown.map(function(item){return '<article class="mp-freezer-item" data-id="'+Number(item.id)+'">'+
    '<div class="mp-freezer-item-info"><strong>'+esc(item.title)+'</strong>'+
    '<small>'+esc(names[item.location]||item.location)+' · '+esc(quantityLabel(item))+'</small>'+
@@ -120,7 +126,7 @@ window.MP_FREEZER=async function(ctx){
  content.querySelectorAll('.mp-freezer-location').forEach(function(b){b.onclick=function(){
   chosen=b.dataset.location;form.elements.location.value=chosen;filter.value=chosen;redraw();
  };});
- filter.onchange=redraw;redraw();
+ filter.onchange=redraw;search.oninput=redraw;redraw();
  content.querySelector('#mp-freezer-reset').onclick=function(){
   form.reset();form.elements.item_id.value='';form.elements.frozen_at.value=cfg.today;
   form.elements.location.value=chosen;content.querySelector('#mp-freezer-heading').textContent='Registrer madvare';
