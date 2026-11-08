@@ -90,7 +90,7 @@ verify($GLOBALS['pages_fetched']===2,'Two pages fetched total');
 MP_DailyOCR::tick();
 verify($GLOBALS['pages_fetched']===2,'Completion stops further fetches');
 $GLOBALS['clock']='2026-11-04T04:00:00+01:00';
-verify(count(MP_DailyOCR::matches(4)['offers'])===1,'OCR offers remain searchable until flyer expiry');
+verify(count(MP_DailyOCR::matches(4)['offers'])===2,'Both stored OCR offers remain searchable until each flyer expires');
 MP_DailyOCR::tick();
 verify($GLOBALS['pages_fetched']===2,'OCR cannot start before 6AM');
 $GLOBALS['clock']='2026-11-04T07:00:00+01:00';
