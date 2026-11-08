@@ -50,6 +50,8 @@ jobs:
           php tests/daily_offers.php
           php tests/daily_ocr.php
           python3 tests/daily_ocr_contract.py
+          php tests/local_offers.php
+          python3 tests/local_offers_contract.py
           python3 tests/daily_offers_contract.py
           python3 tests/flyer_ocr_contract.py
           python3 tests/flyer_library_contract.py
