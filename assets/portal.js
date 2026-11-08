@@ -670,7 +670,11 @@ async function shopping(){
  '<div id="mp-history-matches" class="mp-history-matches" role="listbox" hidden></div></div>'+
  '<input id="item-amount" maxlength="80" aria-label="Mængde" placeholder="Mængde">'+
  '<button type="submit" class="mp-btn mp-btn-primary">Tilføj</button></form>'+
- '<button type="button" id="mp-open-barcode" class="mp-btn mp-barcode-open">📷 Scan stregkode</button></section>'+
+ '<button type="button" id="mp-open-barcode" class="mp-btn mp-barcode-open">📷 Scan stregkode</button>'+
+ '<div class="mp-shopping-bulk-actions"><button type="button" id="mp-clear-purchased" class="mp-btn" '+
+ (!purchased.length?'disabled':'')+'>Ryd købte varer ('+purchased.length+')</button>'+
+ '<button type="button" id="mp-check-offers-all" class="mp-btn mp-shopping-bulk" '+(!pending.length?'disabled':'')+
+ '>Søg tilbud på op til 10 varer</button></div><p id="mp-offer-note" class="mp-help" aria-live="polite"></p></section>'+
  '<dialog id="mp-shopping-settings-dialog" class="mp-shopping-settings-dialog" aria-labelledby="mp-shopping-settings-title">'+
  '<div class="mp-shop-dialog-heading mp-shopping-settings-heading"><h3 id="mp-shopping-settings-title">Indkøbslistens opsætning</h3><button type="button" class="mp-btn" id="mp-shopping-settings-close" aria-label="Luk indstillinger">Luk</button></div>'+
  '<p class="mp-help">Butikker, tilbudsaviser, OCR og vedligeholdelse af indkøbslisten.</p>'+
@@ -728,10 +732,7 @@ async function shopping(){
  '<div class="mp-daily-buttons"><button type="button" class="mp-btn mp-btn-primary" id="mp-daily-ocr-save">Gem OCR-indstillinger</button>'+
  '<button type="button" class="mp-btn" id="mp-daily-ocr-next" '+(!dailyOCR.enabled?'disabled':'')+'>Behandl næste avisside nu</button></div>':'')+
  '<small class="mp-help">OCR-fund bliver markeret som usikre. Ved mange avissider bliver kørslen ufuldstændig og fortsætter ikke ubegrænset.</small></details>'+
- '<div class="mp-shopping-bulk-actions"><button type="button" id="mp-clear-purchased" class="mp-btn" '+
- (!purchased.length?'disabled':'')+'>Ryd købte varer ('+purchased.length+')</button>'+
- '<button type="button" id="mp-check-offers-all" class="mp-btn mp-shopping-bulk" '+(!pending.length?'disabled':'')+
- '>Søg tilbud på op til 10 varer</button></div><p id="mp-offer-note" class="mp-help" aria-live="polite"></p></dialog>';
+ '</dialog>';
  var groups={};
  list.forEach(function(x){
   var group=Number(x.checked)?'Købt':(x.store||'Alle');
