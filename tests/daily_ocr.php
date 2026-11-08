@@ -113,4 +113,29 @@ $retry=MP_DailyOCR::tick();
 verify($retry['processed']===1 && $retry['error']==='','Listing recovers and OCR continues after retry');
 MP_DailyOCR::set_enabled(false,false);
 verify(!isset($GLOBALS['cron']['mp_daily_ocr_tick']),'Disabling removes scheduled task');
-echo "Rights-gated daily OCR, temporary images, daily index and scheduling PASS\n";
+// GitHub runner mode must work without Tesseract installed on the webhotel.
+$GLOBALS['clock']='2026-11-03T07:00:00+01:00';
+MP_FlyerOCR::$available=false;
+$github=MP_DailyOCR::set_enabled(true,true,'github');
+verify(!is_wp_error($github) && $github['enabled'] && $github['mode']==='github',
+ 'GitHub OCR can be activated without server Tesseract');
+verify(!isset($GLOBALS['cron']['mp_daily_ocr_tick']),'GitHub mode does not schedule PHP OCR');
+$downloads=$GLOBALS['pages_fetched'];
+$queue=MP_DailyOCR::external_queue();
+verify(!is_wp_error($queue) && count($queue['pages'])===2,'Admin runner receives authorized flyer queue');
+verify($GLOBALS['pages_fetched']===$downloads,'External queue does not download images on WordPress');
+$first=MP_DailyOCR::external_result(0,$queue['day'],"Faxe Kondi\n65,-");
+verify(!is_wp_error($first) && $first['imported']===1 && $first['next']===1,
+ 'OCR text imported as candidates');
+$again=MP_DailyOCR::external_result(0,$queue['day'],'');
+verify(!is_wp_error($again) && !empty($again['already_processed']),
+ 'External page import is idempotent');
+$second=MP_DailyOCR::external_result(1,$queue['day'],"Faxe Kondi\n65,-");
+verify(!is_wp_error($second) && $second['complete'],'External processing completes queue');
+verify(count(MP_DailyOCR::matches(4)['offers'])>=1,'External OCR is immediately searchable');
+verify($GLOBALS['pages_fetched']===$downloads,'GitHub mode makes no image requests from WordPress');
+verify(is_wp_error(MP_DailyOCR::external_result(3,$queue['day'],'')),
+ 'Unknown external queue pages rejected');
+MP_DailyOCR::set_enabled(false,false);
+verify(is_wp_error(MP_DailyOCR::external_queue()),'Disabled worker cannot access flyer queue');
+echo "Rights-gated daily OCR, temporary images, external queue and scheduling PASS\n";
