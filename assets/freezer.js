@@ -205,7 +205,7 @@ window.MP_FREEZER=async function(ctx){
     function(value){
      if(token!==scanId||scanning)return;
      var code=String(value||'').trim();
-     if(!/^(?:\\d{8}|\\d{12,14})$/.test(code))return;
+     if(!/^(?:\d{8}|\d{12,14})$/.test(code))return;
      scanning=true;
      stop();
      lookup(code);
