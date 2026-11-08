@@ -387,6 +387,24 @@ WP-Cron afhænger af besøg på webstedet og garanterer ikke et præcist klokkes
 Kilder: https://prej.dk/api , https://prej.dk/vilkaar-api . Tests: `tests/daily_offers.php`, `tests/daily_offers_contract.py`.
 
 
+## v0.1.40 – ekstern gratis OCR via GitHub Actions
+
+**Hvorfor:** Nogle webhoteller har ikke Tesseract eller PHP `proc_open`. Når det er tilfældet, kan Madplan nu anvende en gratis GitHub Actions-runner til OCR uden at flytte WordPress-data væk fra familiens site.
+
+**Indstil først under Indkøbsliste → Tandhjul → Daglig OCR:**
+- OCR-motor: **GitHub Actions** (kan aktiveres, selv om der står "Server-Tesseract ikke tilgængelig").
+- Bekræft kun billedrettigheder, hvis du faktisk har det nødvendige grundlag til automatiseret behandling af de udvalgte aviser. Dette er ikke automatisk givet ved privat brug eller Prej-adgang.
+- Tryk **Aktiver daglig OCR-behandling** og **Gem OCR-indstillinger**.
+
+**Forbind GitHub og WordPress (én gang):**
+1. I WordPress: **Brugere → Din profil → Application Passwords**. Opret en særskilt app-adgangskode, fx `Madplan OCR GitHub`. Brug en konto med rettighed til at administrere Madplan. Du skal **ikke** anvende din almindelige WordPress-adgangskode.
+2. I GitHub-repositoryet `phenixdk2020/Madplan`: **Settings → Secrets and variables → Actions → New repository secret**.
+3. Opret `MADPLAN_OCR_USERNAME` med WordPress-login (ikke e-mailadresse, medmindre det også er login), og `MADPLAN_OCR_APP_PASSWORD` med den separate Application Password. Læg aldrig disse værdier i repositoryets filer eller i chatbeskeder.
+4. Gå til **Actions → Madplan OCR (external Tesseract) → Run workflow** for at teste. Workflowet er derefter planlagt hver dag kl. 07:23 Europe/Copenhagen (tidspunkt kan forsinkes af GitHub).
+5. I Madplans OCR-status vises sidste kontakt fra GitHub, antal behandlede sider og gemte fund. Ved 401/403 i Actions skal Application Password, administratoradgang og videresendelse af HTTP Authorization kontrolleres. Test med en autoriseret avis før drift betragtes som klar.
+
+**Arkitektur:** Den autoriserede WordPress REST-rute `GET /shopping/daily-ocr/external-queue` leverer kun den på forhånd udvalgte dags kø. GitHub runneren afviser andre billedværter, behandler midlertidigt billede med `tesseract-ocr-dan` og sender kun OCR-tekst tilbage via `POST /shopping/daily-ocr/external-result`. WordPress matcher den pågældende køside og gemmer kun korte, uverificerede vare-/prisforslag med slutdato, aldrig billeder eller hele OCR-teksten. Begge ruter kræver WordPress-admin via Application Password/HTTPS. Runneren anvender ikke Prej API-nøglen og bruger ingen betalte OCR-API'er, men GitHub Actions' gældende forbrugs- og planregler gælder. Ingen billedrettigheder udledes af indstillingen.
+
 ## v0.1.39 – fortsæt gennem alle tilgængelige avissider over flere dage
 
 Installationspakken udgives først efter den automatiske PHP/JavaScript-regressionstest, og WordPress-aktivering af billed-OCR kræver fortsat, at driftens forudsætninger er på plads.
